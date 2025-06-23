@@ -68,3 +68,11 @@ _imo is better than how Todoist handles subtasks currently; Subtasks functionali
 <img width="661" alt="image" src="https://github.com/user-attachments/assets/ff3653e7-3154-4d5b-9570-9be30a48b712" />
 <img width="659" alt="image" src="https://github.com/user-attachments/assets/f32fe344-9554-426d-9192-004d9bb185d7" />
 
+---
+### To use the plugin, write:
+
+````markdown
+```todoist-board
+```
+````
+anywhere in any note
