@@ -1,3 +1,12 @@
+### To use the plugin, write:
+
+````markdown
+```todoist-board
+```
+````
+anywhere in any note (ensure your API key is submitted in the settings)
+
+***
 This started off as a small code snippet I made to fill a gap in my workflow has now, after few hundred hours, grown into this custom task manager that I think you might like.
 
 Introducing 🥁... Todoist Board!
