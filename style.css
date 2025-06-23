@@ -1,0 +1,2627 @@
+
+/* ========== CSS Variables ========== */
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --pill-bg: #f1f3f5;
+  --pill-text: #4b5563;
+  --selected-bg: #f6f9ff;
+  --selected-border: #b4cef5;
+  --deadline-bg: #d8d5ff;
+  --deadline-text: #6b21a8;
+  --meta-text: #6b7280;
+  
+  /* Enhanced animation variables for native feel */
+  --transition-fast: 100ms cubic-bezier(0.3, 0.7, 0.4, 1);
+  --transition-medium: 280ms cubic-bezier(0.33, 1, 0.68, 1);
+  --transition-smooth: 420ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-spring: 300ms cubic-bezier(0.3, 1, 0.5, 1);
+  
+  --shadow-light: 0 1px 3px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-medium: 0 2px 8px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-heavy: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-interactive: 0 1px 2px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== MODULE: Layout & Container ========== */
+.todoist-board {
+  position: relative;
+  inset: 0;
+  margin: 0 0.125rem;
+  max-width: unset;
+  overflow-y: scroll;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  background: transparent;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+  isolation: unset;
+  z-index: 1000;
+  /* Hardware acceleration */
+  will-change: scroll-position;
+  transform: translate3d(0, 0, 0);
+}
+
+.list-view {
+  display: block;
+  max-width: 768px;
+  min-height: auto;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem; 
+  line-height: 1.5; 
+  position: relative; 
+  opacity: 1;
+  touch-action: pan-y;
+}
+
+.list-wrapper {
+  display: block;
+  touch-action: pan-y;
+}
+
+/* ========== Enhanced Toolbar Styles ========== */
+/* ========== MODULE: Toolbar & Chin ========== */
+.list-toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  z-index: 1000;
+  padding: 0px 8px 0px 8px;
+  margin: 0 auto;
+  border-radius: 16px;
+  /* Inset effect for toolbar */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
+              inset 0 -1px 2px rgba(0, 0, 0, 0.04);
+  /* background-color: #f9fafb; */
+  transition: background-color 0.2s ease;
+  /* Remove background and shadow by default */
+  /* backdrop-filter: blur(20px) saturate(1.2); */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: min-content;
+  flex-wrap: nowrap;
+  touch-action: pan-y;
+  transform: translate3d(0, 0, 0);
+  animation: fade-in-up var(--transition-medium) ease-out both;
+  /* Added for dropdown/menu support */
+  overflow: visible;
+  position: relative;
+  z-index: 1010;
+}
+
+.list-toolbar.sticky {
+  background-color: #1e1e1e;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
+              inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+              0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== MODULE: Filter Bar ========== */
+.filter-button-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 48px;
+}
+
+/* Enhanced filter-btn style for native feel */
+.filter-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  gap: 4px;
+  cursor: pointer;
+  position: relative;
+  padding: 6px;
+  border-radius: 12px;
+  transition: all var(--transition-fast);
+  transform: translate3d(0, 0, 0);
+}
+
+.filter-btn .icon {
+  font-size: 20px;
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+
+.filter-btn .label {
+  pointer-events: none;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.filter-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  transform: scale(1.02) translate3d(0, 0, 0);
+}
+
+.filter-btn:hover .icon {
+  transform: scale(1.1);
+}
+
+.filter-btn:active {
+  transform: scale(0.98) translate3d(0, 0, 0);
+  transition: transform 80ms ease-out;
+}
+
+/* Enhanced active filter button */
+.filter-btn.active {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  border-radius: 12px;
+  position: relative;
+  transform: scale(1.02) translate3d(0, 0, 0);
+  transition: all var(--transition-medium);
+}
+
+.filter-row.selected::after {
+  content: "";
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  width: 20px;
+  height: 5px;
+  background: #6366f1;
+  border-radius: 9999px;
+  pointer-events: none;
+  transition: all var(--transition-smooth);
+  animation: indicator-slide var(--transition-spring) ease-out;
+}
+
+.filter-btn-clicked {
+  transition: transform var(--transition-fast);
+  transform: scale(0.95) translate3d(0, 0, 0);
+}
+
+.filter-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 2rem;
+  flex-shrink: 0;
+  gap: 0;
+  position: relative;
+}
+
+.filter-row-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 80%;
+  max-width: 275px;
+}
+
+.filter-label {
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-top: 0;
+  text-align: center;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.1;
+  display: none;
+}
+
+.filter-title {
+  font-size: 0.5rem;
+}
+
+.filter-icon {
+  position: relative;
+  height: 1.5rem;
+  width: 1.5rem;
+  cursor: pointer;
+}
+
+/* Ensure badge background appears behind the icon for selected filters */
+.filter-row.selected .filter-icon {
+  z-index: 2;
+  position: relative; 
+}
+
+.filter-row.selected .filter-icon > svg {
+  stroke-width: 1.5;
+  scale: 1.2;
+  stroke: currentColor;
+}
+
+body.theme-light .filter-row.selected .filter-icon > svg {
+  color: black;
+}
+
+body.theme-dark .filter-row.selected .filter-icon > svg {
+  color: white;
+}
+
+.filter-row.selected .filter-badge {
+  z-index: 0;
+}
+
+  .filter-badge {
+  position: absolute;
+  top: -0.5em;
+  right: -0.9em;
+  width: 1.5em;
+  height: 1.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.filter-row.selected .filter-icon::before {
+  content: "";
+  position: absolute;
+  top: -0.5em;
+  right: -0.9em;
+  width: 1.5em;
+  height: 1.25em;
+  background-color: var(--badge-bg, #6366f1);
+  border-radius: 9999px;
+  z-index: -10;
+}
+
+.filter-icon {
+  position: relative;
+}
+.filter-icon > svg {
+  scale: 1.15;
+  transform-origin: top left;
+  transition: transform var(--transition-fast);
+}
+
+
+.filter-badge-count {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+}
+
+/* Make inactive filter badges smaller and faded */
+.filter-row:not(.selected) .filter-badge {
+  transform: scale(0.85);
+  opacity: 0.75;
+}
+
+/* Enhance the size of the selected filter's badge */
+.filter-row.selected .filter-badge {
+  transform: scale(1.1);
+  font-weight: 700;
+}
+
+.queue-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-left: 0.5em;
+  padding-left: 0.5em;
+  width: 48px;
+  position: relative;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body.theme-dark .queue-wrapper {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.queue-btn {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 1;
+  border-radius: 8px;
+  transition: all var(--transition-fast);
+  transform: translate3d(0, 0, 0);
+}
+
+.queue-btn:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transform: scale(1.05) translate3d(0, 0, 0);
+}
+
+.queue-btn:active {
+  transform: scale(0.95) translate3d(0, 0, 0);
+  transition: transform 80ms ease-out;
+}
+
+.settings-refresh-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  -webkit-user-select: none;
+  flex-shrink: 0;
+}
+
+.icon-button {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding: 6px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0.7;
+  border-radius: 8px;
+  transition: all var(--transition-fast);
+  transform: translate3d(0, 0, 0);
+}
+
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.04);
+  opacity: 1;
+  transform: scale(1.05) translate3d(0, 0, 0);
+}
+
+.icon-button:active {
+  transform: scale(0.95) translate3d(0, 0, 0);
+  transition: transform 80ms ease-out;
+}
+
+ 
+/* ========== MODULE: Task ========== */
+/* ========== Enhanced Task Styles ========== */
+/* ================================
+   Modern Nesting: Task Styles
+   ================================ */
+.task {
+  background: white;
+  border-radius: 0;
+  border: 1px solid transparent;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: stretch;
+  gap: 0.375rem;
+  min-height: 2rem;
+  -webkit-user-select: none;
+  user-select: none;
+  position: relative;
+  outline: none;
+  transition: all var(--transition-spring);
+  will-change: transform, box-shadow;
+  transform: translate3d(0, 0, 0);
+
+  /* --- Modern Nesting for ::before, :focus, :hover, .selected-task --- */
+  &:not(:first-child)::before {
+    content: "";
+    position: absolute;
+    left: 42px;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 100%);
+    pointer-events: none;
+    transform: translate3d(0, 0, 0);
+  }
+  &:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(.selected-task) {
+      background: #f9fafb;
+      transform: translateY(-1px) translate3d(0, 0, 0);
+      box-shadow: var(--shadow-light);
+      transition: all var(--transition-fast);
+    }
+  }
+  &.no-transition::before {
+    transition: none !important;
+  }
+  &.freeze-transition {
+    transition: none !important;
+    transform: none !important;
+  }
+  /* --- Completed task row styling --- */
+  &.completed .task-content {
+    text-decoration: line-through;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+  }
+}
+
+.task-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  font-size: 0.9rem;
+  touch-action: pan-y;
+  min-height: 2.75rem;
+  position: relative;
+  z-index: 1;
+  /* transition: none !important;
+  animation: none !important; */
+}
+
+.task-content {
+  display: flex;
+  flex: 1;
+}
+
+.task-content-wrapper {
+  position: relative;
+  touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  flex: 1;
+  overflow: visible;
+}
+
+.task-title {
+  position: relative;
+  padding-bottom: 0.85rem;
+  cursor: text;
+  font-size: 0.92rem;
+  will-change: auto;
+  line-height: 1.4;
+  display: block;
+  font-weight: 500;
+  word-break: break-word;
+  white-space: pre-line;
+  color: #111827;
+}
+
+body.theme-dark .task-title {
+  color: #f9fafb;
+}
+
+.selected-task .task-title {
+  max-height: 1000px;
+  opacity: 1;
+  transition:
+    max-height 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 280ms ease-in-out;
+}
+
+
+.task-deadline {
+  position: absolute;
+  top: 0.75rem;
+  right: 10px;
+  z-index: 5;
+  opacity: 0.7;
+}
+.selected-task .task-deadline  {
+  opacity: 1;
+  transition: fade-in 1300ms ease-in-out;
+}
+
+.deadline-label {
+  align-self: center;
+}
+/* ========== Enhanced Task Selection ========== */
+/* --- Modern Nesting: Selected Task --- */
+.selected-task {
+  display: flex;
+  flex-direction: row;
+  justify-content: stretch;
+  height: auto;
+  position: relative;
+  z-index: 0;
+  min-height: 4rem;
+  box-shadow:
+   rgba(6, 24, 44, 0.4) 0px 0px 0px 0.1px, 
+   rgba(6, 24, 44, 0.65) 0px 4px 4px -3px,
+    rgba(255, 255, 255, 0.08) -3px 1px 0px 0px;
+  transform: scale(1.005) translateY(-2px);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  margin-block-start: 1rem;
+  margin-block-end: 0.75rem;
+  margin-inline: auto;
+  transition:
+    box-shadow 420ms cubic-bezier(0.25, 0.8, 0.25, 1),
+    transform 400ms cubic-bezier(0.25, 1, 0.5, 1),
+    border 360ms ease,
+    border-radius 360ms ease;
+  /* Improve animation smoothness on mobile and hardware acceleration */
+  will-change: transform, box-shadow, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0) scale(1.005) translateY(-2px);
+  &::before {
+    display: none;
+  }
+  /* Modern Nesting: Hide ::before on next .task */
+  + .task::before {
+    display: none;
+  }
+}
+
+/* Dim other tasks when a task is selected */
+body:has(.selected-task) .task:not(.selected-task):not(.subtask-row),
+.queue-focused .task:not(.selected-task):not(.subtask-row) {
+  opacity: 0.5;
+  transition: opacity var(--transition-medium);
+}
+
+
+.task-scroll-wrapper {
+  display: flex;
+  width: 100%;
+}
+/* --- Task Scroll Wrapper for selected-task --- */
+.selected-task .task-scroll-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  max-height: 100%;
+  padding-bottom: 0.5rem;
+  position: relative;
+}
+
+.selected-task .task-inner {
+  flex: 0 0 auto;
+}
+
+
+.selected-task .task-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.selected-task .task-content-wrapper {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  min-height: unset;
+  overflow: visible;
+  padding-bottom: 0.5rem;
+}
+
+.selected-task .task-description,
+.selected-task .task-metadata {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: auto;
+}
+
+.selected-task .task-title {
+  flex-shrink: 0;
+}
+
+/* Enhanced selection background */
+
+/* Improved deselection */
+
+.task.no-transition::before {
+  transition: none !important;
+}
+
+/* ========== Enhanced Checkbox Styles ========== */
+input.todoist-checkbox {
+  /* Hard reset to strip all default or theme-injected visuals */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: none;
+  box-shadow: none;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid #d1d5db;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-right: 4px;
+  align-self: flex-start;
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  backface-visibility: hidden;
+  z-index: 10;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Hide browser default checkmark for all major engines */
+input.todoist-checkbox::-webkit-checkmark,
+input.todoist-checkbox::checkmark,
+input.todoist-checkbox::-ms-check {
+  display: none !important;
+  background: none !important;
+  color: transparent !important;
+}
+input.todoist-checkbox:checked {
+  background-color: #6366f1;
+  overflow: hidden;
+}
+/* Priority-based checkbox styling */
+input.todoist-checkbox.priority-4 {
+  background-color: #fee2e2; /* Light red */
+  border-color: #dc2626;     /* Red border */
+}
+input.todoist-checkbox.priority-3 {
+  background-color: #fef3c7; /* Light amber */
+  border-color: #d97706;     /* Amber border */
+}
+input.todoist-checkbox.priority-2 {
+  background-color: #dbeafe; /* Light blue */
+  border-color: #2563eb;     /* Blue border */
+}
+
+.selected-task input.todoist-checkbox {
+  max-height: 1000px;
+  opacity: 1;
+  transition:
+    max-height 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 280ms ease-in-out;
+}
+
+
+input.todoist-checkbox:hover {
+  border-color: #6366f1;
+  animation: checkbox-check var(--transition-spring) ease-out;
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  z-index: 1000;
+}
+
+input.todoist-checkbox:active {
+  transform: scale(0.95);
+  transition: transform 80ms ease-out;
+}
+
+
+
+input.todoist-checkbox:checked::before {
+  content: "";
+  position: absolute;
+  transform-origin: center;
+  top: 0;
+  left: 0.5em;
+  width: 5px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  z-index: 1000;
+}
+
+body.theme-light input.todoist-checkbox:checked::before {
+  border-color: #1f2937;
+}
+
+body.theme-dark input.todoist-checkbox:checked::before {
+  border-color: #f9fafb;
+}
+
+/* Always show the checkmark container, but only display the tick visually on hover or checked */
+input.todoist-checkbox::after {
+  content: none;
+}
+
+/* ========== MODULE: Pills ========== */
+/* ========== Enhanced Pills ========== */
+/* ================================
+   Modern Nesting: Pill Styles
+   ================================ */
+.pill {
+  background: var(--pill-bg);
+  color: var(--pill-text);
+  border-radius: 12px;
+  padding-block: 0.25rem;
+  padding-inline: 0.625rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  display: inline-block;
+  white-space: nowrap;
+  user-select: none;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  /* Modern Nesting for variants */
+  &.deadline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-block: 3px;
+    padding-inline: 8px;
+    font-size: 0.7rem;
+    line-height: 1;
+    min-height: 20px;
+    height: auto;
+    vertical-align: middle;
+  }
+  &.deadline-date {
+    font-weight: 700;
+    font-size: 0.55rem;
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+    color: #fff;
+    opacity: 0.9;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+    animation: fade-in-slide var(--transition-medium) ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    height: auto;
+    min-height: 16px;
+    vertical-align: middle;
+  }
+}
+
+/* --- Grouped Pill Variants with :is() for shared logic --- */
+.pill:is(.today, .overdue, .soon, .future) {
+  color: white;
+  padding-block: 0.2rem;
+  padding-inline: 0.5rem;
+  font-size: 0.6rem;
+  border-radius: 6px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+.pill.today {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+.pill.overdue {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  animation: pulse-urgent 2s ease-in-out infinite;
+}
+.pill.soon {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+.pill.future {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+/* ========== Enhanced Task Metadata ========== */
+.task-description,
+.task-metadata {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: 
+    max-height var(--transition-medium) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity var(--transition-medium);
+}
+
+.selected-task .task-description,
+.selected-task .task-metadata {
+  max-height: 1000px;
+  opacity: 1;
+  transition: 
+    max-height var(--transition-smooth) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity var(--transition-medium);
+}
+
+/* Restrict height and allow scrolling for long descriptions in selected task */
+.selected-task .task-description {
+  max-height: 80px;
+  padding-bottom: 0.5rem;
+  overflow-y: auto;
+  position: relative;
+  background: rgba(255, 239, 213, 0.07);
+}
+
+
+.task-metadata > .pill:not(:first-child):not(.deadline-date) {
+  position: relative;
+  margin-left: 12px;
+  font-weight: inherit;
+}
+
+.task-metadata > .pill:not(:first-child):not(.deadline-date)::before {
+  content: "";
+  background: var(--meta-text);
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  vertical-align: middle;
+  opacity: 0.3;
+}
+
+.label-separator {
+  opacity: 0.4;
+  margin: 0 4px;
+}
+
+/* ================================
+   Modern Nesting: Task Metadata
+   ================================ */
+.task-metadata {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2px 2px;
+  line-height: 0.9;
+  row-gap: 1px;
+  font-size: 0.6rem;
+  align-items: center;
+  color: var(--meta-text);
+  opacity: 0.8;
+  font-weight: 400;
+  padding: 0.25rem 0 0.5rem 0;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: visible;
+  pointer-events: none;
+  transform-origin: top left;
+  animation: fade-in-up var(--transition-spring) ease-out both;
+}
+
+.selected-task .task-metadata {
+  white-space: normal;
+  display: flex;
+  flex-wrap: nowrap;
+  /* Don't override padding-bottom here; let base .task-metadata rule apply */
+}
+
+.selected-task .pill.label-pill {
+  display: flex;
+  flex-wrap: wrap;
+  line-height: 1;
+  padding-right: 2px
+}
+.task-description {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-style: italic;
+  opacity: 0.8;
+  max-width: 100%;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+ 
+
+
+
+/* ========== Enhanced Deadline Styles ========== */
+.deadline-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  font-size: 0.6rem;
+  line-height: 1.1;
+  position: relative;
+}
+
+.deadline-label {
+  font-size: 0.5rem;
+  opacity: 0.6;
+  margin-bottom: 4px;
+  transition: opacity var(--transition-fast);
+}
+
+
+/* ========== MODULE: Toolbar & Chin ========== */
+/* ========== Enhanced Mini Toolbar ========== */
+.mini-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 3rem 0.375rem 0.75rem;
+  height: 1.65rem;
+  border-radius: 18px;
+  background: rgba(31, 41, 55, 0.8);
+  color: white;
+  border: none;
+  box-shadow: 
+    0 4px 12px rgba(0,0,0,0.15),
+    0 2px 4px rgba(0,0,0,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+  animation: toolbar-slide-up var(--transition-spring) ease-out;
+  position: relative;
+  width: 60%;
+  max-width: 220px;
+}
+
+.selected-task .mini-toolbar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.mini-toolbar-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  opacity: 0.85;
+  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mini-toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mini-toolbar .mini-toolbar-btn-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.mini-toolbar-label {
+  position: absolute;
+  top: 4px;
+  font-size: 0.6rem;
+  opacity: 0.7;
+  text-align: center;
+  line-height: 1.1;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.mini-toolbar-btn:hover {
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.08);
+  transform: scale(1.05);
+}
+
+.mini-toolbar-btn:active {
+  transform: scale(0.95);
+  transition: transform 80ms ease-out;
+}
+
+.mini-toolbar-btn:hover + .mini-toolbar-label {
+  opacity: 0.9;
+}
+
+/* ========== Enhanced Dragging States ========== */
+.dragging-row {
+  z-index: 1000;
+  opacity: 0 !important;
+  touch-action: pan-y;
+  box-shadow: none !important;
+  transform: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  animation: none !important;
+}
+
+.task-placeholder {
+  display: flex;
+  flex-direction: row;
+  gap: 0.375rem;
+  opacity: 0.4;
+  border: 2px solid rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 8px;
+  pointer-events: none;
+  padding: 4px 12px 8px 22px;
+  transform: scale(0.97) translate3d(0, 0, 0);
+  transition: all var(--transition-medium);
+}
+
+.drag-scroll-block {
+  touch-action: none !important;
+  overflow: hidden !important;
+  -webkit-overflow-scrolling: auto !important;
+}
+
+/* ========== Enhanced Queue Mode ========== */
+.queue-dimmed {
+  opacity: 0.2;
+  will-change: opacity;
+  pointer-events: none;
+  filter: blur(0.5px);
+  transition: all var(--transition-smooth);
+}
+
+.queue-focused {
+  opacity: 1;
+  filter: none;
+  transition: all var(--transition-smooth);
+  will-change: opacity, filter;
+}
+
+.queue-focused-title {
+  font-weight: 550;
+  transform-origin: top left;
+  transform: scale(1.02);
+  color: #374151;
+  transition: all var(--transition-fast);
+  will-change: transform, font-weight, color;
+}
+
+/* ========== Enhanced Loading Overlay ========== */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: fade-in var(--transition-medium) ease-out;
+}
+
+/* ========== Enhanced Settings Modal ========== */
+.filter-icon-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.settings-label {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.settings-icon-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.settings-icon-btn {
+  font-size: 2em;
+  background: transparent;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  transition: all var(--transition-fast);
+}
+
+.settings-icon-btn:hover {
+  transform: scale(1.05);
+  border-color: #d1d5db;
+  box-shadow: var(--shadow-light);
+}
+
+.settings-icon-btn:active {
+  transform: scale(0.98);
+  transition: transform 80ms ease-out;
+}
+
+.settings-icon-btn.active {
+  background: linear-gradient(135deg, #f3f4f6, #ffffff);
+  border: 2px solid #6366f1;
+  color: #6366f1;
+  transform: scale(1.02) translate3d(0, 0, 0);
+  box-shadow: 
+    0 0 0 3px rgba(99, 102, 241, 0.1),
+    var(--shadow-medium);
+  animation: settings-select var(--transition-spring) ease-out;
+}
+
+.settings-input-row {
+  margin: 12px 0 8px 0;
+}
+
+.settings-input {
+  margin-left: 8px;
+  width: 60%;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all var(--transition-fast);
+  background: white;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.settings-action-row {
+  margin-top: 12px;
+}
+
+.settings-action-btn {
+  margin-right: 12px;
+  padding: 8px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  transform: translate3d(0, 0, 0);
+}
+
+.settings-action-btn:hover {
+  border-color: #6366f1;
+  color: #6366f1;
+  transform: translateY(-1px) translate3d(0, 0, 0);
+  box-shadow: var(--shadow-light);
+}
+
+.settings-action-btn:active {
+  transform: translateY(0) translate3d(0, 0, 0);
+  transition: transform 80ms ease-out;
+}
+
+.settings-save-row {
+  margin-top: 24px;
+}
+
+/* ========== MODULE: Filter Bar ========== */
+/* ========== Enhanced Filter Bar ========== */
+.filter-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 1rem 0.875rem 0.875rem 0.875rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========== Enhanced Utilities ========== */
+.hidden-datetime-picker {
+  position: fixed;
+  left: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.project-hash {
+  font-weight: 500;
+  font-size: 0.625rem;
+  display: inline-block;
+  white-space: nowrap;
+  user-select: none;
+  transition: all var(--transition-fast);
+}
+
+.icon-picker-wrapper {
+  display: none;
+}
+
+.icon-picker-wrapper.visible {
+  display: grid;
+  grid-template-columns: repeat(5, 36px);
+  justify-items: center;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: var(--shadow-heavy);
+  top: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  min-height: 360px;
+  overflow-y: auto;
+  animation: fade-in-scale var(--transition-spring) ease-out;
+}
+
+.task.freeze-transition {
+  transition: none !important;
+  transform: none !important;
+}
+
+/* ========== MODULE: Animations ========== */
+/* ========== Enhanced Sync Animation ========== */
+
+@keyframes toolbar-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px) scale(0.95) translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes settings-select {
+  0% {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  100% {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+
+
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.95) translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1) translate3d(0, 0, 0);
+  }
+}
+
+
+
+@keyframes indicator-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-50%) scale(0.8) translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-50%) scale(1) translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pulse-urgent {
+  0%, 100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.fade-in {
+  animation: fade-in-up var(--transition-fast) ease-out both;
+}
+
+/* ========== Mobile Responsiveness ========== */
+/* ========== MODULE: Mobile Responsiveness ========== */
+@media only screen and (max-width: 600px) {
+  .markdown-preview-section[data-language="todoist-board"] {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .task {
+    font-size: 0.85rem;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    -webkit-touch-callout: none !important;
+    padding: 0.875rem 0.125rem 0.5rem 1rem;
+  }
+  
+  .task-placeholder, .dragging-row {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  .pill {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .task-inner {
+    touch-action: pan-y !important;
+  }
+  
+  .list-toolbar {
+    border-radius: 12px;
+  }
+  
+  .filter-btn {
+    padding: 4px;
+  }
+  
+  .mini-toolbar {
+    border-radius: 16px;
+    padding: 0.25rem 0.625rem;
+    height: 2rem;
+  }
+
+  .list-view {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  
+  /* Disable hover effects on mobile */
+  .task:hover:not(.selected-task) {
+    transform: translate3d(0, 0, 0);
+    background: transparent;
+    box-shadow: none;
+  }
+  
+  .filter-btn:hover,
+  .queue-btn:hover,
+  .icon-button:hover {
+    transform: translate3d(0, 0, 0);
+    background: transparent;
+  }
+
+
+  .selected-task .task-metadata {
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .selected-task .task-description {
+    max-height: none;
+    overflow-y: visible;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .markdown-preview-view .cm-preview-code-block.cm-embed-block.cm-lang-todoist-board,
+  .markdown-source-view.mod-cm6 .block-language-todoist-board.todoist-board,
+  .markdown-rendered .block-language-todoist-board.todoist-board,
+  .cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board,
+  .view-content .block-language-todoist-board.todoist-board.cm-embed-block.cm-lang-todoist-board {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    transform-origin: top left;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  /* Reading Mode: fix horizontal scroll and alignment */
+  .markdown-rendered .block-language-todoist-board.todoist-board.reading-mode {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden;
+  }
+
+  .filter-button-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 55%;
+    max-width: 60%;
+  }
+}
+
+/* ========== Accessibility & Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .task:hover:not(.selected-task) {
+    transform: translate3d(0, 0, 0);
+  }
+  
+  
+  .pill.overdue {
+    animation: none;
+  }
+}
+
+/* ========== Focus Management ========== */
+.task:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.filter-btn:focus-visible,
+.queue-btn:focus-visible,
+.icon-button:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+
+
+/* ========== MODULE: Dark Theme ========== */
+body.theme-dark {
+  --pill-bg: #374151;
+  --pill-text: #d1d5db;
+  --meta-text: #9ca3af;
+}
+
+body.theme-dark .list-toolbar {
+  background: transparent;
+  border: 1px solid rgba(55, 65, 81, 0.3);
+  /* Inset effect for dark theme toolbar */
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
+              inset 0 -1px 2px rgba(0, 0, 0, 0.04);
+  transition: background-color 0.2s ease;
+}
+body.theme-dark .list-toolbar.sticky {
+  background-color: #1e1e1e;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
+              inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+              0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+body.theme-dark .task {
+  color: #f9fafb;
+}
+
+body.theme-dark .task:hover:not(.selected-task) {
+  background: #1f2937;
+}
+
+
+body.theme-dark .task::before {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+}
+
+body.theme-dark .settings-input,
+body.theme-dark .settings-action-btn {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+body.theme-dark .icon-picker-wrapper.visible {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.theme-dark .task {
+  background: transparent;
+  color: #f9fafb;
+}
+
+body.theme-light .task {
+  color: #111827;
+}
+
+body.theme-dark .task:hover:not(.selected-task) {
+  background: #1f2937;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* ========== iOS/Safari Fixes ========== */
+.task.dragging-row {
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.list-view.drag-scroll-block {
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+body.drag-disable {
+  position: fixed !important;
+  overflow: hidden !important;
+  touch-action: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+/* --- Checkbox completion animation --- */
+.task-checked-anim {
+  transition: transform 0.2s ease;
+  transform: scale(0.96);
+}
+/* --- Completed task row styling --- */
+.task.completed .task-content {
+  text-decoration: line-through;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+/* --- Icon grid for settings --- */
+/* Icon picker trigger and popup */
+.icon-trigger {
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* --- Icon grid for settings --- */
+/* --- Improved Icon Picker Grid Layout --- */
+
+.icon-grid-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+.icon-picker-wrapper .icon-grid-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+.icon-picker-wrapper .icon-grid-btn:hover {
+  transform: scale(1.1);
+}
+.icon-picker-wrapper .icon-grid-btn.selected {
+  border-color: #007aff;
+  background-color: #e6f0ff;
+}
+.icon-grid-btn svg {
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+}
+/* --- Icon color picker row --- */
+.icon-color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 6px;
+  border-top: 1px solid #eee;
+  margin-top: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  grid-column: 1 / -1;
+}
+input .icon-color-picker {
+  width: 28px;
+  height: 24px;
+}
+
+/* --- Settings save row spacing --- */
+.settings-save-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+/* --- Icon button style --- */
+.icon-button {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px #ccc;
+}
+.icon-color-swatch:hover {
+  box-shadow: 0 0 0 2px #888;
+}
+/* ================================
+   Modern Nesting: Non-task Note
+   ================================ */
+/* ================================
+   Modern Nesting: Non-task Note
+   ================================ */
+.non-task-note, .non-task-note .task-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937; /* dark gray for visibility */
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  margin-block: 0.5rem;
+  margin-inline: 0;
+  background: none;
+  border: none !important;
+  white-space: pre-wrap;
+  word-break: break-word;
+  opacity: 1;
+}
+
+body.theme-dark .non-task-note {
+  color: #f9fafb;
+  border: none !important;
+}
+
+.non-task-note .chin-inner {
+  height: 0.1rem;
+}
+.non-task-note.selected-task { 
+  border: none;
+  box-shadow: none;
+  margin-bottom: 2rem;
+}
+
+/* ========== Hide metadata and description for non-task notes ========== */
+.non-task-note .task-metadata,
+.non-task-note .task-description, .non-task-note .todoist-checkbox {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.non-task-note {
+  min-height: 4rem;
+  padding-bottom: 0.5rem;
+}
+.non-task-note .task-content-wrapper {
+position: absolute;
+bottom: -1rem;
+}
+.non-task-note .task-title {
+  color: #374151;
+}
+
+.task-placeholder .mini-toolbar {
+  display: none !important;
+}
+
+
+
+/* ========== Custom Mini Toolbar Layout ========== */
+
+/* ========== Custom Mini Toolbar Layout ========== */
+/* Mini-toolbar is centered in its wrapper, with delete button outside */
+
+#mini-toolbar-wrapper {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: auto;
+  /* Prevents click-through, matches JS */
+}
+
+#mini-toolbar-wrapper .mini-toolbar {
+  margin: 0 auto;
+}
+
+/* Hide delete button by default, only show when selected-task is active */
+
+.selected-task .mini-toolbar-wrapper .circle-btn.delete-btn {
+  display: flex;
+  position: absolute;
+  right: 0;
+  transform-origin: center;
+  transform: scale(1.25);
+  z-index: 10;
+  color: #fefefe;
+  background-color: rgb(48, 48, 48);
+  opacity: 1;
+  border-radius: 999px;
+  padding: 4px 0;
+  transition: none !important;
+}
+.selected-task .mini-toolbar-wrapper .circle-btn.delete-btn:hover {
+  color: red;
+}
+.mini-toolbar-dates-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mini-toolbar .date-btn {
+
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-weight: 500;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+}
+
+.mini-toolbar .date-btn:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transform: scale(1.05);
+}
+
+.mini-toolbar .circle-btn {
+  border-radius: 999px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.mini-toolbar .circle-btn:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transform: scale(1.05);
+}
+.mini-toolbar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 0 !important;
+}
+
+
+.icon-button.refresh-btn.syncing > svg {
+  animation: spin 1s linear infinite;
+  transform-origin: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* ========== Chin-Style Mini Toolbar ========== */
+
+.fixed-chin {
+  display: none;
+  position: relative;
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem;
+  align-items: flex-end;
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.selected-task .fixed-chin {
+  display: flex;
+  margin-top: 0.5rem;
+}
+
+
+.chin-inner {
+  display: none;
+}
+
+.selected-task .chin-inner {
+  display: flex;
+  gap: 0.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  margin-top: 1rem;
+  width: 100%;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  background-color: rgba(243, 244, 246, 0.2); /* light gray background */
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+body.theme-dark .selected-task .chin-inner {
+  background-color: var(--background-primary);
+  border-radius: 12px;
+}
+
+.chin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none !important;
+  transition: all var(--transition-fast);
+}
+
+
+.chin-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.chin-btn:active {
+  background: #e5e7eb;
+  transform: scale(0.97);
+}
+
+.chin-btn:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+body.theme-dark .chin-btn {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+body.theme-dark .chin-btn:hover {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+/* Chin-Style Button Customizations for Selected Task */
+.selected-task .mini-toolbar-wrapper .delete-btn {
+  color: red;
+  right: 0;
+  margin-left: auto;
+}
+.selected-task .mini-toolbar-wrapper .delete-btn .lucide {
+  stroke: red;
+}
+.selected-task .edit-btn svg {
+  stroke: #FDB600; 
+}
+.selected-task .tomorrow-btn svg {
+  stroke: #a176e6;
+}
+.selected-task .today-btn svg {
+  stroke: #0764fa; 
+}
+.selected-task .mini-toolbar .today-btn .date-subtitle {
+  font-size: 0.5rem;
+  color: #9ca3af;
+  margin-top: 2px;
+  display: block;
+}
+
+/*=========================== Misc. ===========================*/
+
+
+.selected-task .task-metadata {
+  animation: none;
+}
+/* ========== Always show trash/delete SVG icon in settings modal ========== */
+.settings-filter-table .icon-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  display: inline-block;
+  opacity: 1;
+  visibility: visible;
+}
+/* ========== Filter Badge Z-Index Fix ========== */
+.filter-badge span,
+.filter-badge svg {
+  position: relative;
+  z-index: 2;
+}
+/* Container Query Example for .task */
+@container style (max-width: 500px) {
+  .task {
+    font-size: 0.8rem;
+  }
+}
+
+/* --- Settings filter table styling --- */
+.settings-filter-table th,
+.settings-filter-table td {
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.settings-filter-table input[type="text"] {
+  padding: 3px 5px;
+  font-size: 0.85em;
+}
+
+.settings-filter-table td:nth-child(4) {
+  text-align: center;
+  vertical-align: middle;
+}
+.settings-filter-table input[type="radio"] {
+  transform: scale(1.3);
+  margin: 0;
+}
+
+.settings-filter-table button {
+  padding: 4px 8px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+/* Constrain the width of the Title column in the settings filter table */
+.settings-filter-table td:nth-child(2) input[type="text"] {
+  max-width: 160px;
+}
+
+/* --- Icon dropdown styling --- */
+.icon-dropdown {
+  margin-left: 6px;
+  font-size: 1.1em;
+  padding: 2px 4px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  vertical-align: middle;
+  background: #fff;
+  min-width: 38px;
+}
+/* ========== Smooth Deselection Transition ========== */
+.deselecting {
+  opacity: 0.6;
+  transform: scale(0.99) translateY(1px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+  z-index: 0;
+}
+
+
+/* ========== Task Modal: Flatter Things 3 Style ========== */
+.todoist-edit-task-modal .modal-content {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  max-width: 100%;
+}
+
+.todoist-edit-task-modal .taskmodal-wrapper {
+  background: var(--modal-bg, #f9f9fb);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 260px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
+  background-color: #1e1e1e;
+}
+
+/* --- Task Modal Fields --- */
+
+.todoist-edit-task-modal .taskmodal-title-field,
+.todoist-edit-task-modal .taskmodal-description-field,
+.todoist-edit-task-modal .taskmodal-date-field,
+.todoist-edit-task-modal .taskmodal-project-field,
+.todoist-edit-task-modal .taskmodal-labels-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.todoist-edit-task-modal .taskmodal-date-label,
+.todoist-edit-task-modal .taskmodal-project-label,
+.todoist-edit-task-modal .taskmodal-labels-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.todoist-edit-task-modal .taskmodal-title-input {
+  border: none;
+  background: #fff;
+  border-radius: 6px;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 3px 3px;
+  font-size: 0.9rem;
+  width: 100%;
+}
+.todoist-edit-task-modal .taskmodal-title-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.todoist-edit-task-modal .taskmodal-description-input {
+  border: none;
+  background: #fff;
+  border-radius: 6px;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 3px 3px;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 4rem;
+}
+.todoist-edit-task-modal .taskmodal-description-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.todoist-edit-task-modal .taskmodal-date-input {
+  border: none;
+  background: #fff;
+  border-radius: 6px;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 3px 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+.todoist-edit-task-modal .taskmodal-date-input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.todoist-edit-task-modal .taskmodal-labels-select {
+  padding: 4px 6px;
+  font-size: 0.8rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  min-height: 60px;
+  max-height: 120px;
+  overflow-y: auto;
+  resize: vertical;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.todoist-edit-task-modal .taskmodal-label-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.todoist-edit-task-modal .taskmodal-label-checkbox {
+  background: #eee;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* === Enhanced Date Input Styling for Task Modal === */
+.todoist-edit-task-modal .taskmodal-date-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.todoist-edit-task-modal .taskmodal-date-input-row input[type="date"] {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  height: 2rem;
+}
+
+.todoist-edit-task-modal .taskmodal-date-input-row input[type="date"]:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.todoist-edit-task-modal .taskmodal-date-input-row input[type="date"]:last-child {
+  background-color: #ede9fe;
+  border-radius: 0 6px 6px 0;
+  color: #6b21a8;
+  font-weight: 600;
+}
+
+.todoist-edit-task-modal .taskmodal-date-input-row input[type="date"]:hover {
+  background-color: hsl(0, 0, 0.3);
+}
+
+.todoist-edit-task-modal .taskmodal-button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.todoist-edit-task-modal .taskmodal-button-save {
+  background: linear-gradient(135deg, #6366f1, #4338ca);
+  color: white;
+  font-weight: 500;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.8rem;
+}
+
+.todoist-edit-task-modal .taskmodal-button-cancel {
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+}
+/* ========== Hamburger Dropdown Styles ========== */
+.menu-dropdown {
+  position: absolute;
+  top: 2.5rem;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: var(--shadow-medium);
+  padding: 0.5rem 0;
+  min-width: 150px;
+  z-index: 2000;
+  animation: fade-in-scale var(--transition-spring) ease-out;
+}
+
+.menu-dropdown-item {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.menu-dropdown-item:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.menu-dropdown.hidden {
+  display: none;
+}
+
+body.theme-dark .menu-dropdown {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.theme-dark .menu-dropdown-item {
+  color: #f9fafb;
+}
+
+body.theme-dark .menu-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body > div.app-container > div.horizontal-main-container > div > div.workspace-split.mod-vertical.mod-root > div > div.workspace-tab-container > div > div > div.view-content > div.markdown-source-view.cm-s-obsidian.mod-cm6.node-insert-event.is-readable-line-width.is-live-preview.is-folding > div > div.cm-scroller > div.cm-sizer > div.cm-contentContainer > div > div.cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board {
+  border: none;
+  box-shadow: none;
+}
+/* ========== Enlarge and Thicken Focus/Queue and Add Task Icons ========== */
+.queue-btn svg,
+.add-task-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2;
+  stroke: currentColor;
+}
+
+.queue-btn,
+.add-task-btn {
+  color: #1f2937; /* dark gray for light theme */
+}
+
+body.theme-dark .queue-btn,
+body.theme-dark .add-task-btn {
+  color: #f9fafb; /* light gray for dark theme */
+}
+/* ========== Reading Mode Layout Fix ========== */
+.markdown-reading-view .block-language-todoist-board.todoist-board {
+  all: unset;
+  display: block;
+  padding: 0;
+  margin: 0;
+}
+.change-indicator {
+  display: inline-block;
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: orange;
+  opacity: 0.8;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+
+
+/* ========== Subtask Visual Hierarchy ========== */
+/* ========== Subtask Row Compact Design ========== */
+/* ========== Subtask Row Compact Design with Expansion Toggle ========== */
+/* ========== Subtask Row Compact Design ========== */
+.subtask-row {
+  padding: 0 !important;
+  margin: 0 0 0 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  line-height: 1.2;
+  max-height: 2.2rem;
+  display: flex;
+  align-items: center;
+}
+.subtask-row .task-metadata,
+.subtask-row .task-description {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Compact subtask title and checkbox alignment */
+.subtask-row .task-title {
+  font-size: 0.78rem;
+  padding: 0;
+  margin: 0;
+}
+
+.subtask-row input.todoist-checkbox {
+  margin-right: 6px;
+  width: 18px;
+  height: 18px;
+}
+
+.subtask-row.expanded-subtask {
+  max-height: 5rem !important;
+}
+
+/* ========== Subtask Visibility ========== */
+.subtask-wrapper {
+  display: none;
+}
+
+.selected-task .subtask-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 0.25rem;
+  width: 95%;
+  overflow: visible;
+  max-height: unset;
+}
+.subtask-wrapper .task-scroll-wrapper {
+  overflow-y: hidden;
+}
+.subtask-row::before { 
+  position: absolute;
+  top: -0.25rem;
+}
+
+body.theme-dark .subtask-row {
+  border-left: 2px solid #374151;
+}
+/* Hide metadata in subtasks unless selected */
+.subtask-row .task-meta {
+  display: none;
+}
+
+.subtask-row.selected .task-meta {
+  display: flex;
+}
+/* Hide <small> elements in unselected subtasks */
+.subtask-row:not(.selected) small {
+  display: none;
+}
+
+/* ========== Parent Task Visual Distinction ========== */
+.task.parent-task {
+  position: relative;
+}
+
+.task.parent-task .parent-icon {
+  position: absolute;
+  padding-left: 0.5rem;
+  bottom: 0.75rem;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+  width: 16px;
+  height: 16px;
+}
+
+.task.parent-task.selected-task .parent-icon {
+  opacity: 0;
+}
+
+.task-description:empty,
+.task-metadata:empty {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.task-description .desc-empty {
+  display: none;
+}
+.date-subtitle {
+display: none;
+}
+
+.menu-dropdown-item {
+  display: flex;
+  align-items: center;
+}
+
+.menu-dropdown-item svg {
+  vertical-align: middle;
+  margin-right: 8px;
+}
+/* Subtask checkbox style */
+
+
+/* ========== Custom cursor for task, selected-task, and add-task-btn ========== */
+.task,
+.selected-task,
+.add-task-btn {
+  cursor: pointer;
+}
+.empty-filter {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #9ca3af;
+  text-align: center;
+  padding: 2rem 1rem;
+  opacity: 0.75;
+  max-width: 80%;
+  margin: 2rem auto;
+  line-height: 1.5;
+}
+
+body.theme-dark .empty-filter {
+  color: #d1d5db;
+  opacity: 0.7;
+}
+
+/* Compact mode styles for todoist-board, including reading mode */
+.block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) {
+  max-height: 3rem;
+  overflow: hidden;
+  border-left: 4px solid var(--project-color, #e5e7eb);
+  padding-left: 0.75rem;
+}
+.block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) .task-metadata,
+.block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) .task-description {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.menu-dropdown-wrapper {
+  position: relative;
+  overflow: visible;
+}
+
+.menu-dropdown {
+  position: absolute;
+  z-index: 1000;
+  top: 100%;
+  right: 0;
+}
+/* For dark theme, apply to .taskmodal-wrapper and .taskmodal-labels-select */
+body.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {
+  background-color: transparent;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+/* ========== Task Modal: Project & Date Row Layout ========== */
+.todoist-edit-task-modal .taskmodal-row {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.todoist-edit-task-modal .taskmodal-project-field,
+.todoist-edit-task-modal .taskmodal-date-field {
+  flex: 1;
+}
+
+/* Match select-project height for the date picker */
+input.taskmodal-date-input {
+  height: 2rem;
+}
+/* Dark mode: make the label pills use the dark bg/text vars */
+body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
+  background: var(--pill-bg);
+  color: var(--pill-text);
+}
+/* Mobile keyboard-safe modal alignment */
+  .todoist-edit-task-modal .modal-content {
+    /* push the wrapper toward the top */
+    align-items: flex-start;
+    justify-content: center;
+  }
+@media only screen and (max-width: 600px) {
+
+  /* 2. Anchor the modal itself to the bottom of that container */
+  body > div.modal-container.todoist-edit-task-modal.mod-dim > div.modal {
+    position: absolute;
+    top: 15%;
+    max-height: fit-content;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  /* 3. Keep your scrolling and margin tweaks in the same block */
+  .todoist-edit-task-modal .modal-content {
+    align-items: flex-start;
+    justify-content: center;
+  }
+}
+/* 📘 Reading Mode Support */
+.todoist-board.reading-mode {
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: visible;
+  background: transparent;
+}
+
+.todoist-board.reading-mode .list-wrapper {
+  padding-bottom: 0;
+}
+
+.todoist-board.reading-mode .todoist-edit-task-modal,
+.todoist-board.reading-mode .todoist-add-task-modal {
+  position: fixed !important;
+  z-index: 9999;
+}
+
+.todoist-board.reading-mode .menu-dropdown-wrapper {
+  position: fixed !important;
+  z-index: 9999;
+}
+.task .repeat-icon {
+  position: absolute;
+  padding-left: 0.5rem;
+  bottom: 0.75rem;
+  opacity: 0.3;
+  width: 16px;
+  height: 16px;
+}
+
+.task.selected-task .repeat-icon {
+  opacity: 0;
+}
+/* === Hide Icons in Compact Mode === */
+.block-language-todoist-board.todoist-board.compact-mode .parent-icon,
+.block-language-todoist-board.todoist-board.compact-mode .repeat-icon {
+  display: none !important; 
+}
+/* ================================
+   Dark mode: Enhanced Task Modal Inputs & Fields
+   ================================ */
+body.theme-dark .todoist-edit-task-modal .taskmodal-title-input,
+body.theme-dark .todoist-edit-task-modal .taskmodal-description-input,
+body.theme-dark .todoist-edit-task-modal .taskmodal-date-input {
+  background: #1f2937;
+  color: #f9fafb;
+  border-bottom: 1px solid #4b5563;
+}
+
+body.theme-dark .todoist-edit-task-modal .taskmodal-title-input::placeholder,
+body.theme-dark .todoist-edit-task-modal .taskmodal-description-input::placeholder {
+  color: #9ca3af;
+  opacity: 0.6;
+}
+
+body.theme-dark .todoist-edit-task-modal .taskmodal-project-select,
+body.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
+  background: #374151;
+  color: #f9fafb;
+}
+
+body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox:hover {
+  background: #4b5563;
+}
+
+body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="date"] {
+  background: #1f2937;
+  color: #f9fafb;
+  border: 1px solid #4b5563;
+}
+
+body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="date"]::placeholder {
+  color: #9ca3af;
+  opacity: 0.6;
+}
