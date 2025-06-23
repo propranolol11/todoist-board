@@ -4,14 +4,14 @@ Introducing 🥁... Todoist Board!
 
 # Main Features
 
-1. Runs locally and syncs silently in the background
+**Runs locally and syncs silently in the background**
 ![01](https://github.com/user-attachments/assets/4dbf0933-200a-4fe5-b40e-c0997c0bd3a6)
 _see how quick that typo synced across_
 
 This was one of the core ideas of the plugin. It always reads tasks from localStorage, and refreshes in the background, and when it writes changes, it writes simultaneous to localStorage (which renders immediately giving the native feel) whilst syncing the changes in the background.
 
 ***
-- Two-way sync! (add/edit/complete tasks)
+**Two-way sync! (add/edit/complete tasks)**
 ![02](https://github.com/user-attachments/assets/a5666f4f-c06e-4738-8035-1e17e6ec94f4)
 
 ***
