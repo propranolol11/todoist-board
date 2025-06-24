@@ -1,4 +1,9 @@
-### To use the plugin, write:
+#### Easiest way to install the plugin via BRAT
+Go to Community Plugins → BRAT 
+then put the repo address there (https://github.com/propranolol11/todoist-board)
+and select the version you want to test
+
+#### To use the plugin, write:
 
 ````markdown
 ```todoist-board
