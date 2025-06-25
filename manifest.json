@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "minAppVersion": "0.15.0",
   "description": "Display Todoist tasks as draggable cards inside Obsidian with full sync support.",
-  "author": "Jamie Daghaim",
-  "authorUrl": "https://github.com/JamieDaghaim",
+  "author": "JD",
+  "authorUrl": "https://github.com/propranolol11",
   "main": "dist/main.js",
   "isDesktopOnly": false
 }
