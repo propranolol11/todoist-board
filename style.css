@@ -1710,7 +1710,6 @@ input .icon-color-picker {
   font-size: 1rem;
   font-weight: 600;
   color: #1f2937; /* dark gray for visibility */
-  padding-block: 0.75rem;
   padding-inline: 1rem;
   margin-block: 0.5rem;
   margin-inline: 0;
