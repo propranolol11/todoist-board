@@ -208,7 +208,9 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             el.classList.add("block-language-todoist-board", "todoist-board");
             // --- PATCH: Add sourcePath fallback ---
             const sourcePath = ctx.sourcePath || "reading-mode-placeholder";
-            let filter = "today";
+            const localToday = new Date();
+            const isoToday = localToday.toISOString().split("T")[0];
+            let filter = `due date is ${isoToday}`;
             const match = source.match(/filter:\s*(.*)/);
             if (match) {
                 filter = match[1].trim();
@@ -267,7 +269,10 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             if (boardContainer) {
                 boardContainer.setAttribute("data-current-filter", defaultFilter);
                 const cachedTasks = JSON.parse(localStorage.getItem(`todoistTasksCache:${defaultFilter}`) || "[]");
-                this.renderTodoistBoard(boardContainer, `filter: ${defaultFilter}`, {}, this.settings.apiKey, {
+                const localToday = new Date();
+                const isoToday = localToday.toISOString().split("T")[0];
+                const todayFilter = defaultFilter === "today" ? `due date is ${isoToday}` : defaultFilter;
+                this.renderTodoistBoard(boardContainer, `filter: ${todayFilter}`, {}, this.settings.apiKey, {
                     tasks: cachedTasks,
                     projects: JSON.parse(localStorage.getItem("todoistProjectsCache") || "[]"),
                     labels: JSON.parse(localStorage.getItem("todoistLabelsCache") || "[]"),
@@ -295,7 +300,12 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             const defaultFilterEl = document.querySelector(".filter-icon[data-filter]");
             const container = document.querySelector(".todoist-board");
             if (defaultFilterEl && container) {
-                const source = defaultFilterEl.getAttribute("data-filter") || "";
+                let source = defaultFilterEl.getAttribute("data-filter") || "";
+                if (source === "today") {
+                    const localToday = new Date();
+                    const isoToday = localToday.toISOString().split("T")[0];
+                    source = `due date is ${isoToday}`;
+                }
                 container.setAttribute("data-current-filter", source);
                 container.innerHTML = "";
                 this.renderTodoistBoard(container, source, {}, this.settings?.apiKey || "");
@@ -461,7 +471,11 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         // Ensure filterBar is created with the proper class
         const filterBar = createDiv({ cls: "filter-bar" });
         // Try to match source string, fallback to isDefault, fallback to 0
-        const matchIdx = filterOptions.findIndex((opt) => source.trim() === `filter: ${opt.filter}`);
+        const matchIdx = filterOptions.findIndex((opt) => {
+            if (opt.filter === "today" && source.includes("due date is"))
+                return true;
+            return source.trim() === `filter: ${opt.filter}`;
+        });
         if (matchIdx !== -1) {
             selectedFilterIndex = matchIdx;
         }
@@ -1356,7 +1370,11 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 subtasksByParentId[task.parent_id].push(task);
             }
         });
+        // Removed local date comparison due to timezone mismatch issues (see GitHub issue #timezone-bug)
+        // If any previous logic filtered tasks based on local date (e.g., new Date(task.due.date)), it is now removed.
+        // --- Only render parent tasks and their subtasks, do not filter by local date ---
         for (const task of tasks) {
+            // Do not skip tasks based on local date comparison
             if (task.parent_id)
                 continue; // skip subtasks in top-level loop
             if (task.content?.trim().startsWith("* ")) {
