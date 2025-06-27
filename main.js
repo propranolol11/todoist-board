@@ -63,9 +63,9 @@ const DEFAULT_SETTINGS = {
     filters: [
         { icon: "star", filter: "today", title: "Today" },
         { icon: "hourglass", filter: "overdue", title: "Overdue" },
-        { icon: "calendar-days", filter: "due after: today & due before: +4 days", title: "Next 3 days" },
-        { icon: "moon", filter: "due after: today & due before: +30 days", title: "All upcoming tasks" },
-        { icon: "inbox", filter: "no due date", title: "No due date" },
+        { icon: "calendar-days", filter: "due after: today & due before: +4 days", title: "Next 3d" },
+        { icon: "moon", filter: "due after: today & due before: +30 days", title: "upcoming" },
+        { icon: "inbox", filter: "#inbox", title: "No due date" },
     ],
     compactMode: false
 };
