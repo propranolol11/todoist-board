@@ -450,7 +450,10 @@ body.theme-dark .queue-wrapper {
     transition: all 0.3s ease;
   }
 }
-
+.task-inner p {
+  margin: 0;
+  display: inline;
+}
  .todoist-board .task-inner {
   display: flex;
   flex-direction: row;
