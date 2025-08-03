@@ -17101,38 +17101,49 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                         }
                     }
                     el.setAttribute("data-current-filter", filter);
-                    // --- NEW PATCHED LOGIC: preload from local, render, then fetch ---
-                    const preloadFromLocal = () => {
-                        let preloadTasks = this.taskCache[filter];
-                        if (!Array.isArray(preloadTasks) || preloadTasks.length === 0) {
-                            try {
-                                const raw = localStorage.getItem(`todoistTasksCache:${filter}`);
-                                preloadTasks = raw ? JSON.parse(raw) : [];
-                                if (!Array.isArray(preloadTasks))
-                                    preloadTasks = [];
-                                this.taskCache[filter] = preloadTasks;
-                            }
-                            catch {
-                                preloadTasks = [];
+                    // --- PATCH: Use improved cache logic for loading and rendering tasks ---
+                    const cacheKey = `todoistTasksCache:${filter}`;
+                    const cached = localStorage.getItem(cacheKey);
+                    let cachedTasks = [];
+                    if (cached) {
+                        try {
+                            cachedTasks = JSON.parse(cached);
+                            if (Array.isArray(cachedTasks)) {
+                                this.taskCache[filter] = cachedTasks;
+                                this.renderTodoistBoard(el, `filter: ${filter}`, sourcePath, this.settings.apiKey, {
+                                    tasks: cachedTasks,
+                                    projects: this.projectCache || [],
+                                    labels: this.labelCache || [],
+                                    sections: [],
+                                });
                             }
                         }
-                        return preloadTasks;
-                    };
-                    const preloadTasks = preloadFromLocal();
-                    this.renderTodoistBoard(el, `filter: ${filter}`, sourcePath, this.settings.apiKey, {
-                        tasks: preloadTasks,
-                        projects: this.projectCache || [],
-                        labels: this.labelCache || [],
-                        sections: [],
-                    });
-                    this.fetchFilteredTasksFromREST(this.settings.apiKey, filter).then((resp) => {
-                        const tasks = resp?.results ?? [];
-                        if (Array.isArray(tasks)) {
-                            this.taskCache[filter] = tasks;
-                            localStorage.setItem(`todoistTasksCache:${filter}`, JSON.stringify(tasks));
-                            localStorage.setItem(`todoistTasksCacheTimestamp:${filter}`, String(Date.now()));
+                        catch (e) {
+                            console.warn('Failed to parse cached tasks:', e);
                         }
-                    });
+                    }
+                    if (navigator.onLine) {
+                        this.fetchFilteredTasksFromREST(this.settings.apiKey, filter)
+                            .then((resp) => {
+                            const tasks = resp?.results ?? [];
+                            if (Array.isArray(tasks)) {
+                                this.taskCache[filter] = tasks;
+                                localStorage.setItem(cacheKey, JSON.stringify(tasks));
+                                localStorage.setItem(`${cacheKey}:timestamp`, String(Date.now()));
+                                if (el.isConnected) {
+                                    this.renderTodoistBoard(el, `filter: ${filter}`, sourcePath, this.settings.apiKey, {
+                                        tasks,
+                                        projects: this.projectCache || [],
+                                        labels: this.labelCache || [],
+                                        sections: [],
+                                    });
+                                }
+                            }
+                        })
+                            .catch((e) => {
+                            console.warn("Fetch failed, using cached data only", e);
+                        });
+                    }
                 });
                 // Skip preloadFilters and initial metadata fetch
                 // this.setupDoubleTapPrevention();
