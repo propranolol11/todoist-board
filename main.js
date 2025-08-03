@@ -16855,20 +16855,6 @@ const TODOIST_COLORS = {
 };
 // --- Selected Filter Index State ---
 let selectedFilterIndex = 0;
-const DEFAULT_FILTERS = {
-    "Today": {
-        filter: {
-            due_after: "{{today}}T00:00:00Z",
-            due_before: "{{today}}T23:59:59Z",
-            is_completed: false
-        }
-    },
-    "Overdue": {
-        filter: {
-            due_before: "{{today}}T00:00:00Z",
-            is_completed: false
-        }
-    }};
 const TODOIST_BOARD_VIEW_TYPE = "todoist-board-view";
 // ======================= 📋 TodoistBoardView =======================
 // (Moved here for patch context)
@@ -16937,8 +16923,8 @@ class TodoistBoardView extends obsidian.ItemView {
 const DEFAULT_SETTINGS = {
     apiKey: "",
     filters: [
-        { icon: "star", filter: JSON.stringify(DEFAULT_FILTERS["Today"].filter), title: "Today" },
-        { icon: "hourglass", filter: JSON.stringify(DEFAULT_FILTERS["Overdue"].filter), title: "Overdue" },
+        { icon: "star", filter: "today", title: "Today" },
+        { icon: "hourglass", filter: "overdue", title: "Overdue" },
         { icon: "calendar-days", filter: "due after: today & due before: +4 days", title: "Next 3d" },
         { icon: "moon", filter: "due after: today & due before: +30 days", title: "upcoming" },
         { icon: "inbox", filter: "#inbox", title: "Inbox" },
