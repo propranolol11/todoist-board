@@ -3,13 +3,18 @@ Go to Community Plugins → BRAT
 then put the repo address there (https://github.com/propranolol11/todoist-board)
 and select the version you want to test
 
-#### To use the plugin, write:
+#### To use the plugin:
 
-````markdown
+1. Open command pallete, and choose "Todoist Board: Sidebar"
+This open the main board in the sidebar
+
+2. Another usecase is to have the board anchored to a specific project INLINE
+you do this by
+````
 ```todoist-board
+filter: #inbox
 ```
 ````
-anywhere in any note (ensure your API key is submitted in the settings)
 
 ***
 This started off as a small code snippet I made to fill a gap in my workflow has now, after few hundred hours, grown into this custom task manager that I think you might like.
@@ -83,10 +88,3 @@ _imo is better than how Todoist handles subtasks currently; Subtasks functionali
 <img width="659" alt="image" src="https://github.com/user-attachments/assets/f32fe344-9554-426d-9192-004d9bb185d7" />
 
 ---
-### To use the plugin, write:
-
-````markdown
-```todoist-board
-```
-````
-anywhere in any note
