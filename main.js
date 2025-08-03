@@ -16957,6 +16957,8 @@ function getProjectHexColor(task, projects) {
 class TodoistBoardPlugin extends obsidian.Plugin {
     constructor() {
         super(...arguments);
+        // =========== Plugin ready state and ensurePluginReady ==============
+        this._ready = false;
         this.currentFilter = "";
         this._mutationObservers = [];
         // --- Cancellation token for filter rendering ---
@@ -17066,16 +17068,13 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 spinner.className = "spinner";
                 this.loadingOverlay.appendChild(spinner);
                 this.registerDomEvent(this.loadingOverlay, "click", (e) => e.stopPropagation());
-                this.registerMarkdownCodeBlockProcessor("todoist-board", async (source, el, ctx) => {
+                this.registerMarkdownCodeBlockProcessor("todoist-board", (source, el, ctx) => {
                     // Add classes for code block container
                     el.classList.add("block-language-todoist-board", "todoist-board");
-                    // --- PATCH: Add sourcePath fallback ---
                     const sourcePath = ctx.sourcePath || "reading-mode-placeholder";
                     let filter = "today";
-                    // Try to extract filter from frontmatter or code block params
-                    // --- BEGIN PATCH: Parse block params and apply filter to board config ---
+                    // Parse block params for filter
                     function parseBlockParams(raw) {
-                        // Simple parser for params in codeblock frontmatter (e.g. "filter: today\nfoo: bar")
                         const lines = raw.split("\n");
                         const params = {};
                         for (let line of lines) {
@@ -17101,65 +17100,39 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                 filter = defaultFilterObj.filter;
                         }
                     }
-                    // Set data-current-filter attribute after determining filter
                     el.setAttribute("data-current-filter", filter);
-                    // PATCH: fallback to localStorage if this.taskCache[filter] is undefined or not an array
-                    let preloadTasks = this.taskCache[filter];
-                    if (!Array.isArray(preloadTasks)) {
-                        const raw = localStorage.getItem(`todoistTasksCache:${filter}`);
-                        preloadTasks = [];
-                        if (raw && raw !== "undefined") {
+                    // --- NEW PATCHED LOGIC: preload from local, render, then fetch ---
+                    const preloadFromLocal = () => {
+                        let preloadTasks = this.taskCache[filter];
+                        if (!Array.isArray(preloadTasks) || preloadTasks.length === 0) {
                             try {
-                                preloadTasks = JSON.parse(raw);
+                                const raw = localStorage.getItem(`todoistTasksCache:${filter}`);
+                                preloadTasks = raw ? JSON.parse(raw) : [];
+                                if (!Array.isArray(preloadTasks))
+                                    preloadTasks = [];
+                                this.taskCache[filter] = preloadTasks;
                             }
-                            catch (e) {
-                                // console.warn("❌ Failed to parse cachedTasks:", e);
-                            }
-                        }
-                        this.taskCache[filter] = preloadTasks;
-                    }
-                    // Load project and label metadata from localStorage (if cache is fresh)
-                    const projLocal = localStorage.getItem('todoistProjectsCache');
-                    const projTimestamp = parseInt(localStorage.getItem('todoistProjectsCacheTimestamp') || "0");
-                    if (projLocal && Date.now() - projTimestamp < 24 * 60 * 60 * 1000) {
-                        this.projectCache = JSON.parse(projLocal);
-                        this.projectCacheTimestamp = projTimestamp;
-                        if (Array.isArray(this.projectCache)) {
-                            this.projectMap.clear();
-                            for (const project of this.projectCache) {
-                                this.projectMap.set(String(project.id), project);
+                            catch {
+                                preloadTasks = [];
                             }
                         }
-                    }
-                    const labelLocal = localStorage.getItem('todoistLabelsCache');
-                    const labelTimestamp = parseInt(localStorage.getItem('todoistLabelsCacheTimestamp') || "0");
-                    if (labelLocal && Date.now() - labelTimestamp < 24 * 60 * 60 * 1000) {
-                        this.labelCache = JSON.parse(labelLocal);
-                        this.labelCacheTimestamp = labelTimestamp;
-                    }
-                    const preloadMeta = {
-                        sections: [],
-                        projects: this.projectCache || [],
-                        labels: this.labelCache || []
+                        return preloadTasks;
                     };
-                    // --- PATCH: Pass sourcePath instead of ctx.sourcePath ---
-                    // Reading mode detection: use .markdown-reading-view (modern Obsidian)
-                    el.closest(".markdown-reading-view") !== null;
-                    // (If needed, you can use isReadingMode in your logic below)
-                    this.renderTodoistBoard(el, source, sourcePath, this.settings.apiKey, {
+                    const preloadTasks = preloadFromLocal();
+                    this.renderTodoistBoard(el, `filter: ${filter}`, sourcePath, this.settings.apiKey, {
                         tasks: preloadTasks,
-                        ...preloadMeta
+                        projects: this.projectCache || [],
+                        labels: this.labelCache || [],
+                        sections: [],
                     });
-                    // Ensure tasks are cached after rendering inline boards
-                    if (Array.isArray(preloadTasks)) {
-                        try {
-                            localStorage.setItem(`todoistTasksCache:${filter}`, JSON.stringify(preloadTasks));
+                    this.fetchFilteredTasksFromREST(this.settings.apiKey, filter).then((resp) => {
+                        const tasks = resp?.results ?? [];
+                        if (Array.isArray(tasks)) {
+                            this.taskCache[filter] = tasks;
+                            localStorage.setItem(`todoistTasksCache:${filter}`, JSON.stringify(tasks));
                             localStorage.setItem(`todoistTasksCacheTimestamp:${filter}`, String(Date.now()));
                         }
-                        catch (e) {
-                            // console.error("Failed to cache tasks from inline board", e);
-                        }
-                    }
+                    });
                 });
                 // Skip preloadFilters and initial metadata fetch
                 // this.setupDoubleTapPrevention();
@@ -17173,6 +17146,24 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 this._taskChangeInterval = _todoistPollInterval;
             })();
         };
+    }
+    async ensurePluginReady() {
+        if (this._ready)
+            return;
+        if (!this.todoistApi) {
+            const token = this.settings.apiKey;
+            this.todoistApi = new distExports.TodoistApi(token);
+            window.todoistApi = this.todoistApi;
+        }
+        if (!this.projectCache || this.projectCache.length === 0) {
+            const metadata = await this.fetchMetadataFromSync(this.settings.apiKey);
+            this.projectCache = metadata.projects;
+            this.labelCache = metadata.labels;
+            this.projectCacheTimestamp = Date.now();
+            this.labelCacheTimestamp = Date.now();
+        }
+        await this.preloadFilters();
+        this._ready = true;
     }
     setCurrentFilter(filter) {
         this.currentFilter = filter;
