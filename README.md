@@ -12,7 +12,7 @@ This open the main board in the sidebar
 you do this by
 ````
 ```todoist-board
-filter: #inbox
+filter: #inbox (for example; or any filter)
 ```
 ````
 
