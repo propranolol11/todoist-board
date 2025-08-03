@@ -52,8 +52,8 @@
   display: block;
   max-width: 768px;
   min-height: auto;
-  margin: 0 auto;
-  padding: 0.5rem 1rem;
+  /* margin: 0 auto; */
+  /* padding: 0.5rem 1rem; */
   font-size: 0.9rem; 
   line-height: 1.5; 
   position: relative; 
@@ -394,7 +394,7 @@ body.theme-dark .queue-wrapper {
    Modern Nesting: Task Styles
    ================================ */
  .todoist-board .task {
-  background: white;
+  background: transparent;
   border-radius: 0;
   border: 1px solid transparent;
   padding-block: 0.75rem;
@@ -450,7 +450,10 @@ body.theme-dark .queue-wrapper {
     transition: all 0.3s ease;
   }
 }
-
+.task-inner p {
+  margin: 0;
+  display: inline;
+}
  .todoist-board .task-inner {
   display: flex;
   flex-direction: row;
@@ -2464,20 +2467,22 @@ body.theme-dark .empty-filter {
 }
 
 /* Compact mode styles for todoist-board, including reading mode */
- .block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) {
-   max-height: 3rem;
-   overflow: hidden;
-   border-left: 4px solid var(--project-color, #e5e7eb);
-   padding-left: 0.75rem;
- }
- .block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) .task-metadata,
- .block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) .task-description {
-   display: none !important;
-   max-height: 0 !important;
-   opacity: 0 !important;
-   padding: 0 !important;
-   margin: 0 !important;
- }
+/* Compact mode styles for todoist-board-list, including reading mode */
+/* Compact mode styles for list-wrapper, including reading mode */
+.list-wrapper.compact-mode .task:not(.selected-task) {
+  max-height: 3rem;
+  overflow: hidden;
+  border-left: 4px solid var(--project-color, #e5e7eb);
+  padding-left: 0.75rem;
+}
+.list-wrapper.compact-mode .task:not(.selected-task) .task-metadata,
+.list-wrapper.compact-mode .task:not(.selected-task) .task-description {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
 .menu-dropdown-wrapper {
   position: relative;
   overflow: visible;
@@ -2577,9 +2582,11 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
    opacity: 0;
  }
 /* === Hide Icons in Compact Mode === */
-.block-language-todoist-board.todoist-board.compact-mode .parent-icon,
-.block-language-todoist-board.todoist-board.compact-mode .repeat-icon {
-  display: none !important; 
+/* === Hide Icons in Compact Mode === */
+/* === Hide Icons in Compact Mode for list-wrapper === */
+.list-wrapper.compact-mode .parent-icon,
+.list-wrapper.compact-mode .repeat-icon {
+  display: none !important;
 }
 /* ================================
    Dark mode: Enhanced Task Modal Inputs & Fields
@@ -2623,4 +2630,8 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="d
 body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="date"]::placeholder {
   color: #9ca3af;
   opacity: 0.6;
+}
+
+div.block-language-todoist-board.todoist-board > div.list-toolbar {
+  justify-content: flex-end;
 }
