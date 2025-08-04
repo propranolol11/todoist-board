@@ -1993,7 +1993,7 @@ body.theme-dark .chin-btn:hover {
 /* --- Settings filter table styling --- */
 .settings-filter-table th,
 .settings-filter-table td {
-  padding: 4px 6px;
+  padding: 2px 3px;
   vertical-align: middle;
 }
 
@@ -2643,4 +2643,10 @@ div.block-language-todoist-board.todoist-board > div.list-toolbar {
   width: 640px;
   padding: 1.5rem;
   box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .modal-container.todoist-settings-modal > .modal {
+    width: 100%;
+    padding: 0;
+  }
 }
