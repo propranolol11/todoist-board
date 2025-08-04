@@ -17310,11 +17310,30 @@ class TodoistBoardPlugin extends obsidian.Plugin {
     }
     async completeTask(taskId) {
         await this.todoistApi.closeTask(taskId);
+        // Immediately remove the task from the in-memory cache and localStorage
         const currentFilter = document.querySelector(".todoist-board")?.getAttribute("data-current-filter") || "";
+        if (this.taskCache[currentFilter]) {
+            this.taskCache[currentFilter] = this.taskCache[currentFilter].filter(t => t.id !== taskId);
+            localStorage.setItem(`todoistTasksCache:${currentFilter}`, JSON.stringify(this.taskCache[currentFilter]));
+        }
         const badge = document.querySelector(`.filter-row[data-filter="${currentFilter}"] .filter-badge-count`);
         if (badge) {
             const cache = JSON.parse(localStorage.getItem(`todoistTasksCache:${currentFilter}`) || "[]");
             badge.textContent = String(Math.max(0, cache.length - 1));
+        }
+        // Re-render the board with the updated cache
+        const board = document.querySelector(".todoist-board");
+        if (board) {
+            this.renderTodoistBoard(board, `filter: ${currentFilter}`, {}, this.settings.apiKey, {
+                tasks: this.taskCache[currentFilter],
+                sections: [],
+                projects: this.projectCache,
+                labels: this.labelCache
+            });
+            // Remove any .selected task after rendering
+            const selected = board.querySelector(".todoist-card.selected");
+            if (selected)
+                selected.classList.remove("selected");
         }
     }
     // ======================= 🏁 Auto-render Default Filter on Startup =======================
