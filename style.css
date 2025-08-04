@@ -2063,6 +2063,9 @@ body.theme-dark .chin-btn:hover {
   min-width: 260px;
   font-size: 0.85rem;
   width: 100%;
+  max-width: 600px;
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
 body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   background-color: #1e1e1e;
@@ -2634,4 +2637,10 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="d
 
 div.block-language-todoist-board.todoist-board > div.list-toolbar {
   justify-content: flex-end;
+}
+/* Scope modal width and padding only to plugin settings modal */
+.modal-container.todoist-settings-modal > .modal {
+  width: 640px;
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
