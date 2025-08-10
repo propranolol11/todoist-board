@@ -838,7 +838,6 @@ input.todoist-checkbox::after {
   padding-bottom: 0.5rem;
   overflow-y: auto;
   position: relative;
-  background: rgba(255, 239, 213, 0.07);
 }
 
 
