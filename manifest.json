@@ -5,7 +5,7 @@
   "minAppVersion": "0.15.0",
   "description": "Display Todoist tasks as draggable cards with full sync support.",
   "author": "JD",
-  "authorUrl": "https://github.com/propranolol11/todoist-board",
+  "authorUrl": "https://github.com/propranolol11",
   "isDesktopOnly": false,
   "fundingUrl": "https://ko-fi.com/jamiedaghaim"
 }
