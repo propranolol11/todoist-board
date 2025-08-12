@@ -22,7 +22,7 @@
   --shadow-interactive: 0 1px 2px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.08);
 }
 
-.html {
+html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -43,8 +43,6 @@
   overflow: visible;
   isolation: unset;
   z-index: 1000;
-  /* Hardware acceleration */
-  will-change: scroll-position;
   transform: translate3d(0, 0, 0);
 }
 
@@ -64,6 +62,7 @@
 .list-wrapper {
   display: block;
   touch-action: pan-y;
+  container-type: inline-size;
 }
 
 /* ========== Enhanced Toolbar Styles ========== */
@@ -409,7 +408,6 @@ body.theme-dark .queue-wrapper {
   position: relative;
   outline: none;
   transition: all var(--transition-spring);
-  will-change: transform, box-shadow;
   transform: translate3d(0, 0, 0);
 
   /* --- Modern Nesting for ::before, :focus, :hover, .selected-task --- */
@@ -492,10 +490,8 @@ body.theme-dark .queue-wrapper {
 
  .todoist-board .task-title {
   position: relative;
-  padding-bottom: 0.85rem;
   cursor: text;
   font-size: 0.92rem;
-  will-change: auto;
   line-height: 1.4;
   display: block;
   font-weight: 500;
@@ -503,6 +499,7 @@ body.theme-dark .queue-wrapper {
   white-space: pre-line;
   color: #111827;
 }
+
 
 body.theme-dark .todoist-board .task-title {
   color: #f9fafb;
@@ -526,7 +523,6 @@ body.theme-dark .todoist-board .task-title {
 }
  .todoist-board .selected-task .task-deadline  {
   opacity: 1;
-  transition: fade-in 1300ms ease-in-out;
 }
 
  .todoist-board .deadline-label {
@@ -558,7 +554,6 @@ body.theme-dark .todoist-board .task-title {
     border 360ms ease,
     border-radius 360ms ease;
   /* Improve animation smoothness on mobile and hardware acceleration */
-  will-change: transform, box-shadow, opacity;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0) scale(1.005) translateY(-2px);
   &::before {
@@ -744,8 +739,8 @@ input.todoist-checkbox::after {
   background: var(--pill-bg);
   color: var(--pill-text);
   border-radius: 12px;
-  padding-block: 0.25rem;
-  padding-inline: 0.625rem;
+  padding-block: 0.125rem;
+  padding-inline: 0.50rem;
   font-size: 0.625rem;
   font-weight: 500;
   display: inline-block;
@@ -782,6 +777,16 @@ input.todoist-checkbox::after {
     min-height: 16px;
     vertical-align: middle;
   }
+}
+.pill.project-pill {
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    font-weight: 500;
+    font-size: 0.7rem;
+    opacity: 0.85;
 }
 
 /* --- Grouped Pill Variants with :is() for shared logic --- */
@@ -902,7 +907,6 @@ input.todoist-checkbox::after {
   display: flex;
   flex-wrap: wrap;
   line-height: 1;
-  padding-right: 2px
 }
  .todoist-board .task-description {
   position: relative;
@@ -965,6 +969,13 @@ input.todoist-checkbox::after {
   width: 60%;
   max-width: 220px;
 }
+/* Space reserved for chin/mini‑toolbar */
+:root { --chin-height: 16px; }          /* desktop/tablet default */
+@media (max-width: 600px) { :root { --chin-height: 22px; } }  /* mobile */
+
+.todoist-board .selected-task:has(#mini-toolbar-wrapper, .fixed-chin) .task-content-wrapper {
+  padding-bottom: var(--chin-height) !important;
+}
 
 .selected-task .mini-toolbar {
   position: absolute;
@@ -974,6 +985,7 @@ input.todoist-checkbox::after {
   z-index: 100;
   pointer-events: auto;
 }
+
 
 .mini-toolbar-btn {
   background: transparent;
@@ -1064,7 +1076,6 @@ input.todoist-checkbox::after {
 /* ========== Enhanced Queue Mode ========== */
 .queue-dimmed {
   opacity: 0.2;
-  will-change: opacity;
   pointer-events: none;
   filter: blur(0.5px);
   transition: all var(--transition-smooth);
@@ -1074,7 +1085,6 @@ input.todoist-checkbox::after {
   opacity: 1;
   filter: none;
   transition: all var(--transition-smooth);
-  will-change: opacity, filter;
 }
 
 .queue-focused-title {
@@ -1083,7 +1093,6 @@ input.todoist-checkbox::after {
   transform: scale(1.02);
   color: #374151;
   transition: all var(--transition-fast);
-  will-change: transform, font-weight, color;
 }
 
 /* ========== Enhanced Loading Overlay ========== */
@@ -1208,9 +1217,6 @@ input.todoist-checkbox::after {
   transition: transform 80ms ease-out;
 }
 
-.settings-save-row {
-  margin-top: 24px;
-}
 
 /* ========== MODULE: Filter Bar ========== */
 /* ========== Enhanced Filter Bar ========== */
@@ -1316,7 +1322,14 @@ input.todoist-checkbox::after {
   }
 }
 
-
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in-slide {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 
 @keyframes fade-in-scale {
   from {
@@ -1543,11 +1556,6 @@ body.theme-dark .todoist-board .task {
   color: #f9fafb;
 }
 
-body.theme-dark .todoist-board .task:hover:not(.selected-task) {
-  background: #1f2937;
-}
-
-
 body.theme-dark .todoist-board .task::before {
   background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
 }
@@ -1667,7 +1675,7 @@ body.drag-disable {
   box-sizing: border-box;
   grid-column: 1 / -1;
 }
-input .icon-color-picker {
+input.icon-color-picker {
   width: 28px;
   height: 24px;
 }
@@ -1682,15 +1690,6 @@ input .icon-color-picker {
 }
 
 /* --- Icon button style --- */
-.icon-button {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .icon-color-swatch {
   width: 20px;
   height: 20px;
@@ -1786,7 +1785,6 @@ bottom: -1rem;
   margin: 0 auto;
 }
 
-/* Hide delete button by default, only show when selected-task is active */
 
 .selected-task .mini-toolbar-wrapper .circle-btn.delete-btn {
   display: flex;
@@ -1889,7 +1887,7 @@ bottom: -1rem;
   padding: 0.5rem 0.75rem;
 }
 body.theme-dark .selected-task .chin-inner {
-  background-color: var(--background-primary);
+  background-color: var(--background-primary, #1e1e1e);
   border-radius: 12px;
 }
 
@@ -1983,7 +1981,7 @@ body.theme-dark .chin-btn:hover {
   z-index: 2;
 }
 /* Container Query Example for .task */
-@container style (max-width: 500px) {
+@container (max-width: 500px) {
   .task {
     font-size: 0.8rem;
   }
@@ -2260,10 +2258,7 @@ body.theme-dark .menu-dropdown-item:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-body > div.app-container > div.horizontal-main-container > div > div.workspace-split.mod-vertical.mod-root > div > div.workspace-tab-container > div > div > div.view-content > div.markdown-source-view.cm-s-obsidian.mod-cm6.node-insert-event.is-readable-line-width.is-live-preview.is-folding > div > div.cm-scroller > div.cm-sizer > div.cm-contentContainer > div > div.cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board {
-  border: none;
-  box-shadow: none;
-}
+.cm-embed-block.cm-lang-todoist-board { border: none; box-shadow: none; }
 /* ========== Enlarge and Thicken Focus/Queue and Add Task Icons ========== */
 .queue-btn svg,
 .add-task-btn svg {
@@ -2335,7 +2330,7 @@ body.theme-dark .add-task-btn {
   display: flex;
   align-items: center;
 }
-.subtask-row .task-metadata,
+.view-content .subtask-row .task-meta-compact
 .subtask-row .task-description {
   display: none !important;
   max-height: 0 !important;
@@ -2399,23 +2394,20 @@ body.theme-dark .subtask-row {
   display: none;
 }
 
-/* ========== Parent Task Visual Distinction ========== */
-.task.parent-task {
-  position: relative;
-}
 
-.task.parent-task .parent-icon {
-  position: absolute;
-  padding-left: 0.5rem;
-  bottom: 0.75rem;
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
-  width: 16px;
-  height: 16px;
-}
-
-.task.parent-task.selected-task .parent-icon {
-  opacity: 0;
+/* Hide metadata on child tasks (extra safety) */
+.todoist-board .is-child-task .due-inline,
+.todoist-board .is-child-task .project-pill,
+.todoist-board .is-child-task .project-badge,
+.todoist-board .is-child-task .label-pill,
+.todoist-board .is-child-task .labels,
+.todoist-board .is-child-task .task-meta,
+.todoist-board .is-child-task .meta,
+.todoist-board .is-child-task .meta-span,
+.todoist-board .is-child-task .metadata,
+.todoist-board .is-child-task .task-when,
+.todoist-board .is-child-task .task-meta-compact {
+  display: none !important;
 }
 
  .todoist-board .task-description:empty,
@@ -2559,6 +2551,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
 
 .todoist-board.reading-mode .list-wrapper {
   padding-bottom: 0;
+  container-type: inline-size;
 }
 
 .todoist-board.reading-mode .todoist-edit-task-modal,
@@ -2586,9 +2579,16 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
 /* === Hide Icons in Compact Mode === */
 /* === Hide Icons in Compact Mode === */
 /* === Hide Icons in Compact Mode for list-wrapper === */
-.list-wrapper.compact-mode .parent-icon,
 .list-wrapper.compact-mode .repeat-icon {
   display: none !important;
+}
+
+/* Inline parent marker (emoji) */
+.parent-mark {
+  margin-left: 6px;
+  opacity: 0.8;
+  display: inline-block;
+  vertical-align: baseline;
 }
 /* ================================
    Dark mode: Enhanced Task Modal Inputs & Fields
@@ -2648,4 +2648,73 @@ div.block-language-todoist-board.todoist-board > div.list-toolbar {
     width: 100%;
     padding: 0;
   }
+}
+/* compact 3-line layout used for ALL tasks */
+.task .task-when,
+.task .task-meta-compact {
+  display: flex;
+  align-items: baseline;
+  /* gap: 6px; */
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: var(--meta-text);
+  opacity: 0.95;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.mid-sep { opacity: 0.5; padding: 0 6px; }
+
+/* make due look like text inline */
+.task .task-when .due-pill {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* inline deadline chunk */
+.deadline-inline {
+  font-weight: 600;
+  color: #6b21a8; /* matches your deadline theme */
+  opacity: 0.95;
+}
+
+/* always hide the old pill stack container */
+.task .task-metadata { display: none !important; }
+
+/* Order stack: Title → Description → When → Meta */
+.todoist-board .task-title { order: 0; margin-bottom: 0.25rem; }
+.todoist-board .task-description { order: 1; margin: 0 0 0.5rem 0; display: none; }
+.todoist-board .task-when { order: 2; }
+.todoist-board .task-meta-compact {order: 3;}
+/* Your description already collapses when not selected; this only controls position */
+.task .task-when .due-inline {
+  font-weight: 600;
+  color: var(--meta-text);
+  opacity: 0.95;
+  padding-inline: 0.125rem;
+}
+
+.subtask-row .task-meta-compact {
+  display: none !important;
+}
+
+.subtask-row {
+  align-items: center;
+}
+
+.task .task-when, .task .task-when .due-inline, .deadline-inline {
+  font-weight: 500 !important;
+  opacity: 0.9;
+}
+
+
+/* Hide 'when' + compact metadata in compact mode */
+.todoist-board.compact-mode .task:not(.selected-task) .task-when,
+.todoist-board.compact-mode .task:not(.selected-task) .task-meta-compact,
+.list-wrapper.compact-mode .task:not(.selected-task) .task-when,
+.list-wrapper.compact-mode .task:not(.selected-task) .task-meta-compact {
+  display: none !important;
 }

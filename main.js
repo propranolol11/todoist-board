@@ -24879,7 +24879,7 @@ function styleInject(css, ref) {
   }
 }
 
-var css_248z = "\n/* ========== CSS Variables ========== */\n:root {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif;\n  --pill-bg: #f1f3f5;\n  --pill-text: #4b5563;\n  --selected-bg: #f6f9ff;\n  --selected-border: #b4cef5;\n  --deadline-bg: #d8d5ff;\n  --deadline-text: #6b21a8;\n  --meta-text: #6b7280;\n  \n  /* Enhanced animation variables for native feel */\n  --transition-fast: 100ms cubic-bezier(0.3, 0.7, 0.4, 1);\n  --transition-medium: 280ms cubic-bezier(0.33, 1, 0.68, 1);\n  --transition-smooth: 420ms cubic-bezier(0.25, 0.8, 0.25, 1);\n  --transition-spring: 300ms cubic-bezier(0.3, 1, 0.5, 1);\n  \n  --shadow-light: 0 1px 3px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);\n  --shadow-medium: 0 2px 8px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);\n  --shadow-heavy: 0 4px 16px rgba(0, 0, 0, 0.15);\n  --shadow-interactive: 0 1px 2px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.08);\n}\n\n.html {\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\n/* ========== MODULE: Layout & Container ========== */\n.todoist-board {\n  position: relative;\n  inset: 0;\n  margin: 0 0.125rem;\n  max-width: unset;\n  overflow-y: scroll;\n  touch-action: pan-y;\n  -webkit-overflow-scrolling: touch;\n  background: transparent;\n  padding: 0;\n  border: none;\n  box-shadow: none;\n  overflow: visible;\n  isolation: unset;\n  z-index: 1000;\n  /* Hardware acceleration */\n  will-change: scroll-position;\n  transform: translate3d(0, 0, 0);\n}\n\n.list-view {\n  display: block;\n  max-width: 768px;\n  min-height: auto;\n  /* margin: 0 auto; */\n  /* padding: 0.5rem 1rem; */\n  font-size: 0.9rem; \n  line-height: 1.5; \n  position: relative; \n  opacity: 1;\n  touch-action: pan-y;\n}\n\n.list-wrapper {\n  display: block;\n  touch-action: pan-y;\n}\n\n/* ========== Enhanced Toolbar Styles ========== */\n/* ========== MODULE: Toolbar & Chin ========== */\n.list-toolbar {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  justify-content: space-between;\n  position: sticky;\n  z-index: 1000;\n  padding: 0px 8px 0px 8px;\n  margin: 0 auto;\n  border-radius: 16px;\n  /* Inset effect for toolbar */\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04);\n  /* background-color: #f9fafb; */\n  transition: background-color 0.2s ease;\n  /* Remove background and shadow by default */\n  /* backdrop-filter: blur(20px) saturate(1.2); */\n  border: 1px solid rgba(255, 255, 255, 0.3);\n  font-size: 0.85rem;\n  overflow-x: auto;\n  overflow-y: hidden;\n  min-width: min-content;\n  flex-wrap: nowrap;\n  touch-action: pan-y;\n  transform: translate3d(0, 0, 0);\n  animation: fade-in-up var(--transition-medium) ease-out both;\n  /* Added for dropdown/menu support */\n  overflow: visible;\n  position: relative;\n  z-index: 1010;\n}\n\n.list-toolbar.sticky {\n  background-color: #1e1e1e;\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04),\n              0 1px 4px rgba(0, 0, 0, 0.15);\n}\n\n/* ========== MODULE: Filter Bar ========== */\n.filter-button-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 48px;\n}\n\n/* Enhanced filter-btn style for native feel */\n.filter-btn {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  font-size: 11px;\n  color: var(--text-muted);\n  gap: 4px;\n  cursor: pointer;\n  position: relative;\n  padding: 6px;\n  border-radius: 12px;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.filter-btn .icon {\n  font-size: 20px;\n  line-height: 1;\n  transition: transform var(--transition-fast);\n}\n\n.filter-btn .label {\n  pointer-events: none;\n  font-weight: 500;\n  opacity: 0.8;\n}\n\n.filter-btn:hover {\n  background: rgba(0, 0, 0, 0.04);\n  transform: scale(1.02) translate3d(0, 0, 0);\n}\n\n.filter-btn:hover .icon {\n  transform: scale(1.1);\n}\n\n.filter-btn:active {\n  transform: scale(0.98) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n/* Enhanced active filter button */\n.filter-btn.active {\n  background: rgba(99, 102, 241, 0.1);\n  color: #6366f1;\n  border-radius: 12px;\n  position: relative;\n  transform: scale(1.02) translate3d(0, 0, 0);\n  transition: all var(--transition-medium);\n}\n\n.filter-row.selected::after {\n  content: \"\";\n  position: absolute;\n  top: calc(100% + 6px);\n  left: 50%;\n  transform: translateX(-50%) translateY(-50%);\n  width: 20px;\n  height: 5px;\n  background: #6366f1;\n  border-radius: 9999px;\n  pointer-events: none;\n  transition: all var(--transition-smooth);\n  animation: indicator-slide var(--transition-spring) ease-out;\n}\n\n.filter-btn-clicked {\n  transition: transform var(--transition-fast);\n  transform: scale(0.95) translate3d(0, 0, 0);\n}\n\n.filter-row {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  width: auto;\n  min-width: 2rem;\n  flex-shrink: 0;\n  gap: 0;\n  position: relative;\n}\n\n.filter-row-wrapper {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  flex: 1 1 auto;\n  min-width: 0;\n  width: 80%;\n  max-width: 275px;\n}\n\n.filter-label {\n  font-size: 1rem;\n  font-weight: bold;\n  text-transform: uppercase;\n  opacity: 0.6;\n  margin-top: 0;\n  text-align: center;\n  word-break: break-word;\n  white-space: normal;\n  line-height: 1.1;\n  display: none;\n}\n\n.filter-title {\n  font-size: 0.5rem;\n}\n\n.filter-icon {\n  position: relative;\n  height: 1.5rem;\n  width: 1.5rem;\n  cursor: pointer;\n}\n\n/* Ensure badge background appears behind the icon for selected filters */\n.filter-row.selected .filter-icon {\n  z-index: 2;\n  position: relative; \n}\n\n.filter-row.selected .filter-icon > svg {\n  stroke-width: 1.5;\n  scale: 1.2;\n  stroke: currentColor;\n}\n\nbody.theme-light .filter-row.selected .filter-icon > svg {\n  color: black;\n}\n\nbody.theme-dark .filter-row.selected .filter-icon > svg {\n  color: white;\n}\n\n.filter-row.selected .filter-badge {\n  z-index: 0;\n}\n\n  .filter-badge {\n  position: absolute;\n  top: -0.5em;\n  right: -0.9em;\n  width: 1.5em;\n  height: 1.25em;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n.filter-row.selected .filter-icon::before {\n  content: \"\";\n  position: absolute;\n  top: -0.5em;\n  right: -0.9em;\n  width: 1.5em;\n  height: 1.25em;\n  background-color: var(--badge-bg, #6366f1);\n  border-radius: 9999px;\n  z-index: -10;\n}\n\n.filter-icon {\n  position: relative;\n}\n.filter-icon > svg {\n  scale: 1.15;\n  transform-origin: top left;\n  transition: transform var(--transition-fast);\n}\n\n\n.filter-badge-count {\n  position: relative;\n  z-index: 1;\n  font-size: 10px;\n  font-weight: bold;\n  color: white;\n}\n\n/* Make inactive filter badges smaller and faded */\n.filter-row:not(.selected) .filter-badge {\n  transform: scale(0.85);\n  opacity: 0.75;\n}\n\n/* Enhance the size of the selected filter's badge */\n.filter-row.selected .filter-badge {\n  transform: scale(1.1);\n  font-weight: 700;\n}\n\n.queue-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  margin-left: 0.5em;\n  padding-left: 0.5em;\n  width: 48px;\n  position: relative;\n  border-left: 1px solid rgba(0, 0, 0, 0.08);\n}\n\nbody.theme-dark .queue-wrapper {\n  border-left: 1px solid rgba(255, 255, 255, 0.1);\n}\n\n.queue-btn {\n  border: none;\n  background: transparent;\n  box-shadow: none;\n  outline: none;\n  padding: 8px;\n  font-size: 1.2rem;\n  cursor: pointer;\n  opacity: 1;\n  border-radius: 8px;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.queue-btn:hover {\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05) translate3d(0, 0, 0);\n}\n\n.queue-btn:active {\n  transform: scale(0.95) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n.settings-refresh-wrapper {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  gap: 6px;\n  user-select: none;\n  -webkit-user-select: none;\n  flex-shrink: 0;\n}\n\n.icon-button {\n  border: none;\n  background: transparent;\n  box-shadow: none;\n  outline: none;\n  padding: 6px;\n  font-size: 1.2rem;\n  cursor: pointer;\n  user-select: none;\n  -webkit-user-select: none;\n  opacity: 0.7;\n  border-radius: 8px;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.icon-button:hover {\n  background: rgba(0, 0, 0, 0.04);\n  opacity: 1;\n  transform: scale(1.05) translate3d(0, 0, 0);\n}\n\n.icon-button:active {\n  transform: scale(0.95) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n \n/* ========== MODULE: Task ========== */\n/* ========== Enhanced Task Styles ========== */\n/* ================================\n   Modern Nesting: Task Styles\n   ================================ */\n .todoist-board .task {\n  background: transparent;\n  border-radius: 0;\n  border: 1px solid transparent;\n  padding-block: 0.75rem;\n  padding-inline: 1rem;\n  display: flex;\n  flex-direction: row;\n  justify-content: stretch;\n  gap: 0.375rem;\n  min-height: 2rem;\n  -webkit-user-select: none;\n  user-select: none;\n  position: relative;\n  outline: none;\n  transition: all var(--transition-spring);\n  will-change: transform, box-shadow;\n  transform: translate3d(0, 0, 0);\n\n  /* --- Modern Nesting for ::before, :focus, :hover, .selected-task --- */\n  &:not(:first-child)::before {\n    content: \"\";\n    position: absolute;\n    left: 42px;\n    right: 0;\n    top: 0;\n    height: 1px;\n    background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 100%);\n    pointer-events: none;\n    transform: translate3d(0, 0, 0);\n  }\n  &:focus {\n    outline: none !important;\n    box-shadow: none !important;\n  }\n  @media (hover: hover) and (pointer: fine) {\n    &:hover:not(.selected-task) {\n      background: #f9fafb;\n      transform: translateY(-1px) translate3d(0, 0, 0);\n      box-shadow: var(--shadow-light);\n      transition: all var(--transition-fast);\n    }\n  }\n  &.no-transition::before {\n    transition: none !important;\n  }\n  &.freeze-transition {\n    transition: none !important;\n    transform: none !important;\n  }\n  /* --- Completed task row styling --- */\n  &.completed .task-content {\n    text-decoration: line-through;\n    opacity: 0.5;\n    transition: all 0.3s ease;\n  }\n}\n.task-inner p {\n  margin: 0;\n  display: inline;\n}\n .todoist-board .task-inner {\n  display: flex;\n  flex-direction: row;\n  align-items: stretch;\n  gap: 0.75rem;\n  width: 100%;\n  user-select: none;\n  -webkit-user-select: none;\n  -webkit-touch-callout: none;\n  -webkit-tap-highlight-color: transparent;\n  font-size: 0.9rem;\n  touch-action: pan-y;\n  min-height: 2.75rem;\n  position: relative;\n  z-index: 1;\n  /* transition: none !important;\n  animation: none !important; */\n}\n\n .todoist-board .task-content {\n  display: flex;\n  flex: 1;\n}\n\n .todoist-board .task-content-wrapper {\n  position: relative;\n  touch-action: pan-y;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  justify-content: flex-start;\n  width: 100%;\n  flex: 1;\n  overflow: visible;\n}\n\n .todoist-board .task-title {\n  position: relative;\n  padding-bottom: 0.85rem;\n  cursor: text;\n  font-size: 0.92rem;\n  will-change: auto;\n  line-height: 1.4;\n  display: block;\n  font-weight: 500;\n  word-break: break-word;\n  white-space: pre-line;\n  color: #111827;\n}\n\nbody.theme-dark .todoist-board .task-title {\n  color: #f9fafb;\n}\n\n .todoist-board .selected-task .task-title {\n  max-height: 1000px;\n  opacity: 1;\n  transition:\n    max-height 500ms cubic-bezier(0.33, 1, 0.68, 1),\n    opacity 280ms ease-in-out;\n}\n\n\n .todoist-board .task-deadline {\n  position: absolute;\n  top: 0.75rem;\n  right: 10px;\n  z-index: 5;\n  opacity: 0.7;\n}\n .todoist-board .selected-task .task-deadline  {\n  opacity: 1;\n  transition: fade-in 1300ms ease-in-out;\n}\n\n .todoist-board .deadline-label {\n  align-self: center;\n}\n/* ========== Enhanced Task Selection ========== */\n/* --- Modern Nesting: Selected Task --- */\n .todoist-board .selected-task {\n  display: flex;\n  flex-direction: row;\n  justify-content: stretch;\n  height: auto;\n  position: relative;\n  z-index: 0;\n  min-height: 4rem;\n  box-shadow:\n   rgba(6, 24, 44, 0.4) 0px 0px 0px 0.1px, \n   rgba(6, 24, 44, 0.65) 0px 4px 4px -3px,\n    rgba(255, 255, 255, 0.08) -3px 1px 0px 0px;\n  transform: scale(1.005) translateY(-2px);\n  border-radius: 12px;\n  border: 1px solid #e5e7eb;\n  margin-block-start: 1rem;\n  margin-block-end: 0.75rem;\n  margin-inline: auto;\n  transition:\n    box-shadow 420ms cubic-bezier(0.25, 0.8, 0.25, 1),\n    transform 400ms cubic-bezier(0.25, 1, 0.5, 1),\n    border 360ms ease,\n    border-radius 360ms ease;\n  /* Improve animation smoothness on mobile and hardware acceleration */\n  will-change: transform, box-shadow, opacity;\n  backface-visibility: hidden;\n  transform: translate3d(0, 0, 0) scale(1.005) translateY(-2px);\n  &::before {\n    display: none;\n  }\n  /* Modern Nesting: Hide ::before on next .task */\n  + .task::before {\n    display: none;\n  }\n}\n\n/* Dim other tasks when a task is selected */\nbody:has(.todoist-board .selected-task) .todoist-board .task:not(.selected-task):not(.subtask-row),\n.queue-focused .todoist-board .task:not(.selected-task):not(.subtask-row) {\n  opacity: 0.5;\n  transition: opacity var(--transition-medium);\n}\n\n\n .todoist-board .task-scroll-wrapper {\n  display: flex;\n  width: 100%;\n}\n/* --- Task Scroll Wrapper for selected-task --- */\n .todoist-board .selected-task .task-scroll-wrapper {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  overflow-y: auto;\n  max-height: 100%;\n  padding-bottom: 0.5rem;\n  position: relative;\n}\n\n .todoist-board .selected-task .task-inner {\n  flex: 0 0 auto;\n}\n\n\n .todoist-board .selected-task .task-content {\n  flex: 1 1 auto;\n  display: flex;\n  flex-direction: column;\n}\n\n .todoist-board .selected-task .task-content-wrapper {\n  flex: 1 1 auto;\n  display: flex;\n  justify-content: flex-start;\n  flex-direction: column;\n  align-items: stretch;\n  height: 100%;\n  min-height: unset;\n  overflow: visible;\n  padding-bottom: 0.5rem;\n}\n\n .todoist-board .selected-task .task-description,\n .todoist-board .selected-task .task-metadata {\n  flex-grow: 0;\n  flex-shrink: 0;\n  flex-basis: auto;\n}\n\n .todoist-board .selected-task .task-title {\n  flex-shrink: 0;\n}\n\n/* Enhanced selection background */\n\n/* Improved deselection */\n\n .todoist-board .task.no-transition::before {\n  transition: none !important;\n}\n\n/* ========== Enhanced Checkbox Styles ========== */\ninput.todoist-checkbox {\n  /* Hard reset to strip all default or theme-injected visuals */\n  appearance: none;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  background: none;\n  box-shadow: none;\n  width: 22px;\n  height: 22px;\n  border: 2.5px solid #d1d5db;\n  border-radius: 50%;\n  cursor: pointer;\n  margin-right: 4px;\n  align-self: flex-start;\n  position: relative;\n  display: inline-block;\n  vertical-align: middle;\n  backface-visibility: hidden;\n  z-index: 10;\n  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);\n}\n\n/* Hide browser default checkmark for all major engines */\ninput.todoist-checkbox::-webkit-checkmark,\ninput.todoist-checkbox::checkmark,\ninput.todoist-checkbox::-ms-check {\n  display: none !important;\n  background: none !important;\n  color: transparent !important;\n}\ninput.todoist-checkbox:checked {\n  background-color: #6366f1;\n  overflow: hidden;\n}\n/* Priority-based checkbox styling */\ninput.todoist-checkbox.priority-4 {\n  background-color: #fee2e2; /* Light red */\n  border-color: #dc2626;     /* Red border */\n}\ninput.todoist-checkbox.priority-3 {\n  background-color: #fef3c7; /* Light amber */\n  border-color: #d97706;     /* Amber border */\n}\ninput.todoist-checkbox.priority-2 {\n  background-color: #dbeafe; /* Light blue */\n  border-color: #2563eb;     /* Blue border */\n}\n\n .todoist-board .selected-task input.todoist-checkbox {\n  max-height: 1000px;\n  opacity: 1;\n  transition:\n    max-height 500ms cubic-bezier(0.33, 1, 0.68, 1),\n    opacity 280ms ease-in-out;\n}\n\n\ninput.todoist-checkbox:hover {\n  border-color: #6366f1;\n  animation: checkbox-check var(--transition-spring) ease-out;\n  transform: scale(1.05);\n  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n  z-index: 1000;\n}\n\ninput.todoist-checkbox:active {\n  transform: scale(0.95);\n  transition: transform 80ms ease-out;\n}\n\n\n\ninput.todoist-checkbox:checked::before {\n  content: \"\";\n  position: absolute;\n  transform-origin: center;\n  top: 0;\n  left: 0.5em;\n  width: 5px;\n  height: 10px;\n  border: solid currentColor;\n  border-width: 0 2px 2px 0;\n  transform: rotate(45deg);\n  z-index: 1000;\n}\n\nbody.theme-light input.todoist-checkbox:checked::before {\n  border-color: #1f2937;\n}\n\nbody.theme-dark input.todoist-checkbox:checked::before {\n  border-color: #f9fafb;\n}\n\n/* Always show the checkmark container, but only display the tick visually on hover or checked */\ninput.todoist-checkbox::after {\n  content: none;\n}\n\n/* ========== MODULE: Pills ========== */\n/* ========== Enhanced Pills ========== */\n/* ================================\n   Modern Nesting: Pill Styles\n   ================================ */\n.pill {\n  background: var(--pill-bg);\n  color: var(--pill-text);\n  border-radius: 12px;\n  padding-block: 0.25rem;\n  padding-inline: 0.625rem;\n  font-size: 0.625rem;\n  font-weight: 500;\n  display: inline-block;\n  white-space: nowrap;\n  user-select: none;\n  transition: all var(--transition-fast);\n  box-shadow: 0 1px 2px rgba(0,0,0,0.04);\n  /* Modern Nesting for variants */\n  &.deadline {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding-block: 3px;\n    padding-inline: 8px;\n    font-size: 0.7rem;\n    line-height: 1;\n    min-height: 20px;\n    height: auto;\n    vertical-align: middle;\n  }\n  &.deadline-date {\n    font-weight: 700;\n    font-size: 0.55rem;\n    background: linear-gradient(135deg, #a78bfa, #8b5cf6);\n    color: #fff;\n    opacity: 0.9;\n    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);\n    animation: fade-in-slide var(--transition-medium) ease-out;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    line-height: 1;\n    height: auto;\n    min-height: 16px;\n    vertical-align: middle;\n  }\n}\n\n/* --- Grouped Pill Variants with :is() for shared logic --- */\n.pill:is(.today, .overdue, .soon, .future) {\n  color: white;\n  padding-block: 0.2rem;\n  padding-inline: 0.5rem;\n  font-size: 0.6rem;\n  border-radius: 6px;\n  font-weight: 600;\n  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);\n}\n.pill.today {\n  background: linear-gradient(135deg, #3b82f6, #2563eb);\n  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);\n}\n.pill.overdue {\n  background: linear-gradient(135deg, #ef4444, #dc2626);\n  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);\n  animation: pulse-urgent 2s ease-in-out infinite;\n}\n.pill.soon {\n  background: linear-gradient(135deg, #f59e0b, #d97706);\n  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);\n}\n.pill.future {\n  background: linear-gradient(135deg, #10b981, #059669);\n  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);\n}\n\n/* ========== Enhanced Task Metadata ========== */\n .todoist-board .task-description,\n .todoist-board .task-metadata {\n  overflow: hidden;\n  max-height: 0;\n  opacity: 0;\n  transition: \n    max-height var(--transition-medium) cubic-bezier(0.4, 0, 0.2, 1),\n    opacity var(--transition-medium);\n}\n\n .todoist-board .selected-task .task-description,\n .todoist-board .selected-task .task-metadata {\n  max-height: 1000px;\n  opacity: 1;\n  transition: \n    max-height var(--transition-smooth) cubic-bezier(0.4, 0, 0.2, 1),\n    opacity var(--transition-medium);\n}\n\n/* Restrict height and allow scrolling for long descriptions in selected task */\n .todoist-board .selected-task .task-description {\n  max-height: 80px;\n  padding-bottom: 0.5rem;\n  overflow-y: auto;\n  position: relative;\n}\n\n\n .todoist-board .task-metadata > .pill:not(:first-child):not(.deadline-date) {\n  position: relative;\n  margin-left: 12px;\n  font-weight: inherit;\n}\n\n .todoist-board .task-metadata > .pill:not(:first-child):not(.deadline-date)::before {\n  content: \"\";\n  background: var(--meta-text);\n  display: inline-block;\n  width: 1px;\n  height: 10px;\n  position: absolute;\n  left: -8px;\n  top: 50%;\n  transform: translateY(-50%);\n  margin: 0;\n  vertical-align: middle;\n  opacity: 0.3;\n}\n\n .todoist-board .label-separator {\n  opacity: 0.4;\n  margin: 0 4px;\n}\n\n/* ================================\n   Modern Nesting: Task Metadata\n   ================================ */\n .todoist-board .task-metadata {\n  display: flex;\n  flex-wrap: nowrap;\n  gap: 2px 2px;\n  line-height: 0.9;\n  row-gap: 1px;\n  font-size: 0.6rem;\n  align-items: center;\n  color: var(--meta-text);\n  opacity: 0.8;\n  font-weight: 400;\n  padding: 0.25rem 0 0.5rem 0;\n  position: relative;\n  z-index: 1;\n  white-space: nowrap;\n  overflow: visible;\n  pointer-events: none;\n  transform-origin: top left;\n  animation: fade-in-up var(--transition-spring) ease-out both;\n}\n\n .todoist-board .selected-task .task-metadata {\n  white-space: normal;\n  display: flex;\n  flex-wrap: nowrap;\n  /* Don't override padding-bottom here; let base .task-metadata rule apply */\n}\n\n .todoist-board .selected-task .pill.label-pill {\n  display: flex;\n  flex-wrap: wrap;\n  line-height: 1;\n  padding-right: 2px\n}\n .todoist-board .task-description {\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  justify-content: flex-start;\n  width: 100%;\n  color: #6b7280;\n  font-size: 0.74rem;\n  font-style: italic;\n  opacity: 0.8;\n  max-width: 100%;\n  line-height: 1.4;\n  white-space: pre-line;\n}\n\n \n\n\n\n/* ========== Enhanced Deadline Styles ========== */\n .todoist-board .deadline-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  font-size: 0.6rem;\n  line-height: 1.1;\n  position: relative;\n}\n\n .todoist-board .deadline-label {\n  font-size: 0.5rem;\n  opacity: 0.6;\n  margin-bottom: 4px;\n  transition: opacity var(--transition-fast);\n}\n\n\n/* ========== MODULE: Toolbar & Chin ========== */\n/* ========== Enhanced Mini Toolbar ========== */\n.mini-toolbar {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.375rem 3rem 0.375rem 0.75rem;\n  height: 1.65rem;\n  border-radius: 18px;\n  background: rgba(31, 41, 55, 0.8);\n  color: white;\n  border: none;\n  box-shadow: \n    0 4px 12px rgba(0,0,0,0.15),\n    0 2px 4px rgba(0,0,0,0.1),\n    inset 0 1px 0 rgba(255,255,255,0.1);\n  font-size: 0.75rem;\n  transition: all var(--transition-fast);\n  animation: toolbar-slide-up var(--transition-spring) ease-out;\n  position: relative;\n  width: 60%;\n  max-width: 220px;\n}\n\n.selected-task .mini-toolbar {\n  position: absolute;\n  bottom: 0;\n  left: 50%;\n  transform: translateX(-50%);\n  z-index: 100;\n  pointer-events: auto;\n}\n\n.mini-toolbar-btn {\n  background: transparent;\n  border: none;\n  color: inherit;\n  opacity: 0.85;\n  font-size: 1rem;\n  padding: 4px 8px;\n  border-radius: 8px;\n  cursor: pointer;\n  transition: all var(--transition-fast);\n}\n\n.mini-toolbar-btn svg {\n  width: 16px;\n  height: 16px;\n}\n\n.mini-toolbar .mini-toolbar-btn-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  margin: 0;\n}\n\n.mini-toolbar-label {\n  position: absolute;\n  top: 4px;\n  font-size: 0.6rem;\n  opacity: 0.7;\n  text-align: center;\n  line-height: 1.1;\n  pointer-events: none;\n  transition: opacity var(--transition-fast);\n}\n\n.mini-toolbar-btn:hover {\n  opacity: 1;\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05);\n}\n\n.mini-toolbar-btn:active {\n  transform: scale(0.95);\n  transition: transform 80ms ease-out;\n}\n\n.mini-toolbar-btn:hover + .mini-toolbar-label {\n  opacity: 0.9;\n}\n\n/* ========== Enhanced Dragging States ========== */\n.dragging-row {\n  z-index: 1000;\n  opacity: 0 !important;\n  touch-action: pan-y;\n  box-shadow: none !important;\n  transform: none !important;\n  visibility: hidden !important;\n  position: absolute !important;\n  top: -9999px !important;\n  left: -9999px !important;\n  animation: none !important;\n}\n\n.task-placeholder {\n  display: flex;\n  flex-direction: row;\n  gap: 0.375rem;\n  opacity: 0.4;\n  border: 2px solid rgba(99, 102, 241, 0.3);\n  background: rgba(99, 102, 241, 0.05);\n  border-radius: 8px;\n  pointer-events: none;\n  padding: 4px 12px 8px 22px;\n  transform: scale(0.97) translate3d(0, 0, 0);\n  transition: all var(--transition-medium);\n}\n\n.drag-scroll-block {\n  touch-action: none !important;\n  overflow: hidden !important;\n  -webkit-overflow-scrolling: auto !important;\n}\n\n/* ========== Enhanced Queue Mode ========== */\n.queue-dimmed {\n  opacity: 0.2;\n  will-change: opacity;\n  pointer-events: none;\n  filter: blur(0.5px);\n  transition: all var(--transition-smooth);\n}\n\n.queue-focused {\n  opacity: 1;\n  filter: none;\n  transition: all var(--transition-smooth);\n  will-change: opacity, filter;\n}\n\n.queue-focused-title {\n  font-weight: 550;\n  transform-origin: top left;\n  transform: scale(1.02);\n  color: #374151;\n  transition: all var(--transition-fast);\n  will-change: transform, font-weight, color;\n}\n\n/* ========== Enhanced Loading Overlay ========== */\n.loading-overlay {\n  position: absolute;\n  inset: 0;\n  background: rgba(255, 255, 255, 0.85);\n  backdrop-filter: blur(4px);\n  z-index: 10000;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  pointer-events: none;\n  font-size: 0.9rem;\n  font-weight: 500;\n  animation: fade-in var(--transition-medium) ease-out;\n}\n\n/* ========== Enhanced Settings Modal ========== */\n.filter-icon-row {\n  display: flex;\n  gap: 12px;\n  margin-bottom: 16px;\n  align-items: center;\n  justify-content: center;\n  flex-wrap: wrap;\n}\n\n.settings-label {\n  display: flex;\n  align-items: center;\n  margin-right: 12px;\n  font-weight: 600;\n  font-size: 0.85rem;\n}\n\n.settings-icon-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n\n.settings-icon-btn {\n  font-size: 2em;\n  background: transparent;\n  border: 2px solid #e5e7eb;\n  border-radius: 12px;\n  cursor: pointer;\n  width: 48px;\n  height: 48px;\n  transition: all var(--transition-fast);\n}\n\n.settings-icon-btn:hover {\n  transform: scale(1.05);\n  border-color: #d1d5db;\n  box-shadow: var(--shadow-light);\n}\n\n.settings-icon-btn:active {\n  transform: scale(0.98);\n  transition: transform 80ms ease-out;\n}\n\n.settings-icon-btn.active {\n  background: linear-gradient(135deg, #f3f4f6, #ffffff);\n  border: 2px solid #6366f1;\n  color: #6366f1;\n  transform: scale(1.02) translate3d(0, 0, 0);\n  box-shadow: \n    0 0 0 3px rgba(99, 102, 241, 0.1),\n    var(--shadow-medium);\n  animation: settings-select var(--transition-spring) ease-out;\n}\n\n.settings-input-row {\n  margin: 12px 0 8px 0;\n}\n\n.settings-input {\n  margin-left: 8px;\n  width: 60%;\n  padding: 8px 12px;\n  border: 2px solid #e5e7eb;\n  border-radius: 8px;\n  font-size: 0.9rem;\n  transition: all var(--transition-fast);\n  background: white;\n}\n\n.settings-input:focus {\n  outline: none;\n  border-color: #6366f1;\n  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n}\n\n.settings-action-row {\n  margin-top: 12px;\n}\n\n.settings-action-btn {\n  margin-right: 12px;\n  padding: 8px 16px;\n  border: 2px solid #e5e7eb;\n  border-radius: 8px;\n  background: white;\n  cursor: pointer;\n  font-weight: 500;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.settings-action-btn:hover {\n  border-color: #6366f1;\n  color: #6366f1;\n  transform: translateY(-1px) translate3d(0, 0, 0);\n  box-shadow: var(--shadow-light);\n}\n\n.settings-action-btn:active {\n  transform: translateY(0) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n.settings-save-row {\n  margin-top: 24px;\n}\n\n/* ========== MODULE: Filter Bar ========== */\n/* ========== Enhanced Filter Bar ========== */\n.filter-bar {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1em;\n  padding: 1rem 0.875rem 0.875rem 0.875rem;\n  flex-wrap: nowrap;\n  overflow-x: auto;\n  overflow-y: hidden;\n  width: 100%;\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n\n.filter-bar::-webkit-scrollbar {\n  display: none;\n}\n\n/* ========== Enhanced Utilities ========== */\n.hidden-datetime-picker {\n  position: fixed;\n  left: -9999px;\n  opacity: 0;\n  pointer-events: none;\n}\n\n.project-hash {\n  font-weight: 500;\n  font-size: 0.625rem;\n  display: inline-block;\n  white-space: nowrap;\n  user-select: none;\n  transition: all var(--transition-fast);\n}\n\n.icon-picker-wrapper {\n  display: none;\n}\n\n.icon-picker-wrapper.visible {\n  display: grid;\n  grid-template-columns: repeat(5, 36px);\n  justify-items: center;\n  align-items: center;\n  gap: 8px;\n  position: absolute;\n  z-index: 1000;\n  background: white;\n  border: 1px solid #e5e7eb;\n  border-radius: 12px;\n  padding: 12px;\n  box-shadow: var(--shadow-heavy);\n  top: 48px;\n  left: 50%;\n  transform: translateX(-50%);\n  min-width: 220px;\n  min-height: 360px;\n  overflow-y: auto;\n  animation: fade-in-scale var(--transition-spring) ease-out;\n}\n\n.task.freeze-transition {\n  transition: none !important;\n  transform: none !important;\n}\n\n/* ========== MODULE: Animations ========== */\n/* ========== Enhanced Sync Animation ========== */\n\n@keyframes toolbar-slide-up {\n  0% {\n    opacity: 0;\n    transform: translateX(-50%) translateY(12px) scale(0.95) translate3d(0, 0, 0);\n  }\n  100% {\n    opacity: 1;\n    transform: translateX(-50%) translateY(0) scale(1) translate3d(0, 0, 0);\n  }\n}\n\n@keyframes settings-select {\n  0% {\n    transform: scale(1) translate3d(0, 0, 0);\n  }\n  50% {\n    transform: scale(1.08) translate3d(0, 0, 0);\n  }\n  100% {\n    transform: scale(1.02) translate3d(0, 0, 0);\n  }\n}\n\n@keyframes fade-in {\n  0% {\n    opacity: 0;\n  }\n  100% {\n    opacity: 1;\n  }\n}\n\n\n\n@keyframes fade-in-scale {\n  from {\n    opacity: 0;\n    transform: translateX(-50%) scale(0.95) translate3d(0, 0, 0);\n  }\n  to {\n    opacity: 1;\n    transform: translateX(-50%) scale(1) translate3d(0, 0, 0);\n  }\n}\n\n\n\n@keyframes indicator-slide {\n  from {\n    opacity: 0;\n    transform: translateX(-50%) translateY(-50%) scale(0.8) translate3d(0, 0, 0);\n  }\n  to {\n    opacity: 1;\n    transform: translateX(-50%) translateY(-50%) scale(1) translate3d(0, 0, 0);\n  }\n}\n\n@keyframes pulse-urgent {\n  0%, 100% {\n    opacity: 0.9;\n    transform: scale(1);\n  }\n  50% {\n    opacity: 1;\n    transform: scale(1.02);\n  }\n}\n\n@keyframes spin {\n  0% {\n    transform: rotate(0deg);\n  }\n  100% {\n    transform: rotate(360deg);\n  }\n}\n\n.fade-in {\n  animation: fade-in-up var(--transition-fast) ease-out both;\n}\n\n/* ========== Mobile Responsiveness ========== */\n/* ========== MODULE: Mobile Responsiveness ========== */\n@media only screen and (max-width: 600px) {\n  .markdown-preview-section[data-language=\"todoist-board\"] {\n    padding: 0 !important;\n    margin: 0 !important;\n  }\n  \n  .todoist-board .task {\n    font-size: 0.85rem;\n    -webkit-user-select: none !important;\n    user-select: none !important;\n    -webkit-touch-callout: none !important;\n    padding: 0.875rem 0.125rem 0.5rem 1rem;\n  }\n  \n  .task-placeholder, .dragging-row {\n    -webkit-user-select: none;\n    user-select: none;\n    -webkit-touch-callout: none;\n  }\n  \n  .pill {\n    font-size: 0.6rem;\n    padding: 0.2rem 0.5rem;\n  }\n\n  .todoist-board .task-inner {\n    touch-action: pan-y !important;\n  }\n  \n  .list-toolbar {\n    border-radius: 12px;\n  }\n  \n  .filter-btn {\n    padding: 4px;\n  }\n  \n  .mini-toolbar {\n    border-radius: 16px;\n    padding: 0.25rem 0.625rem;\n    height: 2rem;\n  }\n\n  .list-view {\n    padding-left: 0;\n    padding-right: 0;\n  }\n  \n  /* Disable hover effects on mobile */\n  .todoist-board .task:hover:not(.selected-task) {\n    transform: translate3d(0, 0, 0);\n    background: transparent;\n    box-shadow: none;\n  }\n  \n  .filter-btn:hover,\n  .queue-btn:hover,\n  .icon-button:hover {\n    transform: translate3d(0, 0, 0);\n    background: transparent;\n  }\n\n\n  .todoist-board .selected-task .task-metadata {\n    padding-bottom: 0.5rem;\n    margin-bottom: 1rem;\n  }\n  .todoist-board .selected-task .task-description {\n    max-height: none;\n    overflow-y: visible;\n    margin-bottom: 0.5rem;\n  }\n}\n\n@media only screen and (max-width: 768px) {\n  .markdown-preview-view .cm-preview-code-block.cm-embed-block.cm-lang-todoist-board,\n  .markdown-source-view.mod-cm6 .block-language-todoist-board.todoist-board,\n  .markdown-rendered .block-language-todoist-board.todoist-board,\n  .cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board,\n  .view-content .block-language-todoist-board.todoist-board.cm-embed-block.cm-lang-todoist-board {\n    position: relative;\n    left: 50%;\n    transform: translateX(-50%);\n    transform-origin: top left;\n    width: 100vw !important;\n    max-width: 100vw !important;\n    padding: 0 !important;\n    margin: 0 !important;\n    border-radius: 0 !important;\n    box-sizing: border-box;\n    overflow-x: hidden;\n  }\n\n  /* Reading Mode: fix horizontal scroll and alignment */\n  .markdown-rendered .block-language-todoist-board.todoist-board.reading-mode {\n    position: relative;\n    left: 50%;\n    transform: translateX(-50%);\n    width: 100vw !important;\n    max-width: 100vw !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    overflow-x: hidden;\n  }\n\n  .filter-button-wrapper {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    width: 55%;\n    max-width: 60%;\n  }\n}\n\n/* ========== Accessibility & Motion ========== */\n@media (prefers-reduced-motion: reduce) {\n  *,\n  *::before,\n  *::after {\n    animation-duration: 0.01ms !important;\n    animation-iteration-count: 1 !important;\n    transition-duration: 0.01ms !important;\n  }\n  \n  .todoist-board .task:hover:not(.selected-task) {\n    transform: translate3d(0, 0, 0);\n  }\n  \n  \n  .pill.overdue {\n    animation: none;\n  }\n}\n\n/* ========== Focus Management ========== */\n .todoist-board .task:focus-visible {\n   outline: 2px solid #6366f1;\n   outline-offset: 2px;\n }\n\n.filter-btn:focus-visible,\n.queue-btn:focus-visible,\n.icon-button:focus-visible {\n  outline: 2px solid #6366f1;\n  outline-offset: 2px;\n}\n\n\n\n/* ========== MODULE: Dark Theme ========== */\nbody.theme-dark {\n  --pill-bg: #374151;\n  --pill-text: #d1d5db;\n  --meta-text: #9ca3af;\n}\n\nbody.theme-dark .list-toolbar {\n  background: transparent;\n  border: 1px solid rgba(55, 65, 81, 0.3);\n  /* Inset effect for dark theme toolbar */\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04);\n  transition: background-color 0.2s ease;\n}\nbody.theme-dark .list-toolbar.sticky {\n  background-color: #1e1e1e;\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04),\n              0 1px 4px rgba(0, 0, 0, 0.15);\n}\n\nbody.theme-dark .todoist-board .task {\n  color: #f9fafb;\n}\n\nbody.theme-dark .todoist-board .task:hover:not(.selected-task) {\n  background: #1f2937;\n}\n\n\nbody.theme-dark .todoist-board .task::before {\n  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);\n}\n\nbody.theme-dark .settings-input,\nbody.theme-dark .settings-action-btn {\n  background: #374151;\n  border-color: #4b5563;\n  color: #f9fafb;\n}\n\nbody.theme-dark .icon-picker-wrapper.visible {\n  background: #1f2937;\n  border-color: #374151;\n}\n\nbody.theme-dark .todoist-board .task {\n  background: transparent;\n  color: #f9fafb;\n}\n\nbody.theme-light .todoist-board .task {\n  color: #111827;\n}\n\nbody.theme-dark .todoist-board .task:hover:not(.selected-task) {\n  background: #1f2937;\n  box-shadow: 0 1px 3px rgba(0,0,0,0.4);\n}\n\n/* ========== iOS/Safari Fixes ========== */\n .todoist-board .task.dragging-row {\n   touch-action: none !important;\n   user-select: none !important;\n   -webkit-user-select: none !important;\n   -webkit-touch-callout: none !important;\n }\n\n.list-view.drag-scroll-block {\n  touch-action: none !important;\n  user-select: none !important;\n  -webkit-user-select: none !important;\n  -webkit-touch-callout: none !important;\n}\n\nbody.drag-disable {\n  position: fixed !important;\n  overflow: hidden !important;\n  touch-action: none !important;\n  -webkit-user-select: none !important;\n  user-select: none !important;\n  -webkit-touch-callout: none !important;\n}\n/* --- Checkbox completion animation --- */\n .todoist-board .task-checked-anim {\n   transition: transform 0.2s ease;\n   transform: scale(0.96);\n }\n /* --- Completed task row styling --- */\n .todoist-board .task.completed .task-content {\n   text-decoration: line-through;\n   opacity: 0.5;\n   transition: all 0.3s ease;\n }\n/* --- Icon grid for settings --- */\n/* Icon picker trigger and popup */\n.icon-trigger {\n  position: relative;\n  box-sizing: border-box;\n}\n\n/* --- Icon grid for settings --- */\n/* --- Improved Icon Picker Grid Layout --- */\n\n.icon-grid-btn {\n  width: 36px;\n  height: 36px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  margin: 0;\n}\n.icon-picker-wrapper .icon-grid-btn {\n  background: none;\n  border: none;\n  cursor: pointer;\n  transition: transform 0.1s ease;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  overflow: visible;\n}\n.icon-picker-wrapper .icon-grid-btn:hover {\n  transform: scale(1.1);\n}\n.icon-picker-wrapper .icon-grid-btn.selected {\n  border-color: #007aff;\n  background-color: #e6f0ff;\n}\n.icon-grid-btn svg {\n  width: 20px;\n  height: 20px;\n  overflow: visible;\n}\n/* --- Icon color picker row --- */\n.icon-color-row {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  justify-content: center;\n  align-items: center;\n  padding: 6px 6px;\n  border-top: 1px solid #eee;\n  margin-top: 6px;\n  width: 100%;\n  box-sizing: border-box;\n  grid-column: 1 / -1;\n}\ninput .icon-color-picker {\n  width: 28px;\n  height: 24px;\n}\n\n/* --- Settings save row spacing --- */\n.settings-save-row {\n  display: flex;\n  gap: 8px;\n  align-items: center;\n  justify-content: flex-start;\n  margin-top: 12px;\n}\n\n/* --- Icon button style --- */\n.icon-button {\n  background: none;\n  border: none;\n  padding: 4px;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n}\n.icon-color-swatch {\n  width: 20px;\n  height: 20px;\n  border-radius: 50%;\n  cursor: pointer;\n  border: 2px solid white;\n  box-shadow: 0 0 0 1px #ccc;\n}\n.icon-color-swatch:hover {\n  box-shadow: 0 0 0 2px #888;\n}\n/* ================================\n   Modern Nesting: Non-task Note\n   ================================ */\n/* ================================\n   Modern Nesting: Non-task Note\n   ================================ */\n.non-task-note, .non-task-note .task-title {\n  font-size: 1rem;\n  font-weight: 600;\n  color: #1f2937; /* dark gray for visibility */\n  padding-inline: 1rem;\n  margin-block: 0.5rem;\n  margin-inline: 0;\n  background: none;\n  border: none !important;\n  white-space: pre-wrap;\n  word-break: break-word;\n  opacity: 1;\n}\n\nbody.theme-dark .non-task-note {\n  color: #f9fafb;\n  border: none !important;\n}\n\n.non-task-note .chin-inner {\n  height: 0.1rem;\n}\n.non-task-note.selected-task { \n  border: none;\n  box-shadow: none;\n  margin-bottom: 2rem;\n}\n\n/* ========== Hide metadata and description for non-task notes ========== */\n.non-task-note .task-metadata,\n.non-task-note .task-description, .non-task-note .todoist-checkbox {\n  display: none !important;\n  max-height: 0 !important;\n  opacity: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}\n\n.non-task-note {\n  min-height: 4rem;\n  padding-bottom: 0.5rem;\n}\n.non-task-note .task-content-wrapper {\nposition: absolute;\nbottom: -1rem;\n}\n.non-task-note .task-title {\n  color: #374151;\n}\n\n.task-placeholder .mini-toolbar {\n  display: none !important;\n}\n\n\n\n/* ========== Custom Mini Toolbar Layout ========== */\n\n/* ========== Custom Mini Toolbar Layout ========== */\n/* Mini-toolbar is centered in its wrapper, with delete button outside */\n\n#mini-toolbar-wrapper {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  z-index: 100;\n  pointer-events: auto;\n  /* Prevents click-through, matches JS */\n}\n\n#mini-toolbar-wrapper .mini-toolbar {\n  margin: 0 auto;\n}\n\n/* Hide delete button by default, only show when selected-task is active */\n\n.selected-task .mini-toolbar-wrapper .circle-btn.delete-btn {\n  display: flex;\n  position: absolute;\n  right: 0;\n  transform-origin: center;\n  transform: scale(1.25);\n  z-index: 10;\n  color: #fefefe;\n  background-color: rgb(48, 48, 48);\n  opacity: 1;\n  border-radius: 999px;\n  padding: 4px 0;\n  transition: none !important;\n}\n.selected-task .mini-toolbar-wrapper .circle-btn.delete-btn:hover {\n  color: red;\n}\n.mini-toolbar-dates-wrapper {\n  display: flex;\n  gap: 0.5rem;\n}\n\n.mini-toolbar .date-btn {\n\n  border-radius: 6px;\n  padding: 4px 10px;\n  font-weight: 500;\n  font-size: 0.75rem;\n  transition: all var(--transition-fast);\n}\n\n.mini-toolbar .date-btn:hover {\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05);\n}\n\n.mini-toolbar .circle-btn {\n  border-radius: 999px;\n  padding: 4px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  transition: all var(--transition-fast);\n}\n\n.mini-toolbar .circle-btn:hover {\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05);\n}\n.mini-toolbar-wrapper {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-top: 8px;\n  padding: 0 !important;\n}\n\n\n.icon-button.refresh-btn.syncing > svg {\n  animation: spin 1s linear infinite;\n  transform-origin: center;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n}\n/* ========== Chin-Style Mini Toolbar ========== */\n\n.fixed-chin {\n  display: none;\n  position: relative;\n  width: 100%;\n  padding: 0.5rem 1rem 0.5rem;\n  align-items: flex-end;\n  justify-content: flex-start;\n  flex-direction: column;\n}\n\n.selected-task .fixed-chin {\n  display: flex;\n  margin-top: 0.5rem;\n}\n\n\n.chin-inner {\n  display: none;\n}\n\n.selected-task .chin-inner {\n  display: flex;\n  gap: 0.25rem;\n  border-top: 1px solid rgba(0, 0, 0, 0.05);\n  margin-top: 1rem;\n  width: 100%;\n  justify-content: flex-start;\n  flex-wrap: wrap;\n  background-color: rgba(243, 244, 246, 0.2); /* light gray background */\n  border-radius: 6px;\n  padding: 0.5rem 0.75rem;\n}\nbody.theme-dark .selected-task .chin-inner {\n  background-color: var(--background-primary);\n  border-radius: 12px;\n}\n\n.chin-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 8px;\n  border: 1px solid rgba(0, 0, 0, 0.1);\n  border-radius: 6px;\n  background: white;\n  color: #374151;\n  font-size: 0.7rem;\n  font-weight: 500;\n  cursor: pointer;\n  box-shadow: none !important;\n  transition: all var(--transition-fast);\n}\n\n\n.chin-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.chin-btn:active {\n  background: #e5e7eb;\n  transform: scale(0.97);\n}\n\n.chin-btn:focus-visible {\n  outline: 2px solid #6366f1;\n  outline-offset: 2px;\n}\n\nbody.theme-dark .chin-btn {\n  background: #1f2937;\n  border-color: #374151;\n  color: #f9fafb;\n}\n\nbody.theme-dark .chin-btn:hover {\n  background: #374151;\n  border-color: #4b5563;\n}\n\n/* Chin-Style Button Customizations for Selected Task */\n.selected-task .mini-toolbar-wrapper .delete-btn {\n  color: red;\n  right: 0;\n  margin-left: auto;\n}\n.selected-task .mini-toolbar-wrapper .delete-btn .lucide {\n  stroke: red;\n}\n.selected-task .edit-btn svg {\n  stroke: #FDB600; \n}\n.selected-task .tomorrow-btn svg {\n  stroke: #a176e6;\n}\n.selected-task .today-btn svg {\n  stroke: #0764fa; \n}\n.selected-task .mini-toolbar .today-btn .date-subtitle {\n  font-size: 0.5rem;\n  color: #9ca3af;\n  margin-top: 2px;\n  display: block;\n}\n\n/*=========================== Misc. ===========================*/\n\n\n.selected-task .task-metadata {\n  animation: none;\n}\n/* ========== Always show trash/delete SVG icon in settings modal ========== */\n.settings-filter-table .icon-button svg {\n  width: 16px;\n  height: 16px;\n  fill: none;\n  display: inline-block;\n  opacity: 1;\n  visibility: visible;\n}\n/* ========== Filter Badge Z-Index Fix ========== */\n.filter-badge span,\n.filter-badge svg {\n  position: relative;\n  z-index: 2;\n}\n/* Container Query Example for .task */\n@container style (max-width: 500px) {\n  .task {\n    font-size: 0.8rem;\n  }\n}\n\n/* --- Settings filter table styling --- */\n.settings-filter-table th,\n.settings-filter-table td {\n  padding: 2px 3px;\n  vertical-align: middle;\n}\n\n.settings-filter-table input[type=\"text\"] {\n  padding: 3px 5px;\n  font-size: 0.85em;\n}\n\n.settings-filter-table td:nth-child(4) {\n  text-align: center;\n  vertical-align: middle;\n}\n.settings-filter-table input[type=\"radio\"] {\n  transform: scale(1.3);\n  margin: 0;\n}\n\n.settings-filter-table button {\n  padding: 4px 8px;\n  font-size: 1em;\n  cursor: pointer;\n}\n\n/* Constrain the width of the Title column in the settings filter table */\n.settings-filter-table td:nth-child(2) input[type=\"text\"] {\n  max-width: 160px;\n}\n\n/* --- Icon dropdown styling --- */\n.icon-dropdown {\n  margin-left: 6px;\n  font-size: 1.1em;\n  padding: 2px 4px;\n  border-radius: 5px;\n  border: 1px solid #ccc;\n  vertical-align: middle;\n  background: #fff;\n  min-width: 38px;\n}\n/* ========== Smooth Deselection Transition ========== */\n.deselecting {\n  opacity: 0.6;\n  transform: scale(0.99) translateY(1px);\n  transition:\n    opacity 300ms ease,\n    transform 300ms ease;\n  z-index: 0;\n}\n\n\n/* ========== Task Modal: Flatter Things 3 Style ========== */\n.todoist-edit-task-modal .modal-content {\n  display: flex;\n  justify-content: center;\n  padding: 0;\n  max-width: 100%;\n}\n\n.todoist-edit-task-modal .taskmodal-wrapper {\n  background: var(--modal-bg, #f9f9fb);\n  border-radius: 12px;\n  padding: 1rem;\n  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);\n  display: flex;\n  flex-direction: column;\n  gap: 1rem;\n  min-width: 260px;\n  font-size: 0.85rem;\n  width: 100%;\n  max-width: 600px;\n  padding: 1.5rem;\n  box-sizing: border-box;\n}\nbody.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {\n  background-color: #1e1e1e;\n}\n\n/* --- Task Modal Fields --- */\n\n.todoist-edit-task-modal .taskmodal-title-field,\n.todoist-edit-task-modal .taskmodal-description-field,\n.todoist-edit-task-modal .taskmodal-date-field,\n.todoist-edit-task-modal .taskmodal-project-field,\n.todoist-edit-task-modal .taskmodal-labels-field {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n}\n\n.todoist-edit-task-modal .taskmodal-date-label,\n.todoist-edit-task-modal .taskmodal-project-label,\n.todoist-edit-task-modal .taskmodal-labels-label {\n  font-size: 0.65rem;\n  font-weight: 500;\n  color: #6b7280;\n}\n\n.todoist-edit-task-modal .taskmodal-title-input {\n  border: none;\n  background: #fff;\n  border-radius: 6px;\n  border-bottom: 1px solid #e0e0e0;\n  padding: 3px 3px;\n  font-size: 0.9rem;\n  width: 100%;\n}\n.todoist-edit-task-modal .taskmodal-title-input:focus {\n  outline: none;\n  border-color: #6366f1;\n}\n\n.todoist-edit-task-modal .taskmodal-description-input {\n  border: none;\n  background: #fff;\n  border-radius: 6px;\n  border-bottom: 1px solid #e0e0e0;\n  padding: 3px 3px;\n  font-size: 0.9rem;\n  resize: vertical;\n  min-height: 4rem;\n}\n.todoist-edit-task-modal .taskmodal-description-input:focus {\n  outline: none;\n  border-color: #6366f1;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input {\n  border: none;\n  background: #fff;\n  border-radius: 6px;\n  border-bottom: 1px solid #e0e0e0;\n  padding: 3px 0;\n  font-size: 0.9rem;\n  text-align: center;\n}\n.todoist-edit-task-modal .taskmodal-date-input:focus {\n  outline: none;\n  border-color: #6366f1;\n}\n\n.todoist-edit-task-modal .taskmodal-labels-select {\n  padding: 4px 6px;\n  font-size: 0.8rem;\n  border: 1px solid #e5e7eb;\n  border-radius: 6px;\n  background: #fff;\n  min-height: 60px;\n  max-height: 120px;\n  overflow-y: auto;\n  resize: vertical;\n  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);\n}\n\n.todoist-edit-task-modal .taskmodal-label-list {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.25rem;\n}\n\n.todoist-edit-task-modal .taskmodal-label-checkbox {\n  background: #eee;\n  border-radius: 6px;\n  padding: 4px 8px;\n  font-size: 0.7rem;\n  display: flex;\n  align-items: center;\n  gap: 3px;\n}\n\n/* === Enhanced Date Input Styling for Task Modal === */\n.todoist-edit-task-modal .taskmodal-date-input-row {\n  display: flex;\n  align-items: center;\n  gap: 0.4rem;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"] {\n  flex: 1;\n  min-width: 0;\n  text-align: center;\n  height: 2rem;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]:first-child {\n  border-radius: 6px 0 0 6px;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]:last-child {\n  background-color: #ede9fe;\n  border-radius: 0 6px 6px 0;\n  color: #6b21a8;\n  font-weight: 600;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]:hover {\n  background-color: hsl(0, 0, 0.3);\n}\n\n.todoist-edit-task-modal .taskmodal-button-row {\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.25rem;\n  margin-top: 0.5rem;\n}\n\n.todoist-edit-task-modal .taskmodal-button-save {\n  background: linear-gradient(135deg, #6366f1, #4338ca);\n  color: white;\n  font-weight: 500;\n  padding: 0.4rem 0.75rem;\n  border-radius: 6px;\n  border: none;\n  font-size: 0.8rem;\n}\n\n.todoist-edit-task-modal .taskmodal-button-cancel {\n  color: #6b7280;\n  border: 1px solid #d1d5db;\n  background: #f9fafb;\n  border-radius: 6px;\n  padding: 0.4rem 0.75rem;\n  font-size: 0.8rem;\n}\n/* ========== Hamburger Dropdown Styles ========== */\n.menu-dropdown {\n  position: absolute;\n  top: 2.5rem;\n  right: 0;\n  background: white;\n  border: 1px solid #ddd;\n  border-radius: 8px;\n  box-shadow: var(--shadow-medium);\n  padding: 0.5rem 0;\n  min-width: 150px;\n  z-index: 2000;\n  animation: fade-in-scale var(--transition-spring) ease-out;\n}\n\n.menu-dropdown-item {\n  padding: 0.5rem 1rem;\n  font-size: 0.875rem;\n  cursor: pointer;\n  transition: background var(--transition-fast);\n  white-space: nowrap;\n}\n\n.menu-dropdown-item:hover {\n  background: rgba(99, 102, 241, 0.08);\n}\n\n.menu-dropdown.hidden {\n  display: none;\n}\n\nbody.theme-dark .menu-dropdown {\n  background: #1f2937;\n  border-color: #374151;\n}\n\nbody.theme-dark .menu-dropdown-item {\n  color: #f9fafb;\n}\n\nbody.theme-dark .menu-dropdown-item:hover {\n  background: rgba(255, 255, 255, 0.05);\n}\n\nbody > div.app-container > div.horizontal-main-container > div > div.workspace-split.mod-vertical.mod-root > div > div.workspace-tab-container > div > div > div.view-content > div.markdown-source-view.cm-s-obsidian.mod-cm6.node-insert-event.is-readable-line-width.is-live-preview.is-folding > div > div.cm-scroller > div.cm-sizer > div.cm-contentContainer > div > div.cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board {\n  border: none;\n  box-shadow: none;\n}\n/* ========== Enlarge and Thicken Focus/Queue and Add Task Icons ========== */\n.queue-btn svg,\n.add-task-btn svg {\n  width: 24px;\n  height: 24px;\n  stroke-width: 2;\n  stroke: currentColor;\n}\n\n.queue-btn,\n.add-task-btn {\n  color: #1f2937; /* dark gray for light theme */\n}\n\nbody.theme-dark .queue-btn,\nbody.theme-dark .add-task-btn {\n  color: #f9fafb; /* light gray for dark theme */\n}\n/* ========== Reading Mode Layout Fix ========== */\n.markdown-reading-view .block-language-todoist-board.todoist-board {\n  all: unset;\n  display: block;\n  padding: 0;\n  margin: 0;\n}\n.change-indicator {\n  display: inline-block;\n  position: absolute;\n  bottom: 4px;\n  right: 4px;\n  width: 8px;\n  height: 8px;\n  border-radius: 50%;\n  background-color: orange;\n  opacity: 0.8;\n  z-index: 10;\n  pointer-events: none;\n}\n\n@keyframes pulse {\n  0% {\n    transform: scale(1);\n    opacity: 0.7;\n  }\n  50% {\n    transform: scale(1.2);\n    opacity: 1;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 0.7;\n  }\n}\n\n\n\n/* ========== Subtask Visual Hierarchy ========== */\n/* ========== Subtask Row Compact Design ========== */\n/* ========== Subtask Row Compact Design with Expansion Toggle ========== */\n/* ========== Subtask Row Compact Design ========== */\n.subtask-row {\n  padding: 0 !important;\n  margin: 0 0 0 1rem;\n  border: none;\n  background: transparent;\n  border-radius: 0;\n  line-height: 1.2;\n  max-height: 2.2rem;\n  display: flex;\n  align-items: center;\n}\n.subtask-row .task-metadata,\n.subtask-row .task-description {\n  display: none !important;\n  max-height: 0 !important;\n  opacity: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}\n\n/* Compact subtask title and checkbox alignment */\n.subtask-row .task-title {\n  font-size: 0.78rem;\n  padding: 0;\n  margin: 0;\n}\n\n.subtask-row input.todoist-checkbox {\n  margin-right: 6px;\n  width: 18px;\n  height: 18px;\n}\n\n.subtask-row.expanded-subtask {\n  max-height: 5rem !important;\n}\n\n/* ========== Subtask Visibility ========== */\n.subtask-wrapper {\n  display: none;\n}\n\n.selected-task .subtask-wrapper {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n  margin-top: 0.25rem;\n  width: 95%;\n  overflow: visible;\n  max-height: unset;\n}\n.subtask-wrapper .task-scroll-wrapper {\n  overflow-y: hidden;\n}\n.subtask-row::before { \n  position: absolute;\n  top: -0.25rem;\n}\n\nbody.theme-dark .subtask-row {\n  border-left: 2px solid #374151;\n}\n/* Hide metadata in subtasks unless selected */\n.subtask-row .task-meta {\n  display: none;\n}\n\n.subtask-row.selected .task-meta {\n  display: flex;\n}\n/* Hide <small> elements in unselected subtasks */\n.subtask-row:not(.selected) small {\n  display: none;\n}\n\n/* ========== Parent Task Visual Distinction ========== */\n.task.parent-task {\n  position: relative;\n}\n\n.task.parent-task .parent-icon {\n  position: absolute;\n  padding-left: 0.5rem;\n  bottom: 0.75rem;\n  opacity: 0.3;\n  transition: opacity 0.3s ease;\n  width: 16px;\n  height: 16px;\n}\n\n.task.parent-task.selected-task .parent-icon {\n  opacity: 0;\n}\n\n .todoist-board .task-description:empty,\n .todoist-board .task-metadata:empty {\n   display: none !important;\n   max-height: 0 !important;\n   opacity: 0 !important;\n   padding: 0 !important;\n   margin: 0 !important;\n }\n .todoist-board .task-description .desc-empty {\n   display: none;\n }\n .todoist-board .date-subtitle {\n display: none;\n }\n\n.menu-dropdown-item {\n  display: flex;\n  align-items: center;\n}\n\n.menu-dropdown-item svg {\n  vertical-align: middle;\n  margin-right: 8px;\n}\n/* Subtask checkbox style */\n\n\n/* ========== Custom cursor for task, selected-task, and add-task-btn ========== */\n .todoist-board .task,\n .todoist-board .selected-task,\n .add-task-btn {\n   cursor: pointer;\n }\n.empty-filter {\n  font-size: 0.85rem;\n  font-style: italic;\n  color: #9ca3af;\n  text-align: center;\n  padding: 2rem 1rem;\n  opacity: 0.75;\n  max-width: 80%;\n  margin: 2rem auto;\n  line-height: 1.5;\n}\n\nbody.theme-dark .empty-filter {\n  color: #d1d5db;\n  opacity: 0.7;\n}\n\n/* Compact mode styles for todoist-board, including reading mode */\n/* Compact mode styles for todoist-board-list, including reading mode */\n/* Compact mode styles for list-wrapper, including reading mode */\n.list-wrapper.compact-mode .task:not(.selected-task) {\n  max-height: 3rem;\n  overflow: hidden;\n  border-left: 4px solid var(--project-color, #e5e7eb);\n  padding-left: 0.75rem;\n}\n.list-wrapper.compact-mode .task:not(.selected-task) .task-metadata,\n.list-wrapper.compact-mode .task:not(.selected-task) .task-description {\n  display: none !important;\n  max-height: 0 !important;\n  opacity: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}\n.menu-dropdown-wrapper {\n  position: relative;\n  overflow: visible;\n}\n\n.menu-dropdown {\n  position: absolute;\n  z-index: 1000;\n  top: 100%;\n  right: 0;\n}\n/* For dark theme, apply to .taskmodal-wrapper and .taskmodal-labels-select */\nbody.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {\n  background-color: transparent;\n  border-color: #4b5563;\n  color: #f9fafb;\n}\n\n/* ========== Task Modal: Project & Date Row Layout ========== */\n.todoist-edit-task-modal .taskmodal-row {\n  display: flex;\n  gap: 0.75rem;\n  width: 100%;\n}\n\n.todoist-edit-task-modal .taskmodal-project-field,\n.todoist-edit-task-modal .taskmodal-date-field {\n  flex: 1;\n}\n\n/* Match select-project height for the date picker */\ninput.taskmodal-date-input {\n  height: 2rem;\n}\n/* Dark mode: make the label pills use the dark bg/text vars */\nbody.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {\n  background: var(--pill-bg);\n  color: var(--pill-text);\n}\n/* Mobile keyboard-safe modal alignment */\n  .todoist-edit-task-modal .modal-content {\n    /* push the wrapper toward the top */\n    align-items: flex-start;\n    justify-content: center;\n  }\n@media only screen and (max-width: 600px) {\n\n  /* 2. Anchor the modal itself to the bottom of that container */\n  body > div.modal-container.todoist-edit-task-modal.mod-dim > div.modal {\n    position: absolute;\n    top: 15%;\n    max-height: fit-content;\n    width: 100%;\n    max-width: 100%;\n    margin: 0;\n    box-sizing: border-box;\n  }\n\n  /* 3. Keep your scrolling and margin tweaks in the same block */\n  .todoist-edit-task-modal .modal-content {\n    align-items: flex-start;\n    justify-content: center;\n  }\n}\n/* 📘 Reading Mode Support */\n.todoist-board.reading-mode {\n  padding-bottom: 0 !important;\n  margin-bottom: 0 !important;\n  overflow: visible;\n  background: transparent;\n}\n\n.todoist-board.reading-mode .list-wrapper {\n  padding-bottom: 0;\n}\n\n.todoist-board.reading-mode .todoist-edit-task-modal,\n.todoist-board.reading-mode .todoist-add-task-modal {\n  position: fixed !important;\n  z-index: 9999;\n}\n\n.todoist-board.reading-mode .menu-dropdown-wrapper {\n  position: fixed !important;\n  z-index: 9999;\n}\n .todoist-board .task .repeat-icon {\n   position: absolute;\n   padding-left: 0.5rem;\n   bottom: 0.75rem;\n   opacity: 0.3;\n   width: 16px;\n   height: 16px;\n }\n\n .todoist-board .task.selected-task .repeat-icon {\n   opacity: 0;\n }\n/* === Hide Icons in Compact Mode === */\n/* === Hide Icons in Compact Mode === */\n/* === Hide Icons in Compact Mode for list-wrapper === */\n.list-wrapper.compact-mode .parent-icon,\n.list-wrapper.compact-mode .repeat-icon {\n  display: none !important;\n}\n/* ================================\n   Dark mode: Enhanced Task Modal Inputs & Fields\n   ================================ */\nbody.theme-dark .todoist-edit-task-modal .taskmodal-title-input,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-description-input,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-date-input {\n  background: #1f2937;\n  color: #f9fafb;\n  border-bottom: 1px solid #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-title-input::placeholder,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-description-input::placeholder {\n  color: #9ca3af;\n  opacity: 0.6;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-project-select,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {\n  background: #1f2937;\n  color: #f9fafb;\n  border-color: #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {\n  background: #374151;\n  color: #f9fafb;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox:hover {\n  background: #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"] {\n  background: #1f2937;\n  color: #f9fafb;\n  border: 1px solid #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]::placeholder {\n  color: #9ca3af;\n  opacity: 0.6;\n}\n\ndiv.block-language-todoist-board.todoist-board > div.list-toolbar {\n  justify-content: flex-end;\n}\n/* Scope modal width and padding only to plugin settings modal */\n.modal-container.todoist-settings-modal > .modal {\n  width: 640px;\n  padding: 1.5rem;\n  box-sizing: border-box;\n}\n@media (max-width: 600px) {\n  .modal-container.todoist-settings-modal > .modal {\n    width: 100%;\n    padding: 0;\n  }\n}";
+var css_248z = "\n/* ========== CSS Variables ========== */\n:root {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif;\n  --pill-bg: #f1f3f5;\n  --pill-text: #4b5563;\n  --selected-bg: #f6f9ff;\n  --selected-border: #b4cef5;\n  --deadline-bg: #d8d5ff;\n  --deadline-text: #6b21a8;\n  --meta-text: #6b7280;\n  \n  /* Enhanced animation variables for native feel */\n  --transition-fast: 100ms cubic-bezier(0.3, 0.7, 0.4, 1);\n  --transition-medium: 280ms cubic-bezier(0.33, 1, 0.68, 1);\n  --transition-smooth: 420ms cubic-bezier(0.25, 0.8, 0.25, 1);\n  --transition-spring: 300ms cubic-bezier(0.3, 1, 0.5, 1);\n  \n  --shadow-light: 0 1px 3px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);\n  --shadow-medium: 0 2px 8px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);\n  --shadow-heavy: 0 4px 16px rgba(0, 0, 0, 0.15);\n  --shadow-interactive: 0 1px 2px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.08);\n}\n\nhtml {\n  -webkit-font-smoothing: antialiased;\n  -moz-osx-font-smoothing: grayscale;\n}\n\n/* ========== MODULE: Layout & Container ========== */\n.todoist-board {\n  position: relative;\n  inset: 0;\n  margin: 0 0.125rem;\n  max-width: unset;\n  overflow-y: scroll;\n  touch-action: pan-y;\n  -webkit-overflow-scrolling: touch;\n  background: transparent;\n  padding: 0;\n  border: none;\n  box-shadow: none;\n  overflow: visible;\n  isolation: unset;\n  z-index: 1000;\n  transform: translate3d(0, 0, 0);\n}\n\n.list-view {\n  display: block;\n  max-width: 768px;\n  min-height: auto;\n  /* margin: 0 auto; */\n  /* padding: 0.5rem 1rem; */\n  font-size: 0.9rem; \n  line-height: 1.5; \n  position: relative; \n  opacity: 1;\n  touch-action: pan-y;\n}\n\n.list-wrapper {\n  display: block;\n  touch-action: pan-y;\n  container-type: inline-size;\n}\n\n/* ========== Enhanced Toolbar Styles ========== */\n/* ========== MODULE: Toolbar & Chin ========== */\n.list-toolbar {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  justify-content: space-between;\n  position: sticky;\n  z-index: 1000;\n  padding: 0px 8px 0px 8px;\n  margin: 0 auto;\n  border-radius: 16px;\n  /* Inset effect for toolbar */\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04);\n  /* background-color: #f9fafb; */\n  transition: background-color 0.2s ease;\n  /* Remove background and shadow by default */\n  /* backdrop-filter: blur(20px) saturate(1.2); */\n  border: 1px solid rgba(255, 255, 255, 0.3);\n  font-size: 0.85rem;\n  overflow-x: auto;\n  overflow-y: hidden;\n  min-width: min-content;\n  flex-wrap: nowrap;\n  touch-action: pan-y;\n  transform: translate3d(0, 0, 0);\n  animation: fade-in-up var(--transition-medium) ease-out both;\n  /* Added for dropdown/menu support */\n  overflow: visible;\n  position: relative;\n  z-index: 1010;\n}\n\n.list-toolbar.sticky {\n  background-color: #1e1e1e;\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04),\n              0 1px 4px rgba(0, 0, 0, 0.15);\n}\n\n/* ========== MODULE: Filter Bar ========== */\n.filter-button-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  width: 48px;\n}\n\n/* Enhanced filter-btn style for native feel */\n.filter-btn {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  font-size: 11px;\n  color: var(--text-muted);\n  gap: 4px;\n  cursor: pointer;\n  position: relative;\n  padding: 6px;\n  border-radius: 12px;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.filter-btn .icon {\n  font-size: 20px;\n  line-height: 1;\n  transition: transform var(--transition-fast);\n}\n\n.filter-btn .label {\n  pointer-events: none;\n  font-weight: 500;\n  opacity: 0.8;\n}\n\n.filter-btn:hover {\n  background: rgba(0, 0, 0, 0.04);\n  transform: scale(1.02) translate3d(0, 0, 0);\n}\n\n.filter-btn:hover .icon {\n  transform: scale(1.1);\n}\n\n.filter-btn:active {\n  transform: scale(0.98) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n/* Enhanced active filter button */\n.filter-btn.active {\n  background: rgba(99, 102, 241, 0.1);\n  color: #6366f1;\n  border-radius: 12px;\n  position: relative;\n  transform: scale(1.02) translate3d(0, 0, 0);\n  transition: all var(--transition-medium);\n}\n\n.filter-row.selected::after {\n  content: \"\";\n  position: absolute;\n  top: calc(100% + 6px);\n  left: 50%;\n  transform: translateX(-50%) translateY(-50%);\n  width: 20px;\n  height: 5px;\n  background: #6366f1;\n  border-radius: 9999px;\n  pointer-events: none;\n  transition: all var(--transition-smooth);\n  animation: indicator-slide var(--transition-spring) ease-out;\n}\n\n.filter-btn-clicked {\n  transition: transform var(--transition-fast);\n  transform: scale(0.95) translate3d(0, 0, 0);\n}\n\n.filter-row {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  width: auto;\n  min-width: 2rem;\n  flex-shrink: 0;\n  gap: 0;\n  position: relative;\n}\n\n.filter-row-wrapper {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  flex: 1 1 auto;\n  min-width: 0;\n  width: 80%;\n  max-width: 275px;\n}\n\n.filter-label {\n  font-size: 1rem;\n  font-weight: bold;\n  text-transform: uppercase;\n  opacity: 0.6;\n  margin-top: 0;\n  text-align: center;\n  word-break: break-word;\n  white-space: normal;\n  line-height: 1.1;\n  display: none;\n}\n\n.filter-title {\n  font-size: 0.5rem;\n}\n\n.filter-icon {\n  position: relative;\n  height: 1.5rem;\n  width: 1.5rem;\n  cursor: pointer;\n}\n\n/* Ensure badge background appears behind the icon for selected filters */\n.filter-row.selected .filter-icon {\n  z-index: 2;\n  position: relative; \n}\n\n.filter-row.selected .filter-icon > svg {\n  stroke-width: 1.5;\n  scale: 1.2;\n  stroke: currentColor;\n}\n\nbody.theme-light .filter-row.selected .filter-icon > svg {\n  color: black;\n}\n\nbody.theme-dark .filter-row.selected .filter-icon > svg {\n  color: white;\n}\n\n.filter-row.selected .filter-badge {\n  z-index: 0;\n}\n\n  .filter-badge {\n  position: absolute;\n  top: -0.5em;\n  right: -0.9em;\n  width: 1.5em;\n  height: 1.25em;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  pointer-events: none;\n}\n.filter-row.selected .filter-icon::before {\n  content: \"\";\n  position: absolute;\n  top: -0.5em;\n  right: -0.9em;\n  width: 1.5em;\n  height: 1.25em;\n  background-color: var(--badge-bg, #6366f1);\n  border-radius: 9999px;\n  z-index: -10;\n}\n\n.filter-icon {\n  position: relative;\n}\n.filter-icon > svg {\n  scale: 1.15;\n  transform-origin: top left;\n  transition: transform var(--transition-fast);\n}\n\n\n.filter-badge-count {\n  position: relative;\n  z-index: 1;\n  font-size: 10px;\n  font-weight: bold;\n  color: white;\n}\n\n/* Make inactive filter badges smaller and faded */\n.filter-row:not(.selected) .filter-badge {\n  transform: scale(0.85);\n  opacity: 0.75;\n}\n\n/* Enhance the size of the selected filter's badge */\n.filter-row.selected .filter-badge {\n  transform: scale(1.1);\n  font-weight: 700;\n}\n\n.queue-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  margin-left: 0.5em;\n  padding-left: 0.5em;\n  width: 48px;\n  position: relative;\n  border-left: 1px solid rgba(0, 0, 0, 0.08);\n}\n\nbody.theme-dark .queue-wrapper {\n  border-left: 1px solid rgba(255, 255, 255, 0.1);\n}\n\n.queue-btn {\n  border: none;\n  background: transparent;\n  box-shadow: none;\n  outline: none;\n  padding: 8px;\n  font-size: 1.2rem;\n  cursor: pointer;\n  opacity: 1;\n  border-radius: 8px;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.queue-btn:hover {\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05) translate3d(0, 0, 0);\n}\n\n.queue-btn:active {\n  transform: scale(0.95) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n.settings-refresh-wrapper {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  gap: 6px;\n  user-select: none;\n  -webkit-user-select: none;\n  flex-shrink: 0;\n}\n\n.icon-button {\n  border: none;\n  background: transparent;\n  box-shadow: none;\n  outline: none;\n  padding: 6px;\n  font-size: 1.2rem;\n  cursor: pointer;\n  user-select: none;\n  -webkit-user-select: none;\n  opacity: 0.7;\n  border-radius: 8px;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.icon-button:hover {\n  background: rgba(0, 0, 0, 0.04);\n  opacity: 1;\n  transform: scale(1.05) translate3d(0, 0, 0);\n}\n\n.icon-button:active {\n  transform: scale(0.95) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n \n/* ========== MODULE: Task ========== */\n/* ========== Enhanced Task Styles ========== */\n/* ================================\n   Modern Nesting: Task Styles\n   ================================ */\n .todoist-board .task {\n  background: transparent;\n  border-radius: 0;\n  border: 1px solid transparent;\n  padding-block: 0.75rem;\n  padding-inline: 1rem;\n  display: flex;\n  flex-direction: row;\n  justify-content: stretch;\n  gap: 0.375rem;\n  min-height: 2rem;\n  -webkit-user-select: none;\n  user-select: none;\n  position: relative;\n  outline: none;\n  transition: all var(--transition-spring);\n  transform: translate3d(0, 0, 0);\n\n  /* --- Modern Nesting for ::before, :focus, :hover, .selected-task --- */\n  &:not(:first-child)::before {\n    content: \"\";\n    position: absolute;\n    left: 42px;\n    right: 0;\n    top: 0;\n    height: 1px;\n    background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 100%);\n    pointer-events: none;\n    transform: translate3d(0, 0, 0);\n  }\n  &:focus {\n    outline: none !important;\n    box-shadow: none !important;\n  }\n  @media (hover: hover) and (pointer: fine) {\n    &:hover:not(.selected-task) {\n      background: #f9fafb;\n      transform: translateY(-1px) translate3d(0, 0, 0);\n      box-shadow: var(--shadow-light);\n      transition: all var(--transition-fast);\n    }\n  }\n  &.no-transition::before {\n    transition: none !important;\n  }\n  &.freeze-transition {\n    transition: none !important;\n    transform: none !important;\n  }\n  /* --- Completed task row styling --- */\n  &.completed .task-content {\n    text-decoration: line-through;\n    opacity: 0.5;\n    transition: all 0.3s ease;\n  }\n}\n.task-inner p {\n  margin: 0;\n  display: inline;\n}\n .todoist-board .task-inner {\n  display: flex;\n  flex-direction: row;\n  align-items: stretch;\n  gap: 0.75rem;\n  width: 100%;\n  user-select: none;\n  -webkit-user-select: none;\n  -webkit-touch-callout: none;\n  -webkit-tap-highlight-color: transparent;\n  font-size: 0.9rem;\n  touch-action: pan-y;\n  min-height: 2.75rem;\n  position: relative;\n  z-index: 1;\n  /* transition: none !important;\n  animation: none !important; */\n}\n\n .todoist-board .task-content {\n  display: flex;\n  flex: 1;\n}\n\n .todoist-board .task-content-wrapper {\n  position: relative;\n  touch-action: pan-y;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  justify-content: flex-start;\n  width: 100%;\n  flex: 1;\n  overflow: visible;\n}\n\n .todoist-board .task-title {\n  position: relative;\n  cursor: text;\n  font-size: 0.92rem;\n  line-height: 1.4;\n  display: block;\n  font-weight: 500;\n  word-break: break-word;\n  white-space: pre-line;\n  color: #111827;\n}\n\n\nbody.theme-dark .todoist-board .task-title {\n  color: #f9fafb;\n}\n\n .todoist-board .selected-task .task-title {\n  max-height: 1000px;\n  opacity: 1;\n  transition:\n    max-height 500ms cubic-bezier(0.33, 1, 0.68, 1),\n    opacity 280ms ease-in-out;\n}\n\n\n .todoist-board .task-deadline {\n  position: absolute;\n  top: 0.75rem;\n  right: 10px;\n  z-index: 5;\n  opacity: 0.7;\n}\n .todoist-board .selected-task .task-deadline  {\n  opacity: 1;\n}\n\n .todoist-board .deadline-label {\n  align-self: center;\n}\n/* ========== Enhanced Task Selection ========== */\n/* --- Modern Nesting: Selected Task --- */\n .todoist-board .selected-task {\n  display: flex;\n  flex-direction: row;\n  justify-content: stretch;\n  height: auto;\n  position: relative;\n  z-index: 0;\n  min-height: 4rem;\n  box-shadow:\n   rgba(6, 24, 44, 0.4) 0px 0px 0px 0.1px, \n   rgba(6, 24, 44, 0.65) 0px 4px 4px -3px,\n    rgba(255, 255, 255, 0.08) -3px 1px 0px 0px;\n  transform: scale(1.005) translateY(-2px);\n  border-radius: 12px;\n  border: 1px solid #e5e7eb;\n  margin-block-start: 1rem;\n  margin-block-end: 0.75rem;\n  margin-inline: auto;\n  transition:\n    box-shadow 420ms cubic-bezier(0.25, 0.8, 0.25, 1),\n    transform 400ms cubic-bezier(0.25, 1, 0.5, 1),\n    border 360ms ease,\n    border-radius 360ms ease;\n  /* Improve animation smoothness on mobile and hardware acceleration */\n  backface-visibility: hidden;\n  transform: translate3d(0, 0, 0) scale(1.005) translateY(-2px);\n  &::before {\n    display: none;\n  }\n  /* Modern Nesting: Hide ::before on next .task */\n  + .task::before {\n    display: none;\n  }\n}\n\n/* Dim other tasks when a task is selected */\nbody:has(.todoist-board .selected-task) .todoist-board .task:not(.selected-task):not(.subtask-row),\n.queue-focused .todoist-board .task:not(.selected-task):not(.subtask-row) {\n  opacity: 0.5;\n  transition: opacity var(--transition-medium);\n}\n\n\n .todoist-board .task-scroll-wrapper {\n  display: flex;\n  width: 100%;\n}\n/* --- Task Scroll Wrapper for selected-task --- */\n .todoist-board .selected-task .task-scroll-wrapper {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  overflow-y: auto;\n  max-height: 100%;\n  padding-bottom: 0.5rem;\n  position: relative;\n}\n\n .todoist-board .selected-task .task-inner {\n  flex: 0 0 auto;\n}\n\n\n .todoist-board .selected-task .task-content {\n  flex: 1 1 auto;\n  display: flex;\n  flex-direction: column;\n}\n\n .todoist-board .selected-task .task-content-wrapper {\n  flex: 1 1 auto;\n  display: flex;\n  justify-content: flex-start;\n  flex-direction: column;\n  align-items: stretch;\n  height: 100%;\n  min-height: unset;\n  overflow: visible;\n  padding-bottom: 0.5rem;\n}\n\n .todoist-board .selected-task .task-description,\n .todoist-board .selected-task .task-metadata {\n  flex-grow: 0;\n  flex-shrink: 0;\n  flex-basis: auto;\n}\n\n .todoist-board .selected-task .task-title {\n  flex-shrink: 0;\n}\n\n/* Enhanced selection background */\n\n/* Improved deselection */\n\n .todoist-board .task.no-transition::before {\n  transition: none !important;\n}\n\n/* ========== Enhanced Checkbox Styles ========== */\ninput.todoist-checkbox {\n  /* Hard reset to strip all default or theme-injected visuals */\n  appearance: none;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  background: none;\n  box-shadow: none;\n  width: 22px;\n  height: 22px;\n  border: 2.5px solid #d1d5db;\n  border-radius: 50%;\n  cursor: pointer;\n  margin-right: 4px;\n  align-self: flex-start;\n  position: relative;\n  display: inline-block;\n  vertical-align: middle;\n  backface-visibility: hidden;\n  z-index: 10;\n  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);\n}\n\n/* Hide browser default checkmark for all major engines */\ninput.todoist-checkbox::-webkit-checkmark,\ninput.todoist-checkbox::checkmark,\ninput.todoist-checkbox::-ms-check {\n  display: none !important;\n  background: none !important;\n  color: transparent !important;\n}\ninput.todoist-checkbox:checked {\n  background-color: #6366f1;\n  overflow: hidden;\n}\n/* Priority-based checkbox styling */\ninput.todoist-checkbox.priority-4 {\n  background-color: #fee2e2; /* Light red */\n  border-color: #dc2626;     /* Red border */\n}\ninput.todoist-checkbox.priority-3 {\n  background-color: #fef3c7; /* Light amber */\n  border-color: #d97706;     /* Amber border */\n}\ninput.todoist-checkbox.priority-2 {\n  background-color: #dbeafe; /* Light blue */\n  border-color: #2563eb;     /* Blue border */\n}\n\n .todoist-board .selected-task input.todoist-checkbox {\n  max-height: 1000px;\n  opacity: 1;\n  transition:\n    max-height 500ms cubic-bezier(0.33, 1, 0.68, 1),\n    opacity 280ms ease-in-out;\n}\n\n\ninput.todoist-checkbox:hover {\n  border-color: #6366f1;\n  animation: checkbox-check var(--transition-spring) ease-out;\n  transform: scale(1.05);\n  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n  z-index: 1000;\n}\n\ninput.todoist-checkbox:active {\n  transform: scale(0.95);\n  transition: transform 80ms ease-out;\n}\n\n\n\ninput.todoist-checkbox:checked::before {\n  content: \"\";\n  position: absolute;\n  transform-origin: center;\n  top: 0;\n  left: 0.5em;\n  width: 5px;\n  height: 10px;\n  border: solid currentColor;\n  border-width: 0 2px 2px 0;\n  transform: rotate(45deg);\n  z-index: 1000;\n}\n\nbody.theme-light input.todoist-checkbox:checked::before {\n  border-color: #1f2937;\n}\n\nbody.theme-dark input.todoist-checkbox:checked::before {\n  border-color: #f9fafb;\n}\n\n/* Always show the checkmark container, but only display the tick visually on hover or checked */\ninput.todoist-checkbox::after {\n  content: none;\n}\n\n/* ========== MODULE: Pills ========== */\n/* ========== Enhanced Pills ========== */\n/* ================================\n   Modern Nesting: Pill Styles\n   ================================ */\n.pill {\n  background: var(--pill-bg);\n  color: var(--pill-text);\n  border-radius: 12px;\n  padding-block: 0.125rem;\n  padding-inline: 0.50rem;\n  font-size: 0.625rem;\n  font-weight: 500;\n  display: inline-block;\n  white-space: nowrap;\n  user-select: none;\n  transition: all var(--transition-fast);\n  box-shadow: 0 1px 2px rgba(0,0,0,0.04);\n  /* Modern Nesting for variants */\n  &.deadline {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding-block: 3px;\n    padding-inline: 8px;\n    font-size: 0.7rem;\n    line-height: 1;\n    min-height: 20px;\n    height: auto;\n    vertical-align: middle;\n  }\n  &.deadline-date {\n    font-weight: 700;\n    font-size: 0.55rem;\n    background: linear-gradient(135deg, #a78bfa, #8b5cf6);\n    color: #fff;\n    opacity: 0.9;\n    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);\n    animation: fade-in-slide var(--transition-medium) ease-out;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    line-height: 1;\n    height: auto;\n    min-height: 16px;\n    vertical-align: middle;\n  }\n}\n.pill.project-pill {\n    background: none;\n    border: none;\n    box-shadow: none;\n    padding: 0;\n    margin: 0;\n    font-weight: 500;\n    font-size: 0.7rem;\n    opacity: 0.85;\n}\n\n/* --- Grouped Pill Variants with :is() for shared logic --- */\n.pill:is(.today, .overdue, .soon, .future) {\n  color: white;\n  padding-block: 0.2rem;\n  padding-inline: 0.5rem;\n  font-size: 0.6rem;\n  border-radius: 6px;\n  font-weight: 600;\n  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);\n}\n.pill.today {\n  background: linear-gradient(135deg, #3b82f6, #2563eb);\n  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);\n}\n.pill.overdue {\n  background: linear-gradient(135deg, #ef4444, #dc2626);\n  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);\n  animation: pulse-urgent 2s ease-in-out infinite;\n}\n.pill.soon {\n  background: linear-gradient(135deg, #f59e0b, #d97706);\n  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);\n}\n.pill.future {\n  background: linear-gradient(135deg, #10b981, #059669);\n  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);\n}\n\n/* ========== Enhanced Task Metadata ========== */\n .todoist-board .task-description,\n .todoist-board .task-metadata {\n  overflow: hidden;\n  max-height: 0;\n  opacity: 0;\n  transition: \n    max-height var(--transition-medium) cubic-bezier(0.4, 0, 0.2, 1),\n    opacity var(--transition-medium);\n}\n\n .todoist-board .selected-task .task-description,\n .todoist-board .selected-task .task-metadata {\n  max-height: 1000px;\n  opacity: 1;\n  transition: \n    max-height var(--transition-smooth) cubic-bezier(0.4, 0, 0.2, 1),\n    opacity var(--transition-medium);\n}\n\n/* Restrict height and allow scrolling for long descriptions in selected task */\n .todoist-board .selected-task .task-description {\n  max-height: 80px;\n  padding-bottom: 0.5rem;\n  overflow-y: auto;\n  position: relative;\n}\n\n\n .todoist-board .task-metadata > .pill:not(:first-child):not(.deadline-date) {\n  position: relative;\n  margin-left: 12px;\n  font-weight: inherit;\n}\n\n .todoist-board .task-metadata > .pill:not(:first-child):not(.deadline-date)::before {\n  content: \"\";\n  background: var(--meta-text);\n  display: inline-block;\n  width: 1px;\n  height: 10px;\n  position: absolute;\n  left: -8px;\n  top: 50%;\n  transform: translateY(-50%);\n  margin: 0;\n  vertical-align: middle;\n  opacity: 0.3;\n}\n\n .todoist-board .label-separator {\n  opacity: 0.4;\n  margin: 0 4px;\n}\n\n/* ================================\n   Modern Nesting: Task Metadata\n   ================================ */\n .todoist-board .task-metadata {\n  display: flex;\n  flex-wrap: nowrap;\n  gap: 2px 2px;\n  line-height: 0.9;\n  row-gap: 1px;\n  font-size: 0.6rem;\n  align-items: center;\n  color: var(--meta-text);\n  opacity: 0.8;\n  font-weight: 400;\n  padding: 0.25rem 0 0.5rem 0;\n  position: relative;\n  z-index: 1;\n  white-space: nowrap;\n  overflow: visible;\n  pointer-events: none;\n  transform-origin: top left;\n  animation: fade-in-up var(--transition-spring) ease-out both;\n}\n\n .todoist-board .selected-task .task-metadata {\n  white-space: normal;\n  display: flex;\n  flex-wrap: nowrap;\n  /* Don't override padding-bottom here; let base .task-metadata rule apply */\n}\n\n .todoist-board .selected-task .pill.label-pill {\n  display: flex;\n  flex-wrap: wrap;\n  line-height: 1;\n}\n .todoist-board .task-description {\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  justify-content: flex-start;\n  width: 100%;\n  color: #6b7280;\n  font-size: 0.74rem;\n  font-style: italic;\n  opacity: 0.8;\n  max-width: 100%;\n  line-height: 1.4;\n  white-space: pre-line;\n}\n\n \n\n\n\n/* ========== Enhanced Deadline Styles ========== */\n .todoist-board .deadline-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  font-size: 0.6rem;\n  line-height: 1.1;\n  position: relative;\n}\n\n .todoist-board .deadline-label {\n  font-size: 0.5rem;\n  opacity: 0.6;\n  margin-bottom: 4px;\n  transition: opacity var(--transition-fast);\n}\n\n\n/* ========== MODULE: Toolbar & Chin ========== */\n/* ========== Enhanced Mini Toolbar ========== */\n.mini-toolbar {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n  padding: 0.375rem 3rem 0.375rem 0.75rem;\n  height: 1.65rem;\n  border-radius: 18px;\n  background: rgba(31, 41, 55, 0.8);\n  color: white;\n  border: none;\n  box-shadow: \n    0 4px 12px rgba(0,0,0,0.15),\n    0 2px 4px rgba(0,0,0,0.1),\n    inset 0 1px 0 rgba(255,255,255,0.1);\n  font-size: 0.75rem;\n  transition: all var(--transition-fast);\n  animation: toolbar-slide-up var(--transition-spring) ease-out;\n  position: relative;\n  width: 60%;\n  max-width: 220px;\n}\n/* Space reserved for chin/mini‑toolbar */\n:root { --chin-height: 16px; }          /* desktop/tablet default */\n@media (max-width: 600px) { :root { --chin-height: 22px; } }  /* mobile */\n\n.todoist-board .selected-task:has(#mini-toolbar-wrapper, .fixed-chin) .task-content-wrapper {\n  padding-bottom: var(--chin-height) !important;\n}\n\n.selected-task .mini-toolbar {\n  position: absolute;\n  bottom: 0;\n  left: 50%;\n  transform: translateX(-50%);\n  z-index: 100;\n  pointer-events: auto;\n}\n\n\n.mini-toolbar-btn {\n  background: transparent;\n  border: none;\n  color: inherit;\n  opacity: 0.85;\n  font-size: 1rem;\n  padding: 4px 8px;\n  border-radius: 8px;\n  cursor: pointer;\n  transition: all var(--transition-fast);\n}\n\n.mini-toolbar-btn svg {\n  width: 16px;\n  height: 16px;\n}\n\n.mini-toolbar .mini-toolbar-btn-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  margin: 0;\n}\n\n.mini-toolbar-label {\n  position: absolute;\n  top: 4px;\n  font-size: 0.6rem;\n  opacity: 0.7;\n  text-align: center;\n  line-height: 1.1;\n  pointer-events: none;\n  transition: opacity var(--transition-fast);\n}\n\n.mini-toolbar-btn:hover {\n  opacity: 1;\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05);\n}\n\n.mini-toolbar-btn:active {\n  transform: scale(0.95);\n  transition: transform 80ms ease-out;\n}\n\n.mini-toolbar-btn:hover + .mini-toolbar-label {\n  opacity: 0.9;\n}\n\n/* ========== Enhanced Dragging States ========== */\n.dragging-row {\n  z-index: 1000;\n  opacity: 0 !important;\n  touch-action: pan-y;\n  box-shadow: none !important;\n  transform: none !important;\n  visibility: hidden !important;\n  position: absolute !important;\n  top: -9999px !important;\n  left: -9999px !important;\n  animation: none !important;\n}\n\n.task-placeholder {\n  display: flex;\n  flex-direction: row;\n  gap: 0.375rem;\n  opacity: 0.4;\n  border: 2px solid rgba(99, 102, 241, 0.3);\n  background: rgba(99, 102, 241, 0.05);\n  border-radius: 8px;\n  pointer-events: none;\n  padding: 4px 12px 8px 22px;\n  transform: scale(0.97) translate3d(0, 0, 0);\n  transition: all var(--transition-medium);\n}\n\n.drag-scroll-block {\n  touch-action: none !important;\n  overflow: hidden !important;\n  -webkit-overflow-scrolling: auto !important;\n}\n\n/* ========== Enhanced Queue Mode ========== */\n.queue-dimmed {\n  opacity: 0.2;\n  pointer-events: none;\n  filter: blur(0.5px);\n  transition: all var(--transition-smooth);\n}\n\n.queue-focused {\n  opacity: 1;\n  filter: none;\n  transition: all var(--transition-smooth);\n}\n\n.queue-focused-title {\n  font-weight: 550;\n  transform-origin: top left;\n  transform: scale(1.02);\n  color: #374151;\n  transition: all var(--transition-fast);\n}\n\n/* ========== Enhanced Loading Overlay ========== */\n.loading-overlay {\n  position: absolute;\n  inset: 0;\n  background: rgba(255, 255, 255, 0.85);\n  backdrop-filter: blur(4px);\n  z-index: 10000;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  pointer-events: none;\n  font-size: 0.9rem;\n  font-weight: 500;\n  animation: fade-in var(--transition-medium) ease-out;\n}\n\n/* ========== Enhanced Settings Modal ========== */\n.filter-icon-row {\n  display: flex;\n  gap: 12px;\n  margin-bottom: 16px;\n  align-items: center;\n  justify-content: center;\n  flex-wrap: wrap;\n}\n\n.settings-label {\n  display: flex;\n  align-items: center;\n  margin-right: 12px;\n  font-weight: 600;\n  font-size: 0.85rem;\n}\n\n.settings-icon-wrapper {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n}\n\n.settings-icon-btn {\n  font-size: 2em;\n  background: transparent;\n  border: 2px solid #e5e7eb;\n  border-radius: 12px;\n  cursor: pointer;\n  width: 48px;\n  height: 48px;\n  transition: all var(--transition-fast);\n}\n\n.settings-icon-btn:hover {\n  transform: scale(1.05);\n  border-color: #d1d5db;\n  box-shadow: var(--shadow-light);\n}\n\n.settings-icon-btn:active {\n  transform: scale(0.98);\n  transition: transform 80ms ease-out;\n}\n\n.settings-icon-btn.active {\n  background: linear-gradient(135deg, #f3f4f6, #ffffff);\n  border: 2px solid #6366f1;\n  color: #6366f1;\n  transform: scale(1.02) translate3d(0, 0, 0);\n  box-shadow: \n    0 0 0 3px rgba(99, 102, 241, 0.1),\n    var(--shadow-medium);\n  animation: settings-select var(--transition-spring) ease-out;\n}\n\n.settings-input-row {\n  margin: 12px 0 8px 0;\n}\n\n.settings-input {\n  margin-left: 8px;\n  width: 60%;\n  padding: 8px 12px;\n  border: 2px solid #e5e7eb;\n  border-radius: 8px;\n  font-size: 0.9rem;\n  transition: all var(--transition-fast);\n  background: white;\n}\n\n.settings-input:focus {\n  outline: none;\n  border-color: #6366f1;\n  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n}\n\n.settings-action-row {\n  margin-top: 12px;\n}\n\n.settings-action-btn {\n  margin-right: 12px;\n  padding: 8px 16px;\n  border: 2px solid #e5e7eb;\n  border-radius: 8px;\n  background: white;\n  cursor: pointer;\n  font-weight: 500;\n  transition: all var(--transition-fast);\n  transform: translate3d(0, 0, 0);\n}\n\n.settings-action-btn:hover {\n  border-color: #6366f1;\n  color: #6366f1;\n  transform: translateY(-1px) translate3d(0, 0, 0);\n  box-shadow: var(--shadow-light);\n}\n\n.settings-action-btn:active {\n  transform: translateY(0) translate3d(0, 0, 0);\n  transition: transform 80ms ease-out;\n}\n\n\n/* ========== MODULE: Filter Bar ========== */\n/* ========== Enhanced Filter Bar ========== */\n.filter-bar {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1em;\n  padding: 1rem 0.875rem 0.875rem 0.875rem;\n  flex-wrap: nowrap;\n  overflow-x: auto;\n  overflow-y: hidden;\n  width: 100%;\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n\n.filter-bar::-webkit-scrollbar {\n  display: none;\n}\n\n/* ========== Enhanced Utilities ========== */\n.hidden-datetime-picker {\n  position: fixed;\n  left: -9999px;\n  opacity: 0;\n  pointer-events: none;\n}\n\n.project-hash {\n  font-weight: 500;\n  font-size: 0.625rem;\n  display: inline-block;\n  white-space: nowrap;\n  user-select: none;\n  transition: all var(--transition-fast);\n}\n\n.icon-picker-wrapper {\n  display: none;\n}\n\n.icon-picker-wrapper.visible {\n  display: grid;\n  grid-template-columns: repeat(5, 36px);\n  justify-items: center;\n  align-items: center;\n  gap: 8px;\n  position: absolute;\n  z-index: 1000;\n  background: white;\n  border: 1px solid #e5e7eb;\n  border-radius: 12px;\n  padding: 12px;\n  box-shadow: var(--shadow-heavy);\n  top: 48px;\n  left: 50%;\n  transform: translateX(-50%);\n  min-width: 220px;\n  min-height: 360px;\n  overflow-y: auto;\n  animation: fade-in-scale var(--transition-spring) ease-out;\n}\n\n.task.freeze-transition {\n  transition: none !important;\n  transform: none !important;\n}\n\n/* ========== MODULE: Animations ========== */\n/* ========== Enhanced Sync Animation ========== */\n\n@keyframes toolbar-slide-up {\n  0% {\n    opacity: 0;\n    transform: translateX(-50%) translateY(12px) scale(0.95) translate3d(0, 0, 0);\n  }\n  100% {\n    opacity: 1;\n    transform: translateX(-50%) translateY(0) scale(1) translate3d(0, 0, 0);\n  }\n}\n\n@keyframes settings-select {\n  0% {\n    transform: scale(1) translate3d(0, 0, 0);\n  }\n  50% {\n    transform: scale(1.08) translate3d(0, 0, 0);\n  }\n  100% {\n    transform: scale(1.02) translate3d(0, 0, 0);\n  }\n}\n\n@keyframes fade-in {\n  0% {\n    opacity: 0;\n  }\n  100% {\n    opacity: 1;\n  }\n}\n\n@keyframes fade-in-up {\n  from { opacity: 0; transform: translateY(6px); }\n  to   { opacity: 1; transform: translateY(0); }\n}\n@keyframes fade-in-slide {\n  from { opacity: 0; transform: translateX(-6px); }\n  to   { opacity: 1; transform: translateX(0); }\n}\n\n@keyframes fade-in-scale {\n  from {\n    opacity: 0;\n    transform: translateX(-50%) scale(0.95) translate3d(0, 0, 0);\n  }\n  to {\n    opacity: 1;\n    transform: translateX(-50%) scale(1) translate3d(0, 0, 0);\n  }\n}\n\n\n\n@keyframes indicator-slide {\n  from {\n    opacity: 0;\n    transform: translateX(-50%) translateY(-50%) scale(0.8) translate3d(0, 0, 0);\n  }\n  to {\n    opacity: 1;\n    transform: translateX(-50%) translateY(-50%) scale(1) translate3d(0, 0, 0);\n  }\n}\n\n@keyframes pulse-urgent {\n  0%, 100% {\n    opacity: 0.9;\n    transform: scale(1);\n  }\n  50% {\n    opacity: 1;\n    transform: scale(1.02);\n  }\n}\n\n@keyframes spin {\n  0% {\n    transform: rotate(0deg);\n  }\n  100% {\n    transform: rotate(360deg);\n  }\n}\n\n.fade-in {\n  animation: fade-in-up var(--transition-fast) ease-out both;\n}\n\n/* ========== Mobile Responsiveness ========== */\n/* ========== MODULE: Mobile Responsiveness ========== */\n@media only screen and (max-width: 600px) {\n  .markdown-preview-section[data-language=\"todoist-board\"] {\n    padding: 0 !important;\n    margin: 0 !important;\n  }\n  \n  .todoist-board .task {\n    font-size: 0.85rem;\n    -webkit-user-select: none !important;\n    user-select: none !important;\n    -webkit-touch-callout: none !important;\n    padding: 0.875rem 0.125rem 0.5rem 1rem;\n  }\n  \n  .task-placeholder, .dragging-row {\n    -webkit-user-select: none;\n    user-select: none;\n    -webkit-touch-callout: none;\n  }\n  \n  .pill {\n    font-size: 0.6rem;\n    padding: 0.2rem 0.5rem;\n  }\n\n  .todoist-board .task-inner {\n    touch-action: pan-y !important;\n  }\n  \n  .list-toolbar {\n    border-radius: 12px;\n  }\n  \n  .filter-btn {\n    padding: 4px;\n  }\n  \n  .mini-toolbar {\n    border-radius: 16px;\n    padding: 0.25rem 0.625rem;\n    height: 2rem;\n  }\n\n  .list-view {\n    padding-left: 0;\n    padding-right: 0;\n  }\n  \n  /* Disable hover effects on mobile */\n  .todoist-board .task:hover:not(.selected-task) {\n    transform: translate3d(0, 0, 0);\n    background: transparent;\n    box-shadow: none;\n  }\n  \n  .filter-btn:hover,\n  .queue-btn:hover,\n  .icon-button:hover {\n    transform: translate3d(0, 0, 0);\n    background: transparent;\n  }\n\n\n  .todoist-board .selected-task .task-metadata {\n    padding-bottom: 0.5rem;\n    margin-bottom: 1rem;\n  }\n  .todoist-board .selected-task .task-description {\n    max-height: none;\n    overflow-y: visible;\n    margin-bottom: 0.5rem;\n  }\n}\n\n@media only screen and (max-width: 768px) {\n  .markdown-preview-view .cm-preview-code-block.cm-embed-block.cm-lang-todoist-board,\n  .markdown-source-view.mod-cm6 .block-language-todoist-board.todoist-board,\n  .markdown-rendered .block-language-todoist-board.todoist-board,\n  .cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board,\n  .view-content .block-language-todoist-board.todoist-board.cm-embed-block.cm-lang-todoist-board {\n    position: relative;\n    left: 50%;\n    transform: translateX(-50%);\n    transform-origin: top left;\n    width: 100vw !important;\n    max-width: 100vw !important;\n    padding: 0 !important;\n    margin: 0 !important;\n    border-radius: 0 !important;\n    box-sizing: border-box;\n    overflow-x: hidden;\n  }\n\n  /* Reading Mode: fix horizontal scroll and alignment */\n  .markdown-rendered .block-language-todoist-board.todoist-board.reading-mode {\n    position: relative;\n    left: 50%;\n    transform: translateX(-50%);\n    width: 100vw !important;\n    max-width: 100vw !important;\n    margin: 0 !important;\n    padding: 0 !important;\n    overflow-x: hidden;\n  }\n\n  .filter-button-wrapper {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    width: 55%;\n    max-width: 60%;\n  }\n}\n\n/* ========== Accessibility & Motion ========== */\n@media (prefers-reduced-motion: reduce) {\n  *,\n  *::before,\n  *::after {\n    animation-duration: 0.01ms !important;\n    animation-iteration-count: 1 !important;\n    transition-duration: 0.01ms !important;\n  }\n  \n  .todoist-board .task:hover:not(.selected-task) {\n    transform: translate3d(0, 0, 0);\n  }\n  \n  \n  .pill.overdue {\n    animation: none;\n  }\n}\n\n/* ========== Focus Management ========== */\n .todoist-board .task:focus-visible {\n   outline: 2px solid #6366f1;\n   outline-offset: 2px;\n }\n\n.filter-btn:focus-visible,\n.queue-btn:focus-visible,\n.icon-button:focus-visible {\n  outline: 2px solid #6366f1;\n  outline-offset: 2px;\n}\n\n\n\n/* ========== MODULE: Dark Theme ========== */\nbody.theme-dark {\n  --pill-bg: #374151;\n  --pill-text: #d1d5db;\n  --meta-text: #9ca3af;\n}\n\nbody.theme-dark .list-toolbar {\n  background: transparent;\n  border: 1px solid rgba(55, 65, 81, 0.3);\n  /* Inset effect for dark theme toolbar */\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04);\n  transition: background-color 0.2s ease;\n}\nbody.theme-dark .list-toolbar.sticky {\n  background-color: #1e1e1e;\n  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),\n              inset 0 -1px 2px rgba(0, 0, 0, 0.04),\n              0 1px 4px rgba(0, 0, 0, 0.15);\n}\n\nbody.theme-dark .todoist-board .task {\n  color: #f9fafb;\n}\n\nbody.theme-dark .todoist-board .task::before {\n  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);\n}\n\nbody.theme-dark .settings-input,\nbody.theme-dark .settings-action-btn {\n  background: #374151;\n  border-color: #4b5563;\n  color: #f9fafb;\n}\n\nbody.theme-dark .icon-picker-wrapper.visible {\n  background: #1f2937;\n  border-color: #374151;\n}\n\nbody.theme-dark .todoist-board .task {\n  background: transparent;\n  color: #f9fafb;\n}\n\nbody.theme-light .todoist-board .task {\n  color: #111827;\n}\n\nbody.theme-dark .todoist-board .task:hover:not(.selected-task) {\n  background: #1f2937;\n  box-shadow: 0 1px 3px rgba(0,0,0,0.4);\n}\n\n/* ========== iOS/Safari Fixes ========== */\n .todoist-board .task.dragging-row {\n   touch-action: none !important;\n   user-select: none !important;\n   -webkit-user-select: none !important;\n   -webkit-touch-callout: none !important;\n }\n\n.list-view.drag-scroll-block {\n  touch-action: none !important;\n  user-select: none !important;\n  -webkit-user-select: none !important;\n  -webkit-touch-callout: none !important;\n}\n\nbody.drag-disable {\n  position: fixed !important;\n  overflow: hidden !important;\n  touch-action: none !important;\n  -webkit-user-select: none !important;\n  user-select: none !important;\n  -webkit-touch-callout: none !important;\n}\n/* --- Checkbox completion animation --- */\n .todoist-board .task-checked-anim {\n   transition: transform 0.2s ease;\n   transform: scale(0.96);\n }\n /* --- Completed task row styling --- */\n .todoist-board .task.completed .task-content {\n   text-decoration: line-through;\n   opacity: 0.5;\n   transition: all 0.3s ease;\n }\n/* --- Icon grid for settings --- */\n/* Icon picker trigger and popup */\n.icon-trigger {\n  position: relative;\n  box-sizing: border-box;\n}\n\n/* --- Icon grid for settings --- */\n/* --- Improved Icon Picker Grid Layout --- */\n\n.icon-grid-btn {\n  width: 36px;\n  height: 36px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n  margin: 0;\n}\n.icon-picker-wrapper .icon-grid-btn {\n  background: none;\n  border: none;\n  cursor: pointer;\n  transition: transform 0.1s ease;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  overflow: visible;\n}\n.icon-picker-wrapper .icon-grid-btn:hover {\n  transform: scale(1.1);\n}\n.icon-picker-wrapper .icon-grid-btn.selected {\n  border-color: #007aff;\n  background-color: #e6f0ff;\n}\n.icon-grid-btn svg {\n  width: 20px;\n  height: 20px;\n  overflow: visible;\n}\n/* --- Icon color picker row --- */\n.icon-color-row {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n  justify-content: center;\n  align-items: center;\n  padding: 6px 6px;\n  border-top: 1px solid #eee;\n  margin-top: 6px;\n  width: 100%;\n  box-sizing: border-box;\n  grid-column: 1 / -1;\n}\ninput.icon-color-picker {\n  width: 28px;\n  height: 24px;\n}\n\n/* --- Settings save row spacing --- */\n.settings-save-row {\n  display: flex;\n  gap: 8px;\n  align-items: center;\n  justify-content: flex-start;\n  margin-top: 12px;\n}\n\n/* --- Icon button style --- */\n.icon-color-swatch {\n  width: 20px;\n  height: 20px;\n  border-radius: 50%;\n  cursor: pointer;\n  border: 2px solid white;\n  box-shadow: 0 0 0 1px #ccc;\n}\n.icon-color-swatch:hover {\n  box-shadow: 0 0 0 2px #888;\n}\n/* ================================\n   Modern Nesting: Non-task Note\n   ================================ */\n/* ================================\n   Modern Nesting: Non-task Note\n   ================================ */\n.non-task-note, .non-task-note .task-title {\n  font-size: 1rem;\n  font-weight: 600;\n  color: #1f2937; /* dark gray for visibility */\n  padding-inline: 1rem;\n  margin-block: 0.5rem;\n  margin-inline: 0;\n  background: none;\n  border: none !important;\n  white-space: pre-wrap;\n  word-break: break-word;\n  opacity: 1;\n}\n\nbody.theme-dark .non-task-note {\n  color: #f9fafb;\n  border: none !important;\n}\n\n.non-task-note .chin-inner {\n  height: 0.1rem;\n}\n.non-task-note.selected-task { \n  border: none;\n  box-shadow: none;\n  margin-bottom: 2rem;\n}\n\n/* ========== Hide metadata and description for non-task notes ========== */\n.non-task-note .task-metadata,\n.non-task-note .task-description, .non-task-note .todoist-checkbox {\n  display: none !important;\n  max-height: 0 !important;\n  opacity: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}\n\n.non-task-note {\n  min-height: 4rem;\n  padding-bottom: 0.5rem;\n}\n.non-task-note .task-content-wrapper {\nposition: absolute;\nbottom: -1rem;\n}\n.non-task-note .task-title {\n  color: #374151;\n}\n\n.task-placeholder .mini-toolbar {\n  display: none !important;\n}\n\n\n\n/* ========== Custom Mini Toolbar Layout ========== */\n\n/* ========== Custom Mini Toolbar Layout ========== */\n/* Mini-toolbar is centered in its wrapper, with delete button outside */\n\n#mini-toolbar-wrapper {\n  position: absolute;\n  bottom: 0;\n  left: 0;\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  z-index: 100;\n  pointer-events: auto;\n  /* Prevents click-through, matches JS */\n}\n\n#mini-toolbar-wrapper .mini-toolbar {\n  margin: 0 auto;\n}\n\n\n.selected-task .mini-toolbar-wrapper .circle-btn.delete-btn {\n  display: flex;\n  position: absolute;\n  right: 0;\n  transform-origin: center;\n  transform: scale(1.25);\n  z-index: 10;\n  color: #fefefe;\n  background-color: rgb(48, 48, 48);\n  opacity: 1;\n  border-radius: 999px;\n  padding: 4px 0;\n  transition: none !important;\n}\n.selected-task .mini-toolbar-wrapper .circle-btn.delete-btn:hover {\n  color: red;\n}\n.mini-toolbar-dates-wrapper {\n  display: flex;\n  gap: 0.5rem;\n}\n\n.mini-toolbar .date-btn {\n\n  border-radius: 6px;\n  padding: 4px 10px;\n  font-weight: 500;\n  font-size: 0.75rem;\n  transition: all var(--transition-fast);\n}\n\n.mini-toolbar .date-btn:hover {\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05);\n}\n\n.mini-toolbar .circle-btn {\n  border-radius: 999px;\n  padding: 4px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  transition: all var(--transition-fast);\n}\n\n.mini-toolbar .circle-btn:hover {\n  background: rgba(99, 102, 241, 0.08);\n  transform: scale(1.05);\n}\n.mini-toolbar-wrapper {\n  position: relative;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  margin-top: 8px;\n  padding: 0 !important;\n}\n\n\n.icon-button.refresh-btn.syncing > svg {\n  animation: spin 1s linear infinite;\n  transform-origin: center;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n}\n/* ========== Chin-Style Mini Toolbar ========== */\n\n.fixed-chin {\n  display: none;\n  position: relative;\n  width: 100%;\n  padding: 0.5rem 1rem 0.5rem;\n  align-items: flex-end;\n  justify-content: flex-start;\n  flex-direction: column;\n}\n\n.selected-task .fixed-chin {\n  display: flex;\n  margin-top: 0.5rem;\n}\n\n\n.chin-inner {\n  display: none;\n}\n\n.selected-task .chin-inner {\n  display: flex;\n  gap: 0.25rem;\n  border-top: 1px solid rgba(0, 0, 0, 0.05);\n  margin-top: 1rem;\n  width: 100%;\n  justify-content: flex-start;\n  flex-wrap: wrap;\n  background-color: rgba(243, 244, 246, 0.2); /* light gray background */\n  border-radius: 6px;\n  padding: 0.5rem 0.75rem;\n}\nbody.theme-dark .selected-task .chin-inner {\n  background-color: var(--background-primary, #1e1e1e);\n  border-radius: 12px;\n}\n\n.chin-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;\n  padding: 4px 8px;\n  border: 1px solid rgba(0, 0, 0, 0.1);\n  border-radius: 6px;\n  background: white;\n  color: #374151;\n  font-size: 0.7rem;\n  font-weight: 500;\n  cursor: pointer;\n  box-shadow: none !important;\n  transition: all var(--transition-fast);\n}\n\n\n.chin-btn:hover {\n  background: #f3f4f6;\n  border-color: #d1d5db;\n}\n\n.chin-btn:active {\n  background: #e5e7eb;\n  transform: scale(0.97);\n}\n\n.chin-btn:focus-visible {\n  outline: 2px solid #6366f1;\n  outline-offset: 2px;\n}\n\nbody.theme-dark .chin-btn {\n  background: #1f2937;\n  border-color: #374151;\n  color: #f9fafb;\n}\n\nbody.theme-dark .chin-btn:hover {\n  background: #374151;\n  border-color: #4b5563;\n}\n\n/* Chin-Style Button Customizations for Selected Task */\n.selected-task .mini-toolbar-wrapper .delete-btn {\n  color: red;\n  right: 0;\n  margin-left: auto;\n}\n.selected-task .mini-toolbar-wrapper .delete-btn .lucide {\n  stroke: red;\n}\n.selected-task .edit-btn svg {\n  stroke: #FDB600; \n}\n.selected-task .tomorrow-btn svg {\n  stroke: #a176e6;\n}\n.selected-task .today-btn svg {\n  stroke: #0764fa; \n}\n.selected-task .mini-toolbar .today-btn .date-subtitle {\n  font-size: 0.5rem;\n  color: #9ca3af;\n  margin-top: 2px;\n  display: block;\n}\n\n/*=========================== Misc. ===========================*/\n\n\n.selected-task .task-metadata {\n  animation: none;\n}\n/* ========== Always show trash/delete SVG icon in settings modal ========== */\n.settings-filter-table .icon-button svg {\n  width: 16px;\n  height: 16px;\n  fill: none;\n  display: inline-block;\n  opacity: 1;\n  visibility: visible;\n}\n/* ========== Filter Badge Z-Index Fix ========== */\n.filter-badge span,\n.filter-badge svg {\n  position: relative;\n  z-index: 2;\n}\n/* Container Query Example for .task */\n@container (max-width: 500px) {\n  .task {\n    font-size: 0.8rem;\n  }\n}\n\n/* --- Settings filter table styling --- */\n.settings-filter-table th,\n.settings-filter-table td {\n  padding: 2px 3px;\n  vertical-align: middle;\n}\n\n.settings-filter-table input[type=\"text\"] {\n  padding: 3px 5px;\n  font-size: 0.85em;\n}\n\n.settings-filter-table td:nth-child(4) {\n  text-align: center;\n  vertical-align: middle;\n}\n.settings-filter-table input[type=\"radio\"] {\n  transform: scale(1.3);\n  margin: 0;\n}\n\n.settings-filter-table button {\n  padding: 4px 8px;\n  font-size: 1em;\n  cursor: pointer;\n}\n\n/* Constrain the width of the Title column in the settings filter table */\n.settings-filter-table td:nth-child(2) input[type=\"text\"] {\n  max-width: 160px;\n}\n\n/* --- Icon dropdown styling --- */\n.icon-dropdown {\n  margin-left: 6px;\n  font-size: 1.1em;\n  padding: 2px 4px;\n  border-radius: 5px;\n  border: 1px solid #ccc;\n  vertical-align: middle;\n  background: #fff;\n  min-width: 38px;\n}\n/* ========== Smooth Deselection Transition ========== */\n.deselecting {\n  opacity: 0.6;\n  transform: scale(0.99) translateY(1px);\n  transition:\n    opacity 300ms ease,\n    transform 300ms ease;\n  z-index: 0;\n}\n\n\n/* ========== Task Modal: Flatter Things 3 Style ========== */\n.todoist-edit-task-modal .modal-content {\n  display: flex;\n  justify-content: center;\n  padding: 0;\n  max-width: 100%;\n}\n\n.todoist-edit-task-modal .taskmodal-wrapper {\n  background: var(--modal-bg, #f9f9fb);\n  border-radius: 12px;\n  padding: 1rem;\n  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);\n  display: flex;\n  flex-direction: column;\n  gap: 1rem;\n  min-width: 260px;\n  font-size: 0.85rem;\n  width: 100%;\n  max-width: 600px;\n  padding: 1.5rem;\n  box-sizing: border-box;\n}\nbody.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {\n  background-color: #1e1e1e;\n}\n\n/* --- Task Modal Fields --- */\n\n.todoist-edit-task-modal .taskmodal-title-field,\n.todoist-edit-task-modal .taskmodal-description-field,\n.todoist-edit-task-modal .taskmodal-date-field,\n.todoist-edit-task-modal .taskmodal-project-field,\n.todoist-edit-task-modal .taskmodal-labels-field {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n}\n\n.todoist-edit-task-modal .taskmodal-date-label,\n.todoist-edit-task-modal .taskmodal-project-label,\n.todoist-edit-task-modal .taskmodal-labels-label {\n  font-size: 0.65rem;\n  font-weight: 500;\n  color: #6b7280;\n}\n\n.todoist-edit-task-modal .taskmodal-title-input {\n  border: none;\n  background: #fff;\n  border-radius: 6px;\n  border-bottom: 1px solid #e0e0e0;\n  padding: 3px 3px;\n  font-size: 0.9rem;\n  width: 100%;\n}\n.todoist-edit-task-modal .taskmodal-title-input:focus {\n  outline: none;\n  border-color: #6366f1;\n}\n\n.todoist-edit-task-modal .taskmodal-description-input {\n  border: none;\n  background: #fff;\n  border-radius: 6px;\n  border-bottom: 1px solid #e0e0e0;\n  padding: 3px 3px;\n  font-size: 0.9rem;\n  resize: vertical;\n  min-height: 4rem;\n}\n.todoist-edit-task-modal .taskmodal-description-input:focus {\n  outline: none;\n  border-color: #6366f1;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input {\n  border: none;\n  background: #fff;\n  border-radius: 6px;\n  border-bottom: 1px solid #e0e0e0;\n  padding: 3px 0;\n  font-size: 0.9rem;\n  text-align: center;\n}\n.todoist-edit-task-modal .taskmodal-date-input:focus {\n  outline: none;\n  border-color: #6366f1;\n}\n\n.todoist-edit-task-modal .taskmodal-labels-select {\n  padding: 4px 6px;\n  font-size: 0.8rem;\n  border: 1px solid #e5e7eb;\n  border-radius: 6px;\n  background: #fff;\n  min-height: 60px;\n  max-height: 120px;\n  overflow-y: auto;\n  resize: vertical;\n  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);\n}\n\n.todoist-edit-task-modal .taskmodal-label-list {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 0.25rem;\n}\n\n.todoist-edit-task-modal .taskmodal-label-checkbox {\n  background: #eee;\n  border-radius: 6px;\n  padding: 4px 8px;\n  font-size: 0.7rem;\n  display: flex;\n  align-items: center;\n  gap: 3px;\n}\n\n/* === Enhanced Date Input Styling for Task Modal === */\n.todoist-edit-task-modal .taskmodal-date-input-row {\n  display: flex;\n  align-items: center;\n  gap: 0.4rem;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"] {\n  flex: 1;\n  min-width: 0;\n  text-align: center;\n  height: 2rem;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]:first-child {\n  border-radius: 6px 0 0 6px;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]:last-child {\n  background-color: #ede9fe;\n  border-radius: 0 6px 6px 0;\n  color: #6b21a8;\n  font-weight: 600;\n}\n\n.todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]:hover {\n  background-color: hsl(0, 0, 0.3);\n}\n\n.todoist-edit-task-modal .taskmodal-button-row {\n  display: flex;\n  justify-content: flex-end;\n  gap: 0.25rem;\n  margin-top: 0.5rem;\n}\n\n.todoist-edit-task-modal .taskmodal-button-save {\n  background: linear-gradient(135deg, #6366f1, #4338ca);\n  color: white;\n  font-weight: 500;\n  padding: 0.4rem 0.75rem;\n  border-radius: 6px;\n  border: none;\n  font-size: 0.8rem;\n}\n\n.todoist-edit-task-modal .taskmodal-button-cancel {\n  color: #6b7280;\n  border: 1px solid #d1d5db;\n  background: #f9fafb;\n  border-radius: 6px;\n  padding: 0.4rem 0.75rem;\n  font-size: 0.8rem;\n}\n/* ========== Hamburger Dropdown Styles ========== */\n.menu-dropdown {\n  position: absolute;\n  top: 2.5rem;\n  right: 0;\n  background: white;\n  border: 1px solid #ddd;\n  border-radius: 8px;\n  box-shadow: var(--shadow-medium);\n  padding: 0.5rem 0;\n  min-width: 150px;\n  z-index: 2000;\n  animation: fade-in-scale var(--transition-spring) ease-out;\n}\n\n.menu-dropdown-item {\n  padding: 0.5rem 1rem;\n  font-size: 0.875rem;\n  cursor: pointer;\n  transition: background var(--transition-fast);\n  white-space: nowrap;\n}\n\n.menu-dropdown-item:hover {\n  background: rgba(99, 102, 241, 0.08);\n}\n\n.menu-dropdown.hidden {\n  display: none;\n}\n\nbody.theme-dark .menu-dropdown {\n  background: #1f2937;\n  border-color: #374151;\n}\n\nbody.theme-dark .menu-dropdown-item {\n  color: #f9fafb;\n}\n\nbody.theme-dark .menu-dropdown-item:hover {\n  background: rgba(255, 255, 255, 0.05);\n}\n\n.cm-embed-block.cm-lang-todoist-board { border: none; box-shadow: none; }\n/* ========== Enlarge and Thicken Focus/Queue and Add Task Icons ========== */\n.queue-btn svg,\n.add-task-btn svg {\n  width: 24px;\n  height: 24px;\n  stroke-width: 2;\n  stroke: currentColor;\n}\n\n.queue-btn,\n.add-task-btn {\n  color: #1f2937; /* dark gray for light theme */\n}\n\nbody.theme-dark .queue-btn,\nbody.theme-dark .add-task-btn {\n  color: #f9fafb; /* light gray for dark theme */\n}\n/* ========== Reading Mode Layout Fix ========== */\n.markdown-reading-view .block-language-todoist-board.todoist-board {\n  all: unset;\n  display: block;\n  padding: 0;\n  margin: 0;\n}\n.change-indicator {\n  display: inline-block;\n  position: absolute;\n  bottom: 4px;\n  right: 4px;\n  width: 8px;\n  height: 8px;\n  border-radius: 50%;\n  background-color: orange;\n  opacity: 0.8;\n  z-index: 10;\n  pointer-events: none;\n}\n\n@keyframes pulse {\n  0% {\n    transform: scale(1);\n    opacity: 0.7;\n  }\n  50% {\n    transform: scale(1.2);\n    opacity: 1;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 0.7;\n  }\n}\n\n\n\n/* ========== Subtask Visual Hierarchy ========== */\n/* ========== Subtask Row Compact Design ========== */\n/* ========== Subtask Row Compact Design with Expansion Toggle ========== */\n/* ========== Subtask Row Compact Design ========== */\n.subtask-row {\n  padding: 0 !important;\n  margin: 0 0 0 1rem;\n  border: none;\n  background: transparent;\n  border-radius: 0;\n  line-height: 1.2;\n  max-height: 2.2rem;\n  display: flex;\n  align-items: center;\n}\n.view-content .subtask-row .task-meta-compact\n.subtask-row .task-description {\n  display: none !important;\n  max-height: 0 !important;\n  opacity: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}\n\n/* Compact subtask title and checkbox alignment */\n.subtask-row .task-title {\n  font-size: 0.78rem;\n  padding: 0;\n  margin: 0;\n}\n\n.subtask-row input.todoist-checkbox {\n  margin-right: 6px;\n  width: 18px;\n  height: 18px;\n}\n\n.subtask-row.expanded-subtask {\n  max-height: 5rem !important;\n}\n\n/* ========== Subtask Visibility ========== */\n.subtask-wrapper {\n  display: none;\n}\n\n.selected-task .subtask-wrapper {\n  display: flex;\n  flex-direction: column;\n  gap: 0;\n  margin-top: 0.25rem;\n  width: 95%;\n  overflow: visible;\n  max-height: unset;\n}\n.subtask-wrapper .task-scroll-wrapper {\n  overflow-y: hidden;\n}\n.subtask-row::before { \n  position: absolute;\n  top: -0.25rem;\n}\n\nbody.theme-dark .subtask-row {\n  border-left: 2px solid #374151;\n}\n/* Hide metadata in subtasks unless selected */\n.subtask-row .task-meta {\n  display: none;\n}\n\n.subtask-row.selected .task-meta {\n  display: flex;\n}\n/* Hide <small> elements in unselected subtasks */\n.subtask-row:not(.selected) small {\n  display: none;\n}\n\n\n/* Hide metadata on child tasks (extra safety) */\n.todoist-board .is-child-task .due-inline,\n.todoist-board .is-child-task .project-pill,\n.todoist-board .is-child-task .project-badge,\n.todoist-board .is-child-task .label-pill,\n.todoist-board .is-child-task .labels,\n.todoist-board .is-child-task .task-meta,\n.todoist-board .is-child-task .meta,\n.todoist-board .is-child-task .meta-span,\n.todoist-board .is-child-task .metadata,\n.todoist-board .is-child-task .task-when,\n.todoist-board .is-child-task .task-meta-compact {\n  display: none !important;\n}\n\n .todoist-board .task-description:empty,\n .todoist-board .task-metadata:empty {\n   display: none !important;\n   max-height: 0 !important;\n   opacity: 0 !important;\n   padding: 0 !important;\n   margin: 0 !important;\n }\n .todoist-board .task-description .desc-empty {\n   display: none;\n }\n .todoist-board .date-subtitle {\n display: none;\n }\n\n.menu-dropdown-item {\n  display: flex;\n  align-items: center;\n}\n\n.menu-dropdown-item svg {\n  vertical-align: middle;\n  margin-right: 8px;\n}\n/* Subtask checkbox style */\n\n\n/* ========== Custom cursor for task, selected-task, and add-task-btn ========== */\n .todoist-board .task,\n .todoist-board .selected-task,\n .add-task-btn {\n   cursor: pointer;\n }\n.empty-filter {\n  font-size: 0.85rem;\n  font-style: italic;\n  color: #9ca3af;\n  text-align: center;\n  padding: 2rem 1rem;\n  opacity: 0.75;\n  max-width: 80%;\n  margin: 2rem auto;\n  line-height: 1.5;\n}\n\nbody.theme-dark .empty-filter {\n  color: #d1d5db;\n  opacity: 0.7;\n}\n\n/* Compact mode styles for todoist-board, including reading mode */\n/* Compact mode styles for todoist-board-list, including reading mode */\n/* Compact mode styles for list-wrapper, including reading mode */\n.list-wrapper.compact-mode .task:not(.selected-task) {\n  max-height: 3rem;\n  overflow: hidden;\n  border-left: 4px solid var(--project-color, #e5e7eb);\n  padding-left: 0.75rem;\n}\n.list-wrapper.compact-mode .task:not(.selected-task) .task-metadata,\n.list-wrapper.compact-mode .task:not(.selected-task) .task-description {\n  display: none !important;\n  max-height: 0 !important;\n  opacity: 0 !important;\n  padding: 0 !important;\n  margin: 0 !important;\n}\n.menu-dropdown-wrapper {\n  position: relative;\n  overflow: visible;\n}\n\n.menu-dropdown {\n  position: absolute;\n  z-index: 1000;\n  top: 100%;\n  right: 0;\n}\n/* For dark theme, apply to .taskmodal-wrapper and .taskmodal-labels-select */\nbody.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {\n  background-color: transparent;\n  border-color: #4b5563;\n  color: #f9fafb;\n}\n\n/* ========== Task Modal: Project & Date Row Layout ========== */\n.todoist-edit-task-modal .taskmodal-row {\n  display: flex;\n  gap: 0.75rem;\n  width: 100%;\n}\n\n.todoist-edit-task-modal .taskmodal-project-field,\n.todoist-edit-task-modal .taskmodal-date-field {\n  flex: 1;\n}\n\n/* Match select-project height for the date picker */\ninput.taskmodal-date-input {\n  height: 2rem;\n}\n/* Dark mode: make the label pills use the dark bg/text vars */\nbody.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {\n  background: var(--pill-bg);\n  color: var(--pill-text);\n}\n/* Mobile keyboard-safe modal alignment */\n  .todoist-edit-task-modal .modal-content {\n    /* push the wrapper toward the top */\n    align-items: flex-start;\n    justify-content: center;\n  }\n@media only screen and (max-width: 600px) {\n\n  /* 2. Anchor the modal itself to the bottom of that container */\n  body > div.modal-container.todoist-edit-task-modal.mod-dim > div.modal {\n    position: absolute;\n    top: 15%;\n    max-height: fit-content;\n    width: 100%;\n    max-width: 100%;\n    margin: 0;\n    box-sizing: border-box;\n  }\n\n  /* 3. Keep your scrolling and margin tweaks in the same block */\n  .todoist-edit-task-modal .modal-content {\n    align-items: flex-start;\n    justify-content: center;\n  }\n}\n/* 📘 Reading Mode Support */\n.todoist-board.reading-mode {\n  padding-bottom: 0 !important;\n  margin-bottom: 0 !important;\n  overflow: visible;\n  background: transparent;\n}\n\n.todoist-board.reading-mode .list-wrapper {\n  padding-bottom: 0;\n  container-type: inline-size;\n}\n\n.todoist-board.reading-mode .todoist-edit-task-modal,\n.todoist-board.reading-mode .todoist-add-task-modal {\n  position: fixed !important;\n  z-index: 9999;\n}\n\n.todoist-board.reading-mode .menu-dropdown-wrapper {\n  position: fixed !important;\n  z-index: 9999;\n}\n .todoist-board .task .repeat-icon {\n   position: absolute;\n   padding-left: 0.5rem;\n   bottom: 0.75rem;\n   opacity: 0.3;\n   width: 16px;\n   height: 16px;\n }\n\n .todoist-board .task.selected-task .repeat-icon {\n   opacity: 0;\n }\n/* === Hide Icons in Compact Mode === */\n/* === Hide Icons in Compact Mode === */\n/* === Hide Icons in Compact Mode for list-wrapper === */\n.list-wrapper.compact-mode .repeat-icon {\n  display: none !important;\n}\n\n/* Inline parent marker (emoji) */\n.parent-mark {\n  margin-left: 6px;\n  opacity: 0.8;\n  display: inline-block;\n  vertical-align: baseline;\n}\n/* ================================\n   Dark mode: Enhanced Task Modal Inputs & Fields\n   ================================ */\nbody.theme-dark .todoist-edit-task-modal .taskmodal-title-input,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-description-input,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-date-input {\n  background: #1f2937;\n  color: #f9fafb;\n  border-bottom: 1px solid #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-title-input::placeholder,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-description-input::placeholder {\n  color: #9ca3af;\n  opacity: 0.6;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-project-select,\nbody.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {\n  background: #1f2937;\n  color: #f9fafb;\n  border-color: #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {\n  background: #374151;\n  color: #f9fafb;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox:hover {\n  background: #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"] {\n  background: #1f2937;\n  color: #f9fafb;\n  border: 1px solid #4b5563;\n}\n\nbody.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type=\"date\"]::placeholder {\n  color: #9ca3af;\n  opacity: 0.6;\n}\n\ndiv.block-language-todoist-board.todoist-board > div.list-toolbar {\n  justify-content: flex-end;\n}\n/* Scope modal width and padding only to plugin settings modal */\n.modal-container.todoist-settings-modal > .modal {\n  width: 640px;\n  padding: 1.5rem;\n  box-sizing: border-box;\n}\n@media (max-width: 600px) {\n  .modal-container.todoist-settings-modal > .modal {\n    width: 100%;\n    padding: 0;\n  }\n}\n/* compact 3-line layout used for ALL tasks */\n.task .task-when,\n.task .task-meta-compact {\n  display: flex;\n  align-items: baseline;\n  /* gap: 6px; */\n  font-size: 0.74rem;\n  line-height: 1.2;\n  color: var(--meta-text);\n  opacity: 0.95;\n  margin-top: 2px;\n  margin-bottom: 2px;\n}\n\n.mid-sep { opacity: 0.5; padding: 0 6px; }\n\n/* make due look like text inline */\n.task .task-when .due-pill {\n  background: transparent;\n  box-shadow: none;\n  padding: 0;\n  margin: 0;\n  font-weight: 600;\n}\n\n/* inline deadline chunk */\n.deadline-inline {\n  font-weight: 600;\n  color: #6b21a8; /* matches your deadline theme */\n  opacity: 0.95;\n}\n\n/* always hide the old pill stack container */\n.task .task-metadata { display: none !important; }\n\n/* Order stack: Title → Description → When → Meta */\n.todoist-board .task-title { order: 0; margin-bottom: 0.25rem; }\n.todoist-board .task-description { order: 1; margin: 0 0 0.5rem 0; display: none; }\n.todoist-board .task-when { order: 2; }\n.todoist-board .task-meta-compact {order: 3;}\n/* Your description already collapses when not selected; this only controls position */\n.task .task-when .due-inline {\n  font-weight: 600;\n  color: var(--meta-text);\n  opacity: 0.95;\n  padding-inline: 0.125rem;\n}\n\n.subtask-row .task-meta-compact {\n  display: none !important;\n}\n\n.subtask-row {\n  align-items: center;\n}\n\n.task .task-when, .task .task-when .due-inline, .deadline-inline {\n  font-weight: 500 !important;\n  opacity: 0.9;\n}\n\n\n/* Hide 'when' + compact metadata in compact mode */\n.todoist-board.compact-mode .task:not(.selected-task) .task-when,\n.todoist-board.compact-mode .task:not(.selected-task) .task-meta-compact,\n.list-wrapper.compact-mode .task:not(.selected-task) .task-when,\n.list-wrapper.compact-mode .task:not(.selected-task) .task-meta-compact {\n  display: none !important;\n}\n";
 styleInject(css_248z);
 
 // @ts-ignore
@@ -24887,6 +24887,17 @@ styleInject(css_248z);
 let _todoistPollInterval;
 let _activityHandlers = [];
 // ======================= 🧩 Small Utilities =======================
+const a11yButton = (el, label) => {
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", label);
+    el.setAttribute("tabindex", "0");
+    el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            el.click?.();
+            e.preventDefault();
+        }
+    }, { once: false });
+};
 const readJSON = (key, fallback) => {
     try {
         const v = localStorage.getItem(key);
@@ -24908,7 +24919,8 @@ const useHour12 = () => {
     if (_hour12 !== null)
         return _hour12;
     try {
-        const ro = new Intl.DateTimeFormat(undefined, { timeStyle: "short" }).resolvedOptions?.();
+        const fmt = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
+        const ro = typeof fmt.resolvedOptions === "function" ? fmt.resolvedOptions() : null;
         if (ro && typeof ro.hour12 === "boolean") {
             _hour12 = ro.hour12;
             return _hour12 ?? false;
@@ -24924,6 +24936,9 @@ const useHour12 = () => {
 };
 // Centralized count lookup for a filter
 const getCountForFilter = (filterKey, memCache) => {
+    const ids = readJSON(`todoistFilterIndex:${String(filterKey)}`, []);
+    if (Array.isArray(ids) && ids.length)
+        return ids.length;
     const mem = memCache[String(filterKey)];
     if (Array.isArray(mem))
         return mem.length;
@@ -24980,27 +24995,26 @@ function pollForTaskChanges(interval = 10000) {
                 const changed = deleted || cached.length !== tasks.length || contentChanged;
                 if (changed) {
                     anyChanges = true;
-                    plugin.taskCache[filter] = tasks;
-                    localStorage.setItem(`todoistTasksCache:${filter}`, JSON.stringify(tasks));
-                    localStorage.setItem(`todoistTasksCacheTimestamp:${filter}`, String(Date.now()));
+                    plugin.upsertTasks(filter, tasks);
                 }
             }
             if (anyChanges) {
                 document.querySelectorAll(".todoist-board.plugin-view").forEach(async (el) => {
                     const filter = el.getAttribute("data-current-filter") || "today";
-                    const cached = plugin.taskCache[filter] || [];
+                    const viewTasks = plugin.getViewTasks(filter);
                     const metadata = await plugin.fetchMetadataFromSync(plugin.settings.apiKey);
                     plugin.projectCache = metadata.projects;
                     plugin.labelCache = metadata.labels;
                     plugin.projectCacheTimestamp = Date.now();
                     plugin.labelCacheTimestamp = Date.now();
                     plugin.renderTodoistBoard(el, `filter: ${filter}`, {}, plugin.settings.apiKey, {
-                        tasks: cached,
+                        tasks: viewTasks,
                         projects: metadata.projects,
-                        labels: metadata.labels,
-                        sections: []
+                        labels: metadata.labels
                     });
                 });
+                // nudge all inline boards too
+                plugin.refreshAllInlineBoards();
             }
         }
         catch (err) {
@@ -25116,15 +25130,24 @@ class TodoistBoardView extends obsidian.ItemView {
         }
         // Force immediate fetch of tasks to avoid waiting for polling
         const response = await plugin.fetchFilteredTasksFromREST(plugin.settings.apiKey, defaultFilter);
-        plugin.taskCache[defaultFilter] = response?.results ?? [];
-        const cachedTasks = plugin.taskCache[defaultFilter];
-        const projects = plugin.projectCache;
-        const labels = plugin.labelCache;
+        const live = Array.isArray(response?.results) ? response.results : [];
+        const cachedTasks = (live.length ? live : plugin.getViewTasks(defaultFilter));
+        plugin.upsertTasks(defaultFilter, cachedTasks);
+        let projects = plugin.projectCache;
+        let labels = plugin.labelCache;
+        // Offline hydration from localStorage if empty
+        if (!Array.isArray(projects) || projects.length === 0) {
+            projects = readJSON("todoistProjectsCache", []);
+            plugin.projectCache = projects;
+        }
+        if (!Array.isArray(labels) || labels.length === 0) {
+            labels = readJSON("todoistLabelsCache", []);
+            plugin.labelCache = labels;
+        }
         await plugin.renderTodoistBoard(container, `filter: ${defaultFilter}`, {}, plugin.settings.apiKey, {
             tasks: cachedTasks,
             projects,
-            labels,
-            sections: []
+            labels
         });
         // --- PATCH: Explicitly persist cached data to localStorage after rendering ---
         localStorage.setItem(`todoistTasksCache:${defaultFilter}`, JSON.stringify(cachedTasks));
@@ -25143,12 +25166,11 @@ const DEFAULT_SETTINGS = {
     filters: [
         { icon: "star", filter: "today", title: "Today" },
         { icon: "hourglass", filter: "overdue", title: "Overdue" },
-        { icon: "calendar-days", filter: "due after: today & due before: +3 days", title: "Next 3d" },
         { icon: "moon", filter: "due after: today & due before: +30 days", title: "upcoming" },
         { icon: "inbox", filter: "#inbox", title: "Inbox" },
     ],
     compactMode: false,
-    defaultFilter: "Today",
+    defaultFilter: "today",
     timezoneMode: "auto",
     manualTimezone: "Europe/London",
 };
@@ -25183,7 +25205,9 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         // --- Timezone tracking for cache invalidation ---
         this.lastKnownTimezone = null;
         this.htmlCache = {};
-        this.taskCache = {};
+        this.taskStore = {}; // id → task (single source of truth)
+        this.filterIndex = {}; // filterKey → [taskId]
+        this.taskCache = {}; // legacy (kept for compatibility)
         this.projectCache = [];
         this.sectionCache = [];
         this.labelCache = [];
@@ -25248,8 +25272,6 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                     this.addSettingTab(new TodoistBoardSettingTab(this.app, this));
                     return;
                 }
-                this.todoistApi = new distExports.TodoistApi(initialToken);
-                window.todoistApi = this.todoistApi;
                 this.addSettingTab(new TodoistBoardSettingTab(this.app, this));
                 if (!this.settings.filters?.some(f => f.isDefault)) {
                     if (this.settings.filters && this.settings.filters.length > 0) {
@@ -25271,7 +25293,8 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 this.lastKnownTimezone = storedTimezone;
                 if (storedTimezone !== effectiveZone) {
                     // Invalidate all cached task data if timezone changed
-                    for (const key in localStorage) {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const key = localStorage.key(i) || "";
                         if (key.startsWith("todoistTasksCache:") || key.startsWith("todoistTasksCacheTimestamp:")) {
                             localStorage.removeItem(key);
                         }
@@ -25294,8 +25317,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                         this.renderTodoistBoard(boardEl, `filter: ${currentFilter}`, {}, this.settings.apiKey, {
                             tasks,
                             projects: this.projectCache,
-                            labels: this.labelCache,
-                            sections: []
+                            labels: this.labelCache
                         });
                     }
                 }
@@ -25345,10 +25367,17 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                     const filterKey = parsedFilter;
                     this.dbg("🎯 Final filter used:", filterKey);
                     el.setAttribute("data-current-filter", filterKey);
-                    // --- PATCH: Use improved cache logic for loading and rendering tasks ---
-                    const cacheKey = `todoistTasksCache:${filterKey}`;
-                    const cached = localStorage.getItem(cacheKey);
-                    let cachedTasks = [];
+                    // Offline metadata hydration (so projects/labels resolve)
+                    if (!Array.isArray(this.projectCache) || this.projectCache.length === 0) {
+                        const proj = readJSON("todoistProjectsCache", []);
+                        if (Array.isArray(proj) && proj.length)
+                            this.projectCache = proj;
+                    }
+                    if (!Array.isArray(this.labelCache) || this.labelCache.length === 0) {
+                        const labs = readJSON("todoistLabelsCache", []);
+                        if (Array.isArray(labs) && labs.length)
+                            this.labelCache = labs;
+                    }
                     // Helper for rendering with sort toolbar
                     const renderWithSortToolbar = (tasks) => {
                         // Prepare metadata
@@ -25371,6 +25400,10 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                 div.className = opts.cls;
                             return div;
                         };
+                        // Prevent duplicate toolbar if render() is called twice by parent
+                        const existing = el.querySelector(".inline-toolbar");
+                        if (existing)
+                            existing.remove();
                         const toolbar = createDiv("inline-toolbar");
                         toolbar.style.display = "flex";
                         toolbar.style.gap = "8px";
@@ -25380,130 +25413,98 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                         obsidian.setIcon(sortButton, "arrow-up-down");
                         const sortLabel = document.createElement("span");
                         // Persist sort mode per filter key
-                        let currentSortMode = localStorage.getItem(`todoistSortMode:${filterKey}`) ||
-                            el.dataset.sortMode ||
-                            "Due Date";
-                        localStorage.setItem(`todoistSortMode:${filterKey}`, currentSortMode);
+                        let currentSortMode = localStorage.getItem(`todoistSortMode:${filterKey}`);
+                        if (!currentSortMode)
+                            currentSortMode = el.dataset.sortMode || "Due Date";
                         el.dataset.sortMode = currentSortMode;
+                        this.setSortMode(filterKey, currentSortMode);
                         sortLabel.textContent = `Sort: ${currentSortMode}`;
                         sortLabel.style.marginLeft = "4px";
                         sortLabel.style.fontSize = "0.8em";
                         sortButton.appendChild(sortLabel);
                         sortButton.setAttribute("aria-label", "Sort Tasks");
                         sortButton.setAttribute("role", "button");
+                        a11yButton(sortButton, "Sort tasks");
                         const render = () => {
                             // Remove previous list if any
                             const prevList = el.querySelector(".list-wrapper");
                             if (prevList)
                                 prevList.remove();
-                            // Fresh base snapshot on every render
-                            const baseTasks = (() => {
-                                const currentFilter = el.getAttribute("data-current-filter") || "";
-                                const live = this.taskCache[currentFilter];
-                                if (Array.isArray(live) && live.length)
-                                    return live.slice();
-                                return Array.isArray(tasks) ? tasks.slice() : [];
-                            })();
-                            // use the shared comparator so inline == plugin view
-                            const sortTasks = (tasks, mode) => this.sortTasksLikeTodoist(tasks, mode);
-                            // Decide view list from baseTasks every time
-                            const mode = el.dataset.sortMode || currentSortMode;
-                            const viewTasks = mode === "Manual" ? baseTasks : sortTasks(baseTasks, mode);
-                            // Render tasks using the plugin's renderTaskList
+                            // Build fresh base from cache or fetched "tasks"
+                            const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
+                            const base = this.getViewTasks(currentFilterKey);
+                            const { mode, viewTasks, projects, labels } = this.buildRenderInput(base, el, currentFilterKey);
+                            // Render tasks
                             const listWrapper = document.createElement("div");
                             listWrapper.className = "list-wrapper";
                             el.appendChild(listWrapper);
-                            const projectsForRender = Array.isArray(this.projectCache) && this.projectCache.length > 0
-                                ? this.projectCache
-                                : JSON.parse(localStorage.getItem("todoistProjectsCache") || "[]");
-                            const labelsForRender = Array.isArray(this.labelCache) && this.labelCache.length > 0
-                                ? this.labelCache
-                                : JSON.parse(localStorage.getItem("todoistLabelsCache") || "[]");
                             this.projectMap.clear();
-                            for (const p of (projectsForRender || [])) {
+                            for (const p of (projects || []))
                                 this.projectMap.set(String(p.id), p);
-                            }
-                            this.renderTaskList(listWrapper, sourcePath, this.settings.apiKey, {
-                                tasks: viewTasks,
-                                projects: projectsForRender || [],
-                                labels: labelsForRender || [],
-                            });
-                            /* ---- Keep DOM order in sync with viewTasks (with logs) ---- */
-                            // Fast path: if renderTaskList draws one card per direct child, stamp by index
-                            const children = Array.from(listWrapper.children);
-                            if (children.length === viewTasks.length) {
-                                for (let i = 0; i < children.length; i++) {
-                                    const id = String(viewTasks[i].id);
-                                    const n = children[i];
-                                    n.classList.add("todoist-card");
-                                    n.dataset.taskId = id;
+                            this.renderTaskList(listWrapper, sourcePath, this.settings.apiKey, { tasks: viewTasks, projects, labels });
+                            // Stamp ids on direct children in the same order as viewTasks
+                            const directChildren = Array.from(listWrapper.children);
+                            for (let i = 0; i < directChildren.length && i < viewTasks.length; i++) {
+                                const id = String(viewTasks[i]?.id || "");
+                                if (id) {
+                                    directChildren[i].classList.add("todoist-card");
+                                    directChildren[i].dataset.taskId = id;
                                 }
                             }
-                            else {
-                                // Fallback: mark any candidate nodes with a discovered id
-                                listWrapper
-                                    .querySelectorAll(".todoist-card, .todoist-task, .task-card, [data-task-id], [data-id], [role='listitem']")
-                                    .forEach((node) => {
-                                    const id = node.dataset.taskId ||
-                                        node.dataset.id ||
-                                        node.getAttribute("data-task-id") ||
-                                        node.getAttribute("data-id") || "";
-                                    if (id) {
-                                        node.classList.add("todoist-card");
-                                        node.dataset.taskId = String(id);
-                                    }
-                                });
-                            }
-                            try {
-                                const mode = el.dataset.sortMode || currentSortMode;
-                                // Build the target order from the sorted viewTasks
+                            // DOM reorder to match sorted order (no-op for Manual)
+                            if (mode !== "Manual") {
                                 const targetOrder = new Map(viewTasks.map((t, i) => [String(t.id), i]));
-                                if (this.settings?.enableLogs)
-                                    console.log("[Sort Render]", "mode =", mode, "sorted ids =", viewTasks.map((t) => String(t.id)));
-                                // Helper: pick the card root for any descendant stamped with an id
-                                const pickCardRoot = (node) => {
-                                    const root = node.closest(".todoist-card, .todoist-task, .task-card, [role='listitem']");
-                                    return root && listWrapper.contains(root) ? root : node;
-                                };
-                                // Stamp ids on likely roots and build a deduped list of root nodes
-                                const stamped = [];
-                                const candidates = listWrapper.querySelectorAll(".todoist-card, .todoist-task, .task-card, [data-task-id], [data-id], [role='listitem']");
-                                candidates.forEach((node) => {
-                                    // Prefer any existing data-task-id/data-id on node or its children
-                                    let id = node.dataset.taskId || node.dataset.id || node.getAttribute("data-task-id") || node.getAttribute("data-id") || "";
-                                    if (!id) {
-                                        const childWithId = node.querySelector("[data-task-id],[data-id]");
-                                        if (childWithId)
-                                            id = childWithId.dataset.taskId || childWithId.dataset.id || "";
+                                const nodes = Array.from(listWrapper.children);
+                                // Stamp any missing ids before sorting
+                                nodes.forEach((n, i) => {
+                                    if (!n.dataset.taskId && viewTasks[i]?.id) {
+                                        n.classList.add("todoist-card");
+                                        n.dataset.taskId = String(viewTasks[i].id);
                                     }
-                                    const root = pickCardRoot(node);
-                                    if (id)
-                                        root.dataset.taskId = String(id);
-                                    if (!stamped.includes(root))
-                                        stamped.push(root);
                                 });
-                                if (stamped.length === 0) {
-                                    console.warn("[Sort DOM] No task roots found under listWrapper");
-                                    return;
-                                }
-                                const before = stamped.map((n) => n.dataset.taskId || "");
-                                if (this.settings?.enableLogs)
-                                    console.log("[Sort DOM] before ids =", before);
-                                if ((el.dataset.sortMode || currentSortMode) !== "Manual") {
-                                    stamped.sort((a, b) => {
-                                        const ai = targetOrder.get(String(a.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
-                                        const bi = targetOrder.get(String(b.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
-                                        return ai - bi;
+                                nodes.sort((a, b) => {
+                                    const ai = targetOrder.get(String(a.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
+                                    const bi = targetOrder.get(String(b.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
+                                    return ai - bi;
+                                });
+                                nodes.forEach((n) => listWrapper.appendChild(n));
+                                // Hide metadata for child (sub) tasks AND mark parents (inline boards)
+                                try {
+                                    const vt = viewTasks || [];
+                                    const byId = new Map(vt.map((t) => [String(t.id), t]));
+                                    // Build the parent-id set from the entire store so parents still mark even if children are filtered out
+                                    const childParentIds = new Set(Object.values(this.taskStore || {})
+                                        .filter((t) => t && t.parentId)
+                                        .map((t) => String(t.parentId)));
+                                    const nodes = Array.from(listWrapper.querySelectorAll("[data-task-id]"));
+                                    nodes.forEach((node) => {
+                                        const id = String(node.dataset.taskId || "");
+                                        const t = byId.get(id);
+                                        // Child rows: hide meta
+                                        if (t && t.parentId) {
+                                            node.classList.add("is-child-task");
+                                            const hideSel = ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
+                                            node.querySelectorAll(hideSel).forEach((el) => (el.style.display = "none"));
+                                        }
+                                        // Parent rows: add inline emoji marker once
+                                        if (childParentIds.has(id)) {
+                                            node.classList.add("has-children", "parent-task");
+                                            const titleEl = node.querySelector(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
+                                                node.querySelector(".task-content-wrapper") ||
+                                                node;
+                                            if (titleEl && !titleEl.querySelector(".parent-mark")) {
+                                                const mark = document.createElement("span");
+                                                mark.className = "parent-mark";
+                                                mark.textContent = "☰";
+                                                mark.style.marginLeft = "6px";
+                                                mark.style.opacity = "0.8";
+                                                mark.style.display = "inline-block";
+                                                titleEl.appendChild(mark); // placed at the end of the title content
+                                            }
+                                        }
                                     });
-                                    // Append back in new order (moves existing nodes)
-                                    stamped.forEach((n) => listWrapper.appendChild(n));
                                 }
-                                const after = Array.from(listWrapper.children).map((n) => n.dataset.taskId || "");
-                                if (this.settings?.enableLogs)
-                                    console.log("[Sort DOM] after  ids =", after);
-                            }
-                            catch (e) {
-                                console.warn("[Sort] DOM reorder fallback failed", e);
+                                catch { }
                             }
                         };
                         render();
@@ -25521,7 +25522,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                         console.log("[Sort Click] → Due Date");
                                     currentSortMode = "Due Date";
                                     el.dataset.sortMode = currentSortMode;
-                                    localStorage.setItem(`todoistSortMode:${filterKey}`, currentSortMode);
+                                    this.setSortMode(filterKey, currentSortMode);
                                     sortLabel.textContent = `Sort: ${currentSortMode}`;
                                     if (this.settings?.enableLogs)
                                         console.log("[Sort State] mode:", currentSortMode, "dataset:", el.dataset.sortMode);
@@ -25532,18 +25533,18 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                         console.log("[Sort Click] → Priority");
                                     currentSortMode = "Priority";
                                     el.dataset.sortMode = currentSortMode;
-                                    localStorage.setItem(`todoistSortMode:${filterKey}`, currentSortMode);
+                                    this.setSortMode(filterKey, currentSortMode);
                                     sortLabel.textContent = `Sort: ${currentSortMode}`;
                                     if (this.settings?.enableLogs)
                                         console.log("[Sort State] mode:", currentSortMode, "dataset:", el.dataset.sortMode);
                                     render();
                                 }));
-                                menu.addItem((item) => item.setTitle("Alphabetical").setIcon("a-z").onClick(() => {
+                                menu.addItem((item) => item.setTitle("Alphabetical").setIcon("list-ordered").onClick(() => {
                                     if (this.settings?.enableLogs)
                                         console.log("[Sort Click] → Alphabetical");
                                     currentSortMode = "Alphabetical";
                                     el.dataset.sortMode = currentSortMode;
-                                    localStorage.setItem(`todoistSortMode:${filterKey}`, currentSortMode);
+                                    this.setSortMode(filterKey, currentSortMode);
                                     sortLabel.textContent = `Sort: ${currentSortMode}`;
                                     if (this.settings?.enableLogs)
                                         console.log("[Sort State] mode:", currentSortMode, "dataset:", el.dataset.sortMode);
@@ -25554,7 +25555,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                         console.log("[Sort Click] → Manual");
                                     currentSortMode = "Manual";
                                     el.dataset.sortMode = currentSortMode;
-                                    localStorage.setItem(`todoistSortMode:${filterKey}`, currentSortMode);
+                                    this.setSortMode(filterKey, currentSortMode);
                                     sortLabel.textContent = `Sort: ${currentSortMode}`;
                                     if (this.settings?.enableLogs)
                                         console.log("[Sort State] mode:", currentSortMode, "dataset:", el.dataset.sortMode);
@@ -25566,6 +25567,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                         console.log("[Sort Click] → Clear Sort (Manual)");
                                     currentSortMode = "Manual";
                                     el.dataset.sortMode = currentSortMode;
+                                    this.setSortMode(filterKey, currentSortMode);
                                     sortLabel.textContent = `Sort: ${currentSortMode}`;
                                     if (this.settings?.enableLogs)
                                         console.log("[Sort State] mode:", currentSortMode, "dataset:", el.dataset.sortMode);
@@ -25584,6 +25586,79 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                             }
                         };
                         toolbar.appendChild(sortButton);
+                        // --- Capture (+) Button for inline board ---
+                        const captureBtn = document.createElement("span");
+                        captureBtn.className = "clickable-icon todoist-add-task-btn";
+                        captureBtn.style.transform = "scale(1.25)";
+                        captureBtn.style.opacity = "0.6"; // match faded look
+                        captureBtn.style.display = "flex";
+                        captureBtn.style.alignItems = "center";
+                        captureBtn.style.justifyContent = "center";
+                        captureBtn.style.cursor = "pointer";
+                        obsidian.setIcon(captureBtn, "plus-circle");
+                        captureBtn.title = "Add Task";
+                        captureBtn.onclick = () => {
+                            this.openAddTaskModal();
+                        };
+                        // Match hover style
+                        captureBtn.addEventListener("mouseenter", () => captureBtn.style.opacity = "1");
+                        captureBtn.addEventListener("mouseleave", () => captureBtn.style.opacity = "0.6");
+                        a11yButton(captureBtn, "Add task");
+                        toolbar.appendChild(captureBtn);
+                        // --- End Capture (+) Button ---
+                        // --- Copy List Button ---
+                        const copyBtn = document.createElement("span");
+                        copyBtn.className = "clickable-icon";
+                        copyBtn.style.transform = "scale(1.1)";
+                        copyBtn.style.opacity = "0.6";
+                        copyBtn.style.display = "flex";
+                        copyBtn.style.alignItems = "center";
+                        copyBtn.style.justifyContent = "center";
+                        copyBtn.style.cursor = "pointer";
+                        obsidian.setIcon(copyBtn, "copy");
+                        copyBtn.title = "Copy list";
+                        copyBtn.onclick = async () => {
+                            try {
+                                const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
+                                // Build the current view using the same sorter as the renderer
+                                const base = this.getViewTasks(currentFilterKey);
+                                const { viewTasks } = this.buildRenderInput(base, el, currentFilterKey);
+                                const lines = viewTasks.map((t) => {
+                                    const title = String(t?.content || "").trim();
+                                    return `- [ ] ${title}`;
+                                });
+                                const text = lines.join("\n");
+                                if (!text) {
+                                    new obsidian.Notice("No tasks to copy");
+                                    return;
+                                }
+                                // Try Clipboard API first
+                                try {
+                                    await navigator.clipboard.writeText(text);
+                                }
+                                catch {
+                                    // Fallback for environments without Clipboard API permissions
+                                    const ta = document.createElement("textarea");
+                                    ta.value = text;
+                                    ta.style.position = "fixed";
+                                    ta.style.left = "-10000px";
+                                    document.body.appendChild(ta);
+                                    ta.select();
+                                    document.execCommand("copy");
+                                    ta.remove();
+                                }
+                                new obsidian.Notice("Copied task list");
+                            }
+                            catch (err) {
+                                console.warn("[Todoist Board] Copy list failed", err);
+                                new obsidian.Notice("Copy failed");
+                            }
+                        };
+                        copyBtn.addEventListener("mouseenter", () => (copyBtn.style.opacity = "1"));
+                        copyBtn.addEventListener("mouseleave", () => (copyBtn.style.opacity = "0.6"));
+                        a11yButton(copyBtn, "Copy task list");
+                        toolbar.appendChild(copyBtn);
+                        // --- End Copy List Button ---
                         // --- Manual Sync Button ---
                         const syncButton = document.createElement("span");
                         syncButton.className = "clickable-icon";
@@ -25591,16 +25666,22 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                         syncButton.title = "Manual Sync";
                         syncButton.onclick = async () => {
                             const currentFilter = el.getAttribute("data-current-filter") || "today";
+                            // If offline, keep cache and just re-render from it
+                            if (!navigator.onLine) {
+                                if (this.settings?.enableLogs)
+                                    console.warn("[Manual Sync] Offline, using cached tasks.");
+                                render();
+                                return;
+                            }
+                            // Online: refresh from server
                             localStorage.removeItem(`todoistTasksCache:${currentFilter}`);
                             localStorage.removeItem(`todoistTasksCacheTimestamp:${currentFilter}`);
                             const resp = await this.fetchFilteredTasksFromREST(this.settings.apiKey, currentFilter);
                             const tasks = resp?.results ?? [];
-                            this.taskCache[currentFilter] = tasks;
-                            localStorage.setItem(`todoistTasksCache:${currentFilter}`, JSON.stringify(tasks));
-                            localStorage.setItem(`todoistTasksCacheTimestamp:${currentFilter}`, String(Date.now()));
-                            // Only re-render inline board layout, not the full board UI
-                            renderWithSortToolbar(tasks);
+                            this.upsertTasks(currentFilter, tasks);
+                            render();
                         };
+                        a11yButton(syncButton, "Manual sync");
                         toolbar.appendChild(syncButton);
                         // --- Queue Toggle Button ---
                         const queueButton = document.createElement("span");
@@ -25612,11 +25693,12 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                             queueActive = !queueActive;
                             this.updateQueueView(queueActive, el.querySelector(".list-wrapper"));
                         };
+                        a11yButton(queueButton, "Toggle queue mode");
                         toolbar.appendChild(queueButton);
                         // --- Compact Mode Toggle Button ---
                         const compactButton = document.createElement("span");
                         compactButton.className = "clickable-icon";
-                        obsidian.setIcon(compactButton, "layout-grid");
+                        obsidian.setIcon(compactButton, "list");
                         compactButton.title = "Toggle Compact Mode";
                         compactButton.onclick = () => {
                             el.classList.toggle("compact-mode");
@@ -25625,18 +25707,31 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                                 listWrapper.classList.toggle("compact-mode");
                             }
                         };
+                        a11yButton(compactButton, "Toggle compact mode");
                         toolbar.appendChild(compactButton);
                         // Place toolbar at the top; inline boards hide it via CSS when needed
                         el.prepend(toolbar);
                         // --- End Inline Sort Toolbar ---
                     };
+                    // --- PATCH: Use improved cache logic for loading and rendering tasks ---
+                    const cacheKey = `todoistTasksCache:${filterKey}`;
+                    const cached = localStorage.getItem(cacheKey);
+                    let cachedTasks = [];
+                    if (!cached && !navigator.onLine) {
+                        const fallback = this.getViewTasks(filterKey);
+                        if (Array.isArray(fallback) && fallback.length) {
+                            cachedTasks = fallback;
+                            this.upsertTasks(filterKey, cachedTasks); // populate filterIndex for this session
+                            renderWithSortToolbar();
+                        }
+                    }
                     if (cached) {
                         try {
                             cachedTasks = JSON.parse(cached);
                             this.dbg("📦 Cached tasks for", filterKey, ":", cachedTasks);
                             if (Array.isArray(cachedTasks)) {
                                 this.taskCache[typeof filterKey === "string" ? filterKey : JSON.stringify(filterKey)] = cachedTasks;
-                                // Always use renderWithSortToolbar for inline boards (block-language-todoist-board or todoist-inline-board)
+                                this.upsertTasks(filterKey, cachedTasks); // make sure filterIndex is ready
                                 if (el.classList.contains("block-language-todoist-board") ||
                                     el.classList.contains("todoist-inline-board")) {
                                     renderWithSortToolbar(cachedTasks);
@@ -25660,14 +25755,12 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                             const tasks = resp?.results ?? [];
                             this.dbg("🛰️ Live fetch results for", filterKey, ":", tasks);
                             if (Array.isArray(tasks)) {
-                                this.taskCache[typeof filterKey === "string" ? filterKey : JSON.stringify(filterKey)] = tasks;
-                                localStorage.setItem(cacheKey, JSON.stringify(tasks));
-                                localStorage.setItem(`todoistTasksCacheTimestamp:${filterKey}`, String(Date.now()));
+                                this.upsertTasks(filterKey, tasks);
                                 if (el.isConnected) {
                                     // Always use renderWithSortToolbar for inline boards (block-language-todoist-board or todoist-inline-board)
                                     if (el.classList.contains("block-language-todoist-board") ||
                                         el.classList.contains("todoist-inline-board")) {
-                                        renderWithSortToolbar(tasks);
+                                        renderWithSortToolbar();
                                     }
                                     else {
                                         this.renderTodoistBoard(el, `filter: ${filterKey}`, sourcePath, this.settings.apiKey, {
@@ -25691,28 +25784,121 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 // (Removed polling-based initial render block; handled in TodoistBoardView.onOpen)
                 document.addEventListener("click", this._globalClickListener);
                 // Start polling for task changes after initial rendering and setup
-                const id = pollForTaskChanges();
-                // Store interval id for cleanup
-                this._taskChangeInterval = id;
+                pollForTaskChanges(); // cleanup handled via _todoistPollInterval
             })();
         };
+        // ======================= ✏️ Async Edit Modal (instant open, lazy hydrate) =======================
+        this.modalHost = null;
     }
-    // Debug logger (respects settings.debug)
-    dbg(...args) {
+    // Debug logger helpers (gated by settings.enableLogs)
+    log(...args) {
         try {
             if (this.settings?.enableLogs)
-                if (this.settings?.enableLogs)
-                    console.log(...args);
+                console.log(...args);
         }
         catch { }
     }
+    info(...args) {
+        try {
+            if (this.settings?.enableLogs)
+                console.info(...args);
+        }
+        catch { }
+    }
+    warn(...args) {
+        try {
+            if (this.settings?.enableLogs)
+                console.warn(...args);
+        }
+        catch { }
+    }
+    error(...args) {
+        try {
+            if (this.settings?.enableLogs)
+                console.error(...args);
+        }
+        catch { }
+    }
+    createDueInline(task) {
+        const d = task?.due?.datetime || task?.due?.date;
+        if (!d)
+            return null;
+        const zone = this.settings?.timezoneMode === "manual"
+            ? this.settings.manualTimezone
+            : Intl.DateTimeFormat().resolvedOptions().timeZone;
+        // Parse respecting user zone
+        const dt = DateTime.fromISO(d).setZone(zone);
+        if (!dt?.isValid)
+            return null;
+        const today = DateTime.now().setZone(zone).startOf("day");
+        const target = dt.startOf("day");
+        const days = Math.round(target.diff(today, "days").days);
+        const hasTime = /T\d{2}:\d{2}/.test(d);
+        const dateLabel = days === 0 ? "Today"
+            : days === 1 ? "Tomorrow"
+                : dt.toFormat("ccc, LLL d");
+        const span = document.createElement("span");
+        span.className = "due-inline";
+        const timeFmt = useHour12() ? "h:mm a" : "HH:mm";
+        span.textContent = hasTime ? `${dateLabel} @ ${dt.toFormat(timeFmt)}` : dateLabel;
+        // 🔁 Recurrence indicator (Todoist exposes `due.isRecurring` and a human `due.string`)
+        const isRecurring = Boolean(task?.due?.isRecurring === true ||
+            (typeof task?.due?.string === "string" && /\b(every|daily|weekly|monthly|yearly|weekday|weekend)\b/i.test(task.due.string)));
+        if (isRecurring) {
+            const r = document.createElement("span");
+            r.className = "repeat-indicator";
+            r.setAttribute("aria-label", "Repeats");
+            r.title = "Repeats";
+            r.textContent = " \uD83D\uDD01"; // 🔁
+            span.appendChild(r);
+        }
+        return span;
+    }
+    // Closes any Todoist Board modal (edit/add)
+    closeAnyModal() {
+        try {
+            const modal = document.querySelector('.todoist-modal');
+            if (modal && modal.parentElement)
+                modal.parentElement.removeChild(modal);
+        }
+        catch { }
+        try {
+            if (this.modalHost && this.modalHost.parentElement)
+                this.modalHost.remove();
+        }
+        catch { }
+        this.modalHost = null;
+    }
+    // Back-compat
+    dbg(...args) { this.log(...args); }
+    // Centralized helper for sorting and metadata selection used by all views
+    buildRenderInput(base, container, filterKey) {
+        const stored = this.getSortMode(filterKey);
+        if (!container.dataset.sortMode)
+            container.dataset.sortMode = stored;
+        const mode = container.dataset.sortMode || stored;
+        const projects = (Array.isArray(this.projectCache) && this.projectCache.length)
+            ? this.projectCache
+            : JSON.parse(localStorage.getItem("todoistProjectsCache") || "[]");
+        const labels = (Array.isArray(this.labelCache) && this.labelCache.length)
+            ? this.labelCache
+            : JSON.parse(localStorage.getItem("todoistLabelsCache") || "[]");
+        const baseArr = Array.isArray(base) ? base.slice() : [];
+        const viewTasks = (mode === "Manual") ? baseArr : this.sortTasksLikeTodoist(baseArr, mode);
+        return { mode, viewTasks, projects, labels };
+    }
+    // Sort state helpers
+    getSortMode(filterKey) { return localStorage.getItem(`todoistSortMode:${filterKey}`) || "Due Date"; }
+    setSortMode(filterKey, mode) { try {
+        localStorage.setItem(`todoistSortMode:${filterKey}`, mode);
+    }
+    catch { } }
     // --- unified sorter ---
     sortTasksLikeTodoist(arr, mode) {
-        getZone(this.settings);
+        const tz = getZone(this.settings);
         const toRow = (t) => {
             const d = t?.due;
             let hasDue = 1, day = Number.POSITIVE_INFINITY, allDay = 1, slot = Number.POSITIVE_INFINITY;
-            const tz = getZone(this.settings);
             if (d?.datetime) {
                 // Timed task: parse and normalize to user timezone
                 const dt = DateTime.fromISO(d.datetime).setZone(tz);
@@ -25807,18 +25993,87 @@ class TodoistBoardPlugin extends obsidian.Plugin {
     setCurrentFilter(filter) {
         this.currentFilter = filter;
     }
+    // ---- Single-source helpers ----
+    upsertTasks(filterKey, tasks) {
+        const ids = [];
+        for (const t of (Array.isArray(tasks) ? tasks : [])) {
+            const id = String(t?.id ?? "");
+            if (!id)
+                continue;
+            this.taskStore[id] = t;
+            ids.push(id);
+        }
+        this.filterIndex[filterKey] = ids;
+        // persist
+        try {
+            localStorage.setItem("todoistTaskStore", JSON.stringify(this.taskStore));
+            localStorage.setItem(`todoistFilterIndex:${filterKey}`, JSON.stringify(ids));
+            // keep legacy cache in sync for any old paths still reading it
+            localStorage.setItem(`todoistTasksCache:${filterKey}`, JSON.stringify(ids.map(id => this.taskStore[id])));
+            localStorage.setItem(`todoistTasksCacheTimestamp:${filterKey}`, String(Date.now()));
+        }
+        catch { }
+        this.refreshAllInlineBoards();
+    }
+    deleteTaskEverywhere(taskId) {
+        delete this.taskStore[taskId];
+        for (const k of Object.keys(this.filterIndex)) {
+            const next = (this.filterIndex[k] || []).filter(id => id !== taskId);
+            this.filterIndex[k] = next;
+            try {
+                localStorage.setItem(`todoistFilterIndex:${k}`, JSON.stringify(next));
+                localStorage.setItem(`todoistTasksCache:${k}`, JSON.stringify(next.map(id => this.taskStore[id]).filter(Boolean)));
+                localStorage.setItem(`todoistTasksCacheTimestamp:${k}`, String(Date.now()));
+            }
+            catch { }
+        }
+        try {
+            localStorage.setItem("todoistTaskStore", JSON.stringify(this.taskStore));
+        }
+        catch { }
+        this.refreshAllInlineBoards();
+    }
+    getViewTasks(filterKey) {
+        const ids = (this.filterIndex[filterKey] || readJSON(`todoistFilterIndex:${filterKey}`, []));
+        if (Array.isArray(ids) && ids.length) {
+            return ids.map(id => this.taskStore[id]).filter(Boolean);
+        }
+        // fallback to legacy cache if index not populated yet
+        const legacy = readJSON(`todoistTasksCache:${filterKey}`, []);
+        if (Array.isArray(legacy) && legacy.length) {
+            this.upsertTasks(filterKey, legacy);
+            return legacy;
+        }
+        return [];
+    }
     async fetchFilteredTasksFromREST(apiKey, args) {
         try {
+            const filterKey = typeof args === "string" ? args : "today";
+            // Offline-first fallback: serve last known tasks
+            if (!navigator.onLine) {
+                const cached = this.getViewTasks(filterKey);
+                if (Array.isArray(cached) && cached.length)
+                    return { results: cached };
+                const legacy = readJSON(`todoistTasksCache:${filterKey}`, []);
+                return { results: Array.isArray(legacy) ? legacy : [] };
+            }
             if (!this.todoistApi)
                 this.todoistApi = new distExports.TodoistApi(apiKey);
             const api = this.todoistApi;
-            const filterQuery = typeof args === "string" ? args : "today";
-            const res = await api.getTasksByFilter({ query: filterQuery });
-            const list = Array.isArray(res) ? res : (Array.isArray(res?.results) ? res.results : []);
+            const res = await api.getTasksByFilter({ query: filterKey });
+            const list = Array.isArray(res)
+                ? res
+                : (Array.isArray(res?.results) ? res.results : []);
             return { results: Array.isArray(list) ? list : [] };
         }
         catch {
-            return { results: [] };
+            // Final safety: try cache on errors
+            const filterKey = typeof args === "string" ? args : "today";
+            const cached = this.getViewTasks(filterKey);
+            if (Array.isArray(cached) && cached.length)
+                return { results: cached };
+            const legacy = readJSON(`todoistTasksCache:${filterKey}`, []);
+            return { results: Array.isArray(legacy) ? legacy : [] };
         }
     }
     async fetchMetadataFromSync(apiKey) {
@@ -25868,8 +26123,17 @@ class TodoistBoardPlugin extends obsidian.Plugin {
     }
     async saveSettings() {
         await this.saveData(this.settings);
+        // refresh inline boards
         document.querySelectorAll(".todoist-inline-board").forEach((el) => {
             el.dispatchEvent(new CustomEvent("todoist-inline-refresh", { bubbles: true }));
+        });
+        // update sidebar boards right away
+        document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
+            const on = !!this.settings.compactMode;
+            el.classList.toggle("compact-mode", on);
+            const list = el.querySelector(".list-wrapper");
+            if (list)
+                list.classList.toggle("compact-mode", on);
         });
     }
     // ======================= 🔄 Refresh All Inline Boards =======================
@@ -25908,10 +26172,8 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                         (Array.isArray(tasks) && tasks.some((t) => !oldIds.has(t.id))) ||
                         oldTasks.some((t) => !newIds.has(t.id));
                     if (hasChanges) {
-                        this.taskCache[key] = Array.isArray(tasks) ? tasks : [];
+                        this.upsertTasks(key, Array.isArray(tasks) ? tasks : []);
                         this.taskCacheTimestamps[key] = Date.now();
-                        localStorage.setItem(`todoistTasksCache:${key}`, JSON.stringify(Array.isArray(tasks) ? tasks : []));
-                        localStorage.setItem(`todoistTasksCacheTimestamp:${key}`, String(Date.now()));
                     }
                     const currentFilter = document.querySelector(".todoist-board")?.getAttribute("data-current-filter");
                     if (hasChanges && currentFilter === key) {
@@ -25925,10 +26187,8 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 else {
                     const tasksResponse = await this.fetchFilteredTasksFromREST(this.settings.apiKey, key);
                     const tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
-                    this.taskCache[key] = Array.isArray(tasks) ? tasks : [];
+                    this.upsertTasks(key, Array.isArray(tasks) ? tasks : []);
                     this.taskCacheTimestamps[key] = now;
-                    localStorage.setItem(`todoistTasksCache:${key}`, JSON.stringify(Array.isArray(tasks) ? tasks : []));
-                    localStorage.setItem(`todoistTasksCacheTimestamp:${key}`, String(now));
                 }
             }
             catch (err) {
@@ -25938,38 +26198,26 @@ class TodoistBoardPlugin extends obsidian.Plugin {
     }
     async completeTask(taskId) {
         await this.todoistApi.closeTask(taskId);
-        // Immediately remove the task from the in-memory cache and localStorage
-        // Prefer the board open as a plugin view; fallback to the first board
+        this.deleteTaskEverywhere(String(taskId));
+        // Re-render all visible boards so every filter reflects the change
         const boards = Array.from(document.querySelectorAll(".todoist-board.plugin-view"));
-        const currentFilter = (boards.find(b => b.classList.contains("plugin-view")) || boards[0])
-            ?.getAttribute("data-current-filter") || "";
-        if (this.taskCache[currentFilter]) {
-            this.taskCache[currentFilter] = this.taskCache[currentFilter].filter(t => t.id !== taskId);
-            localStorage.setItem(`todoistTasksCache:${currentFilter}`, JSON.stringify(this.taskCache[currentFilter]));
-        }
-        // Update the badge only within the matching board
-        const scopedBoard = boards.find(b => b.getAttribute("data-current-filter") === currentFilter) || boards[0];
-        const badge = scopedBoard
-            ? scopedBoard.querySelector(`.filter-row[data-filter="${currentFilter}"] .filter-badge-count`)
-            : null;
-        if (badge) {
-            const cache = JSON.parse(localStorage.getItem(`todoistTasksCache:${currentFilter}`) || "[]");
-            badge.textContent = String(Array.isArray(cache) ? cache.length : 0);
-        }
-        // Re-render the board with the updated cache
-        const board = (boards.find(b => b.getAttribute("data-current-filter") === currentFilter) || boards[0]);
-        if (board) {
-            this.renderTodoistBoard(board, `filter: ${currentFilter}`, {}, this.settings.apiKey, {
-                tasks: this.taskCache[currentFilter],
-                sections: [],
+        boards.forEach((board) => {
+            const f = board.getAttribute("data-current-filter") || "today";
+            const tasks = this.getViewTasks(f);
+            this.renderTodoistBoard(board, `filter: ${f}`, {}, this.settings.apiKey, {
+                tasks,
                 projects: this.projectCache,
                 labels: this.labelCache
             });
-            // Remove any .selected task after rendering
             const selected = board.querySelector(".todoist-card.selected");
             if (selected)
                 selected.classList.remove("selected");
-        }
+            // update badge in this toolbar
+            const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`);
+            if (badge)
+                badge.textContent = String(tasks.length);
+        });
+        this.refreshAllInlineBoards();
     }
     // ======================= 🏁 Auto-render Default Filter on Startup =======================
     // This block ensures the default filter's board is rendered immediately after UI is ready.
@@ -25983,10 +26231,12 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             const container = document.querySelector(".todoist-board");
             if (defaultFilterRow && container) {
                 const source = defaultFilterRow.getAttribute("data-filter") || "today";
-                container.setAttribute("data-current-filter", String(source));
+                const prev = container.getAttribute("data-current-filter");
+                if (prev !== String(source))
+                    container.setAttribute("data-current-filter", String(source));
                 container.innerHTML = "";
                 this.renderTodoistBoard(container, `filter: ${String(source)}`, {}, this.settings.apiKey, {
-                    tasks: this.taskCache[String(source)] || [],
+                    tasks: this.getViewTasks(String(source)),
                     sections: [],
                     projects: this.projectCache,
                     labels: this.labelCache
@@ -26055,6 +26305,11 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         }
         // Remove all .todoist-board elements from DOM
         document.querySelectorAll('.todoist-board').forEach(el => el.remove());
+        // Close lingering modal host
+        if (this.modalHost && this.modalHost.parentElement) {
+            this.modalHost.remove();
+        }
+        this.modalHost = null;
     }
     // ======================= 🧱 Board Renderer =======================
     async render(...args) {
@@ -26062,10 +26317,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         this.projectMap.clear();
         this.projectCache.forEach((p) => this.projectMap.set(p.id, p));
         // Ensure due time is included in fetched tasks by passing as_time: true
-        if (this.todoistApi && typeof this.todoistApi.getTasks === "function") {
-            await this.todoistApi.getTasks();
-            // You might want to use these tasks as needed in your render logic
-        }
+        // no-op fetch removed to avoid extra network calls per render
         await this.renderTodoistBoard(...(args ?? []));
     }
     /**
@@ -26075,7 +26327,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         const boards = Array.from(document.querySelectorAll(".todoist-board.plugin-view"));
         boards.forEach((container) => {
             const currentFilter = container.getAttribute("data-current-filter") || "";
-            const tasks = this.taskCache[currentFilter] || [];
+            const tasks = this.getViewTasks(currentFilter);
             this.renderTodoistBoard(container, `filter: ${currentFilter}`, {}, this.settings.apiKey, {
                 tasks,
                 projects: this.projectCache,
@@ -26087,9 +26339,14 @@ class TodoistBoardPlugin extends obsidian.Plugin {
     renderTodoistBoard(...args) {
         // Extract parameters for backwards compatibility
         let [container, source, ctx, apiKey, initialData = { }] = args;
-        if (container.getAttribute("data-rendering") === "true")
+        // If a render is in progress, queue one more pass and bail
+        if (container.getAttribute("data-rendering") === "true") {
+            container.setAttribute("data-render-pending", "1");
             return;
+        }
+        const renderToken = String(Date.now()) + ":" + Math.random().toString(36).slice(2);
         container.setAttribute("data-rendering", "true");
+        container.setAttribute("data-render-token", renderToken);
         try {
             // --- Always proceed with rendering, even if same filter and task count ---
             const currentFilter = container.getAttribute("data-current-filter") || "";
@@ -26154,7 +26411,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             const currentKey = `${currentFilter}:${tasks?.length || 0}`;
             container.setAttribute("data-prev-render-key", currentKey);
             // Sync in-memory cache with current tasks
-            this.taskCache[currentFilter] = tasks;
+            this.upsertTasks(currentFilter, tasks);
             // PATCH: If no tasks or not an array, skip render and warn
             if (!tasks || !Array.isArray(tasks)) {
                 return;
@@ -26165,6 +26422,8 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             let cachedTasks = tasks;
             let defaultFilter = currentFilter;
             try {
+                if (!container.dataset.sortMode)
+                    container.dataset.sortMode = localStorage.getItem(`todoistSortMode:${currentFilter}`) || "Due Date";
                 this.setupContainer(container);
                 container.classList.toggle("compact-mode", this.compactMode);
                 // 🧪 Log compact mode application
@@ -26180,6 +26439,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                     todoistBoardEl.classList.add("reading-mode");
                 }
                 const { toolbar, listWrapper } = this.createLayout(container);
+                listWrapper.classList.toggle("compact-mode", this.compactMode);
                 // Hide the entire toolbar for inline boards (markdown blocks / reading mode)
                 const inlineBoard = container.classList.contains("block-language-todoist-board") || !!container.closest(".markdown-reading-view");
                 if (inlineBoard) {
@@ -26197,68 +26457,67 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 else {
                     this.renderToolbar(toolbar, filterOptions, source, container, ctx, apiKey, listWrapper);
                 }
-                // Use tasks from initialData to drive the rendering
-                // (Pass as initialData so renderTaskList uses them)
-                // Also ensure we pass the latest metadata if available
-                const meta = {
-                    sections: [],
-                    projects: projects,
-                    labels: this.labelCache || []
-                };
-                // 🧪 Log tasks right before rendering
-                // if (this.settings?.enableLogs) console.log("🧪 Tasks for render:", tasks);
-                // --- Debug log: tasks before filter ---
-                // if (this.settings?.enableLogs) console.log("🔍 Tasks before filter:", tasks.length);
-                // If you have filtering logic, insert here:
-                // For demonstration, if you filter tasks, do:
-                // const filtered = tasks.filter(...);
-                // if (this.settings?.enableLogs) console.log("🔎 Tasks after filter:", filtered.length);
-                // --- sort for plugin view using shared comparator ---
-                const mode = container.dataset.sortMode || "Due Date";
-                const base = Array.isArray(tasks) ? tasks.slice() : [];
-                const viewTasks = mode === "Manual" ? base : this.sortTasksLikeTodoist(base, mode);
-                this.renderTaskList(listWrapper, source, apiKey, { tasks: viewTasks, ...meta });
-                // --- keep DOM order in sync with viewTasks (plugin view) ---
+                // --- sort for plugin view and render via centralized helper ---
+                const filterKey = currentFilter;
+                if (!container.dataset.sortMode) {
+                    container.dataset.sortMode = localStorage.getItem(`todoistSortMode:${filterKey}`) || "Due Date";
+                }
+                const baseForView = Array.isArray(tasks) ? tasks.slice() : [];
+                const { mode, viewTasks, projects: projectsForRender, labels: labelsForRender } = this.buildRenderInput(baseForView, container, filterKey);
+                this.renderTaskList(listWrapper, source, apiKey, { tasks: viewTasks, projects: projectsForRender, labels: labelsForRender });
+                // Keep DOM order in sync with viewTasks (plugin view)
                 try {
-                    const mode = container.dataset.sortMode || "Due Date";
-                    const targetOrder = new Map(viewTasks.map((t, i) => [String(t.id), i]));
-                    const pickCardRoot = (node) => {
-                        const root = node.closest(".todoist-card, .todoist-task, .task-card, [role='listitem']");
-                        return root && listWrapper.contains(root) ? root : node;
-                    };
-                    const stamped = [];
-                    const candidates = listWrapper.querySelectorAll(".todoist-card, .todoist-task, .task-card, [data-task-id], [data-id], [role='listitem']");
-                    candidates.forEach((node) => {
-                        let id = node.dataset.taskId || node.dataset.id || node.getAttribute("data-task-id") || node.getAttribute("data-id") || "";
-                        if (!id) {
-                            const childWithId = node.querySelector("[data-task-id],[data-id]");
-                            if (childWithId)
-                                id = childWithId.dataset.taskId || childWithId.dataset.id || "";
-                        }
-                        const root = pickCardRoot(node);
-                        if (id)
-                            root.dataset.taskId = String(id);
-                        if (!stamped.includes(root))
-                            stamped.push(root);
-                    });
-                    if (!stamped.length) {
-                        console.warn("[Sort DOM] No task roots found under listWrapper");
-                        return;
-                    }
-                    const before = stamped.map((n) => n.dataset.taskId || "");
-                    if (this.settings?.enableLogs)
-                        console.log("[Sort DOM] before ids =", before);
                     if (mode !== "Manual") {
-                        stamped.sort((a, b) => {
+                        const targetOrder = new Map(viewTasks.map((t, i) => [String(t.id), i]));
+                        const children = Array.from(listWrapper.children);
+                        // Stamp ids if missing
+                        children.forEach((n, i) => {
+                            const id = String(viewTasks[i]?.id || n.dataset.taskId || "");
+                            if (id) {
+                                n.classList.add("todoist-card");
+                                n.dataset.taskId = id;
+                            }
+                        });
+                        children.sort((a, b) => {
                             const ai = targetOrder.get(String(a.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
                             const bi = targetOrder.get(String(b.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
                             return ai - bi;
                         });
-                        stamped.forEach((n) => listWrapper.appendChild(n));
+                        children.forEach((n) => listWrapper.appendChild(n));
+                        // Hide child metadata AND mark parents (sidebar/plugin board)
+                        try {
+                            const byId = new Map(viewTasks.map((t) => [String(t.id), t]));
+                            const childParentIds = new Set(Object.values(this.taskStore || {})
+                                .filter((t) => t && t.parentId)
+                                .map((t) => String(t.parentId)));
+                            const nodes = Array.from(listWrapper.querySelectorAll("[data-task-id]"));
+                            nodes.forEach((node) => {
+                                const id = String(node.dataset.taskId || "");
+                                const t = byId.get(id);
+                                if (t && t.parentId) {
+                                    node.classList.add("is-child-task");
+                                    const hideSel = ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
+                                    node.querySelectorAll(hideSel).forEach((el) => (el.style.display = "none"));
+                                }
+                                if (childParentIds.has(id)) {
+                                    node.classList.add("has-children", "parent-task");
+                                    const titleEl = node.querySelector(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
+                                        node.querySelector(".task-content-wrapper") ||
+                                        node;
+                                    if (titleEl && !titleEl.querySelector(".parent-mark")) {
+                                        const mark = document.createElement("span");
+                                        mark.className = "parent-mark";
+                                        mark.textContent = "☰";
+                                        mark.style.marginLeft = "6px";
+                                        mark.style.opacity = "0.8";
+                                        mark.style.display = "inline-block";
+                                        titleEl.appendChild(mark);
+                                    }
+                                }
+                            });
+                        }
+                        catch { }
                     }
-                    const after = Array.from(listWrapper.children).map((n) => n.dataset.taskId || "");
-                    if (this.settings?.enableLogs)
-                        console.log("[Sort DOM] after  ids =", after);
                 }
                 catch { }
                 // PATCH: Fetch metadata in background if stale, then re-render
@@ -26299,7 +26558,16 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             }
         }
         finally {
-            container.removeAttribute("data-rendering");
+            const still = container.getAttribute("data-render-token");
+            if (still === renderToken) {
+                container.removeAttribute("data-rendering");
+                container.removeAttribute("data-render-token");
+                // If a rerender was requested while we were busy, run it now
+                if (container.getAttribute("data-render-pending") === "1") {
+                    container.removeAttribute("data-render-pending");
+                    queueMicrotask(() => this.renderTodoistBoard(container, source, ctx, apiKey));
+                }
+            }
         }
     }
     setupContainer(container) {
@@ -26325,7 +26593,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         listView.classList.add("list-view");
         const listWrapper = document.createElement("div");
         listWrapper.className = "list-wrapper";
-        // if (this.settings?.enableLogs) console.log("🎯 Applied compact-mode to listWrapper?", this.compactMode);
+        listWrapper.classList.toggle("compact-mode", this.compactMode);
         listView.appendChild(listWrapper);
         container.appendChild(listView);
         return { toolbar: listToolbar, listWrapper };
@@ -26361,18 +26629,18 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         const filterWrapper = createDiv({ cls: "filter-row-wrapper" });
         // Ensure filterBar is created with the proper class
         const filterBar = createDiv({ cls: "filter-bar" });
-        // Try to match source string, fallback to isDefault, fallback to 0
-        const matchIdx = filterOptions.findIndex((opt) => {
-            if (opt.filter === "today" && source.includes("due date is"))
-                return true;
-            return source.trim() === `filter: ${opt.filter}`;
-        });
+        // Find the current selected filter index (from state or from source)
+        let initialIndex = 0;
+        const matchIdx = filterOptions.findIndex(opt => source.trim() === `filter: ${opt.filter}`);
         if (matchIdx !== -1) {
-            selectedFilterIndex = matchIdx;
+            initialIndex = matchIdx;
         }
-        else if (typeof filterOptions.findIndex((f) => f.isDefault) === "number") {
-            filterOptions.findIndex((f) => f.isDefault);
+        else {
+            const defaultIdx = filterOptions.findIndex((f) => f.isDefault);
+            if (defaultIdx !== -1)
+                initialIndex = defaultIdx;
         }
+        selectedFilterIndex = initialIndex;
         // Render all .filter-row elements (buttons)
         filterOptions.forEach((opt, idx) => {
             const filterRow = document.createElement("div");
@@ -26455,6 +26723,151 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         toolbar.appendChild(queueWrapper);
         toolbar.appendChild(captureBtn);
         toolbar.appendChild(settingsRefreshWrapper);
+    }
+    getOrCreateModalHost() {
+        if (this.modalHost && document.body.contains(this.modalHost))
+            return this.modalHost;
+        const host = document.createElement("div");
+        host.className = "taskmodal-host";
+        Object.assign(host.style, {
+            position: "fixed",
+            inset: "0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.35)",
+            zIndex: "99999"
+        });
+        // backdrop close
+        host.addEventListener("click", (e) => {
+            if (e.target === host)
+                this.closeModal();
+        });
+        this.modalHost = host;
+        return host;
+    }
+    showSkeletonModal(title = "Edit Task") {
+        const host = this.getOrCreateModalHost();
+        host.innerHTML = "";
+        // Outer wrapper matches your CSS scope
+        const box = document.createElement("div");
+        box.className = "todoist-edit-task-modal";
+        const inner = document.createElement("div");
+        inner.className = "taskmodal-wrapper taskmodal-skeleton";
+        // keep a minimal inline size so it doesn’t jump
+        Object.assign(inner.style, {
+            minWidth: "min(560px, 92vw)",
+            maxWidth: "92vw"
+        });
+        inner.innerHTML = `
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+    <div class="modal-title" style="font-weight:600;">${title}</div>
+    <div class="spinner" style="margin-left:auto;width:16px;height:16px;border-radius:50%;
+      border:2px solid var(--text-muted);border-top-color:transparent;animation:spin .9s linear infinite;"></div>
+  </div>
+  <div class="skeleton-lines">
+    <div style="height:36px;background:var(--background-modifier-border);border-radius:8px;margin-bottom:8px;"></div>
+    <div style="height:92px;background:var(--background-modifier-border);border-radius:8px;margin-bottom:8px;"></div>
+    <div style="height:36px;background:var(--background-modifier-border);border-radius:8px;margin-bottom:8px;"></div>
+  </div>
+`;
+        box.appendChild(inner);
+        if (!host.parentElement)
+            document.body.appendChild(host);
+        host.appendChild(box);
+        return box;
+    }
+    closeModal() {
+        if (this.modalHost && this.modalHost.parentElement) {
+            this.modalHost.remove();
+        }
+    }
+    async openEditTaskModalAsync(taskOrId, row, filters) {
+        const taskId = typeof taskOrId === "string" ? taskOrId : String(taskOrId?.id);
+        // Phase 1: instant shell
+        const box = this.showSkeletonModal("Edit Task");
+        this.getOrCreateModalHost();
+        // Phase 2: hydrate without blocking first paint
+        queueMicrotask(async () => {
+            let task = this.taskStore[String(taskId)];
+            // background refresh (don’t await)
+            const refresh = (async () => {
+                try {
+                    const live = await this.todoistApi.getTask(taskId);
+                    if (live && live.id) {
+                        this.taskStore[String(live.id)] = live;
+                        task = live;
+                    }
+                }
+                catch { }
+            })();
+            const fields = {
+                title: String(task?.content ?? ""),
+                description: String(task?.description ?? ""),
+                due: (() => {
+                    const d = task?.due;
+                    return d?.datetime || d?.date || "";
+                })(),
+                projectId: String(task?.projectId ?? ""),
+                labels: Array.isArray(task?.labels) ? task.labels : []
+            };
+            const contentInner = this.buildTaskModalContent(fields, "Save", async (data) => {
+                try {
+                    // Remember current project before updating fields
+                    const oldProjectId = String((this.taskStore[String(taskId)] ?? task)?.projectId || "");
+                    // 1) Update editable fields (no projectId here)
+                    await this.todoistApi.updateTask(taskId, {
+                        content: data.title,
+                        description: data.description,
+                        dueString: data.due || undefined,
+                        labels: data.labels
+                    });
+                    // 2) If project changed, move the task using moveTasks
+                    if (data.projectId && String(data.projectId) !== oldProjectId) {
+                        await this.todoistApi.moveTasks([String(taskId)], { projectId: String(data.projectId) }); // must be separate call
+                        // keep local copy consistent immediately
+                        const local = this.taskStore[String(taskId)] ?? task;
+                        if (local)
+                            local.projectId = String(data.projectId);
+                    }
+                    // 3) Re-fetch the task to ensure we have the server-truth
+                    const updated = await this.todoistApi.getTask(taskId);
+                    if (updated) {
+                        this.taskStore[String(taskId)] = updated;
+                        // refresh visible boards
+                        this.refreshAllInlineBoards();
+                        document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
+                            const f = el.getAttribute("data-current-filter") || "today";
+                            const tasks = this.getViewTasks(f);
+                            this.renderTodoistBoard(el, `filter: ${f}`, {}, this.settings.apiKey, {
+                                tasks,
+                                projects: this.projectCache,
+                                labels: this.labelCache
+                            });
+                        });
+                    }
+                }
+                finally {
+                    this.closeModal();
+                }
+            });
+            // match your CSS scope: .todoist-edit-task-modal .taskmodal-wrapper
+            const wrapper = document.createElement("div");
+            wrapper.className = "todoist-edit-task-modal";
+            const inner = document.createElement("div");
+            inner.className = "taskmodal-wrapper";
+            inner.appendChild(contentInner);
+            wrapper.appendChild(inner);
+            requestAnimationFrame(() => {
+                box.replaceWith(wrapper);
+                setTimeout(() => {
+                    const first = wrapper.querySelector(".taskmodal-title-input");
+                    first?.focus();
+                    first?.select?.();
+                }, 10);
+            });
+            await refresh;
+        });
     }
     // ======================= ➕ Task Modal Content Builder =======================
     /**
@@ -27583,18 +27996,12 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             rowCheckbox.classList.add(`priority-${task.priority}`);
             // PATCH: Move checkbox out of .task-inner and into .task before scrollWrapper
             row.appendChild(rowCheckbox);
-            // --- PATCH: Insert parent-icon using setIcon if hasChildren, after checkbox, before scrollWrapper ---
-            if (hasChildren) {
-                const icon = document.createElement("span");
-                icon.classList.add("parent-icon");
-                obsidian.setIcon(icon, "list-tree");
-                row.appendChild(icon);
-            }
             row.appendChild(scrollWrapper);
             const left = this.createTaskContent(task, projectMap, labelMap, labelColorMap, projects);
             taskInner.appendChild(left);
-            const deadline = this.createTaskDeadline(task);
-            row.appendChild(deadline);
+            // const deadline = this.createTaskDeadline(task);
+            // row.appendChild(deadline);
+            // this used to be the old right-hand side deadline, now will in the WHEN row
         }
         return row;
     }
@@ -27836,7 +28243,7 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             Modal = window.Modal;
         }
         const modal = new Modal(this.app);
-        modal.containerEl.classList.add("todoist-edit-task-modal");
+        modal.containerEl.classList.add("todoist-edit-task-modal", "todoist-modal");
         // --- Ensure project and label metadata is loaded before building dropdown ---
         (async () => {
             if (!this.projectCache || this.projectCache.length === 0) {
@@ -27927,9 +28334,17 @@ class TodoistBoardPlugin extends obsidian.Plugin {
             wrapper.appendChild(labelField);
             // Button row
             const buttonRow = createDiv("taskmodal-button-row");
-            const cancelBtn = createEl("button", { cls: "taskmodal-button-cancel", text: "Cancel" });
-            cancelBtn.onclick = () => modal.close();
-            const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save" });
+            const cancelBtn = createEl("button", { cls: "taskmodal-button-cancel btn-cancel", text: "Cancel", type: "button", attr: { "aria-label": "Cancel", "data-action": "cancel" } });
+            cancelBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                    modal.close();
+                }
+                catch { }
+                this.closeAnyModal();
+            };
+            const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save", type: "button" });
             saveBtn.onclick = async () => {
                 const newTitle = titleInput.value.trim();
                 const newDesc = descInput.value.trim();
@@ -28352,7 +28767,55 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         const contentWrapper = document.createElement("div");
         contentWrapper.className = "task-content-wrapper";
         contentWrapper.appendChild(titleSpan);
+        // line 2: WHEN (due | deadline)
+        const whenRow = document.createElement("div");
+        whenRow.className = "task-when";
+        // due inline
+        task?.due?.date;
+        let dueTimeStr = undefined;
+        try {
+            if (task?.due?.datetime) {
+                const _dt = DateTime.fromISO(task.due.datetime);
+                if (_dt?.isValid)
+                    dueTimeStr = _dt.toFormat("HH:mm");
+            }
+        }
+        catch { }
+        const dueInline = this.createDueInline(task);
+        if (dueInline)
+            whenRow.appendChild(dueInline);
+        // deadline inline
+        const dlInline = this.createDeadlineInline(task);
+        if (dlInline) {
+            if (whenRow.childNodes.length) {
+                const sep = document.createElement("span");
+                sep.className = "mid-sep";
+                sep.textContent = " | ";
+                whenRow.appendChild(sep);
+            }
+            whenRow.appendChild(dlInline);
+        }
+        contentWrapper.appendChild(whenRow);
+        // line 3: META (# project | @labels)
+        const metaRow = document.createElement("div");
+        metaRow.className = "task-meta-compact";
+        const projInline = this.createProjectPill(task.projectId, projectMap, projects);
+        if (projInline)
+            metaRow.appendChild(projInline);
+        const labelsInline = this.createLabelPill(task.labels, labelMap, labelColorMap);
+        if (labelsInline) {
+            if (projInline) {
+                const sep2 = document.createElement("span");
+                sep2.className = "mid-sep";
+                sep2.textContent = " | ";
+                metaRow.appendChild(sep2);
+            }
+            metaRow.appendChild(labelsInline);
+        }
+        contentWrapper.appendChild(metaRow);
+        // description (only visible on selected via CSS you already have)
         contentWrapper.appendChild(descEl);
+        // keep a hidden .task-metadata node so existing code that queries it still works
         if (metaSpan)
             contentWrapper.appendChild(metaSpan);
         left.appendChild(contentWrapper);
@@ -28397,6 +28860,28 @@ class TodoistBoardPlugin extends obsidian.Plugin {
         if (labelPill)
             pills.push(labelPill);
         return pills.filter(pill => pill.style.display !== "none");
+    }
+    createDeadlineInline(task) {
+        const d = task?.deadline?.date;
+        if (!d)
+            return null;
+        const zone = this.settings?.timezoneMode === "manual"
+            ? this.settings.manualTimezone
+            : Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let dt = DateTime.fromISO(d, { zone });
+        if (!dt?.isValid)
+            return null;
+        const today = DateTime.now().setZone(zone).startOf("day");
+        const target = dt.startOf("day");
+        const days = Math.round(target.diff(today, "days").days);
+        const span = document.createElement("span");
+        span.className = "deadline-inline";
+        span.textContent =
+            days === 0 ? "🎯 today"
+                : days === 1 ? "🎯 in 1 day"
+                    : days < 0 ? `🎯 ${Math.abs(days)} days ago`
+                        : `🎯 in ${days} days`;
+        return span;
     }
     // Requires: import { DateTime } from "luxon";
     createDuePill(dueDate, dueTime) {
@@ -28783,6 +29268,30 @@ class TodoistBoardPlugin extends obsidian.Plugin {
                 this.clearSelectedTaskHighlight();
             }
         });
+        // Cancel click inside modal
+        document.addEventListener('click', (ev) => {
+            const t = ev.target;
+            if (!t)
+                return;
+            // Common selectors
+            const bySelector = t.closest('.todoist-modal .btn-cancel, .todoist-modal [data-action="cancel"], .todoist-modal [data-cancel], .todoist-modal .cancel, .todoist-modal button[aria-label="Cancel"]');
+            // Fallback: any button whose text is “Cancel” inside the modal
+            const btn = t.closest('button');
+            const inModal = t.closest('.todoist-modal');
+            const textLooksLikeCancel = btn && /\bcancel\b/i.test((btn.textContent || '').trim());
+            if (bySelector || (inModal && textLooksLikeCancel)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                this.closeAnyModal();
+            }
+        }, { capture: true });
+        // Escape closes modal
+        document.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && document.querySelector('.todoist-modal')) {
+                ev.preventDefault();
+                this.closeAnyModal();
+            }
+        });
     }
     clearSelectedTaskHighlight() {
         document.querySelectorAll(".selected-task").forEach((el) => {
@@ -28867,35 +29376,33 @@ class TodoistBoardPlugin extends obsidian.Plugin {
 // Covers 99% of global use cases, with major cities and non-integer offsets
 TodoistBoardPlugin.commonTimezones = [
     "UTC",
-    "Europe/London",
-    "Europe/Paris",
-    "Europe/Berlin",
-    "Europe/Moscow",
-    "Africa/Tripoli",
-    "Africa/Cairo",
-    "Africa/Lagos",
-    "Africa/Johannesburg",
-    "Africa/Nairobi",
-    "Africa/Casablanca",
-    "Africa/Accra",
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "America/Sao_Paulo",
-    "America/Mexico_City",
-    "Asia/Tokyo",
-    "Asia/Shanghai",
-    "Asia/Hong_Kong",
-    "Asia/Singapore",
-    "Asia/Seoul",
-    "Asia/Bangkok",
-    "Asia/Kolkata",
-    "Asia/Dubai",
-    "Asia/Jerusalem",
-    "Australia/Sydney",
-    "Australia/Perth",
-    "Pacific/Auckland"
+    // Europe
+    "Europe/London", "Europe/Dublin", "Europe/Lisbon",
+    "Europe/Madrid", "Europe/Paris", "Europe/Amsterdam", "Europe/Brussels", "Europe/Zurich",
+    "Europe/Berlin", "Europe/Rome", "Europe/Stockholm", "Europe/Copenhagen", "Europe/Oslo",
+    "Europe/Warsaw", "Europe/Prague", "Europe/Athens", "Europe/Bucharest", "Europe/Helsinki",
+    "Europe/Kyiv", "Europe/Istanbul", "Europe/Minsk", "Europe/Moscow",
+    // MENA & Africa
+    "Africa/Casablanca", "Africa/Algiers", "Africa/Tunis", "Africa/Tripoli",
+    "Africa/Cairo", "Africa/Khartoum", "Africa/Nairobi", "Africa/Johannesburg", "Africa/Lagos", "Africa/Accra",
+    "Asia/Jerusalem", "Asia/Amman", "Asia/Beirut", "Asia/Baghdad", "Asia/Riyadh", "Asia/Kuwait", "Asia/Qatar",
+    "Asia/Bahrain", "Asia/Dubai", "Asia/Muscat", "Asia/Tehran",
+    // South & Central Asia
+    "Asia/Karachi", "Asia/Kabul", "Asia/Tashkent", "Asia/Almaty",
+    "Asia/Colombo", "Asia/Kolkata", "Asia/Kathmandu",
+    // East & SE Asia
+    "Asia/Shanghai", "Asia/Taipei", "Asia/Hong_Kong", "Asia/Singapore",
+    "Asia/Tokyo", "Asia/Seoul",
+    "Asia/Bangkok", "Asia/Kuala_Lumpur", "Asia/Jakarta", "Asia/Manila", "Asia/Ho_Chi_Minh",
+    // Oceania
+    "Australia/Sydney", "Australia/Melbourne", "Australia/Brisbane", "Australia/Adelaide", "Australia/Darwin",
+    "Australia/Perth", "Pacific/Auckland", "Pacific/Fiji", "Pacific/Guam", "Pacific/Honolulu",
+    // North America
+    "America/New_York", "America/Toronto", "America/Chicago", "America/Denver", "America/Los_Angeles",
+    "America/Phoenix", "America/Anchorage", "America/Halifax", "America/Puerto_Rico", "America/Mexico_City",
+    // Latin America
+    "America/Bogota", "America/Lima", "America/La_Paz", "America/Santiago", "America/Sao_Paulo",
+    "America/Argentina/Buenos_Aires", "America/Montevideo"
 ];
 // --- Inject task description show/hide CSS ---
 const descStyle = document.createElement('style');
