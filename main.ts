@@ -42,6 +42,12 @@ const writeJSON = (key: string, value: unknown) => {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 };
 
+// Safe clear helper to avoid innerHTML writes
+const clearEl = (el: Element | null | undefined) => {
+  if (!el) return;
+  while (el.firstChild) el.removeChild(el.firstChild);
+};
+
 const getZone = (settings: { timezoneMode: "auto" | "manual"; manualTimezone: string }) =>
   settings.timezoneMode === "manual"
     ? settings.manualTimezone
@@ -916,7 +922,7 @@ refreshAllInlineBoards() {
           if (hasChanges && currentFilter === key) {
             const container = document.querySelector(".todoist-board") as HTMLElement;
             if (container) {
-              container.innerHTML = "";
+              clearEl(container);
               this.renderTodoistBoard(container, `filter: ${key}`, {}, this.settings.apiKey);
             }
           }
@@ -966,7 +972,7 @@ this.taskCacheTimestamps[key] = now;
       // Register command to open Todoist Board in right sidebar (works on mobile and desktop)
       this.addCommand({
         id: 'open-todoist-board-sidebar',
-        name: 'Open Todoist Board (Right Sidebar)',
+        name: 'Open in Right Sidebar',
         callback: async () => {
           // Only open the board if it's not already open in the right sidebar
           const existingLeaf = this.app.workspace
@@ -1143,11 +1149,11 @@ if (!Array.isArray(this.labelCache) || this.labelCache.length === 0) {
               labels: this.labelCache || [],
             };
             // Clear container
-            el.innerHTML = "";
+            clearEl(el);
             // Create a wrapper for the filter row and task list, as in createLayout
             const filterRowWrapper = document.createElement("div");
             filterRowWrapper.className = "filter-row-wrapper";
-            filterRowWrapper.style.display = "none"; // Hide filter bar for inline boards
+            filterRowWrapper.classList.add("tb-hidden"); // Hide filter bar for inline boards
             el.appendChild(filterRowWrapper);
             // Insert sort toolbar immediately after filterRowWrapper
             // --- Begin Inline Sort Toolbar ---
@@ -1161,12 +1167,10 @@ const existing = el.querySelector(".inline-toolbar");
 if (existing) existing.remove();
 
 const toolbar = createDiv("inline-toolbar");
-toolbar.style.display = "flex";
-toolbar.style.gap = "8px";
-toolbar.style.marginBottom = "8px";
+toolbar.classList.add("tb-flex", "tb-gap-8", "tb-mb-8");
 
             const sortButton = createDiv({ cls: "clickable-icon" });
-            sortButton.style.fontSize = "0.8em";
+            sortButton.classList.add("tb-fs-08");
             setIcon(sortButton, "arrow-up-down");
             const sortLabel = document.createElement("span");
             // Persist sort mode per filter key
@@ -1175,8 +1179,7 @@ if (!currentSortMode) currentSortMode = el.dataset.sortMode || "Due Date";
 el.dataset.sortMode = currentSortMode;
 this.setSortMode(filterKey, currentSortMode);
 sortLabel.textContent = `Sort: ${currentSortMode}`;
-            sortLabel.style.marginLeft = "4px";
-            sortLabel.style.fontSize = "0.8em";
+            sortLabel.classList.add("tb-ml-4", "tb-fs-08");
             sortButton.appendChild(sortLabel);
             sortButton.setAttribute("aria-label", "Sort Tasks");
             sortButton.setAttribute("role", "button");
@@ -1238,51 +1241,86 @@ const base: Task[] = this.getViewTasks(currentFilterKey);
   // Hide metadata for child (sub) tasks AND mark parents (inline boards)
 try {
   const vt = (viewTasks as any[]) || [];
-const byId = new Map(vt.map((t: any) => [String(t.id), t]));
+  const byId = new Map(vt.map((t: any) => [String(t.id), t]));
 
-// Build the parent-id set from the entire store so parents still mark even if children are filtered out
-const childParentIds = new Set(
-  Object.values(this.taskStore || {})
-    .filter((t: any) => t && t.parentId)
-    .map((t: any) => String(t.parentId))
-);
+  // Build the parent-id set from the entire store so parents still mark even if children are filtered out
+  const childParentIds = new Set(
+    Object.values(this.taskStore || {})
+      .filter((t: any) => t && t.parentId)
+      .map((t: any) => String(t.parentId))
+  );
 
-const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+  const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
 
-nodes.forEach((node) => {
-  const id = String(node.dataset.taskId || "");
-  const t = byId.get(id);
+  nodes.forEach((node) => {
+    const id = String(node.dataset.taskId || "");
+    const t = byId.get(id);
 
-  // Child rows: hide meta
-  if (t && t.parentId) {
-    node.classList.add("is-child-task");
-    const hideSel =
-      ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
-    node.querySelectorAll(hideSel).forEach((el) => ((el as HTMLElement).style.display = "none"));
-  }
-
-  // Parent rows: add inline emoji marker once
-  if (childParentIds.has(id)) {
-    node.classList.add("has-children", "parent-task");
-
-    const titleEl =
-      node.querySelector<HTMLElement>(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
-      node.querySelector<HTMLElement>(".task-content-wrapper") ||
-      node;
-
-    if (titleEl && !titleEl.querySelector(".parent-mark")) {
-      const mark = document.createElement("span");
-      mark.className = "parent-mark";
-      mark.textContent = "☰";
-      mark.style.marginLeft = "6px";
-      mark.style.opacity = "0.8";
-      mark.style.display = "inline-block";
-      titleEl.appendChild(mark); // placed at the end of the title content
+    // Child rows: hide meta
+    if (t && t.parentId) {
+      node.classList.add("is-child-task");
+      const hideSel =
+        ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
+      node.querySelectorAll(hideSel).forEach((el) => (el as HTMLElement).classList.add("tb-hidden"));
     }
-  }
-});
+
+    // Parent rows: add inline emoji marker once
+    if (childParentIds.has(id)) {
+      node.classList.add("has-children", "parent-task");
+
+      const titleEl =
+        node.querySelector<HTMLElement>(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
+        node.querySelector<HTMLElement>(".task-content-wrapper") ||
+        node;
+
+      if (titleEl && !titleEl.querySelector(".parent-mark")) {
+        const mark = document.createElement("span");
+        mark.className = "parent-mark";
+        mark.textContent = "🔢";
+        mark.classList.add("tb-ml-6", "tb-opacity-80", "tb-inline");
+        titleEl.appendChild(mark); // placed at the end of the title content
+      }
+    }
+  });
 } catch {}
+
+  
               }
+              // --- Populate label pill text (inline board) ---
+try {
+  const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+  const byId = new Map((viewTasks as any[]).map((t: any) => [String(t.id), t]));
+
+  nodes.forEach((node) => {
+    const id = String(node.dataset.taskId || "");
+    const task = byId.get(id);
+
+    // find the existing chip on this card
+    const pill =
+      node.querySelector<HTMLElement>("span.pill.label-pill, .pill.label-pill, .label-pill");
+    if (!pill) return;
+
+    const labs = Array.isArray(task?.labels) ? (task!.labels as (number | string)[]) : [];
+    const names = labs
+      .map((lab) => {
+        const hit = (this.labelCache || []).find(
+          (l: any) =>
+            String((l as any).id) === String(lab) ||
+            String((l as any).name) === String(lab)
+        );
+        return String(hit?.name ?? lab);
+      })
+      .filter((s) => s && s.trim().length > 0);
+
+    if (pill.querySelector(".label-part")) {
+  // already built by createLabelPill → keep structure, just toggle visibility
+  pill.classList.toggle("tb-hidden", !names.length);
+} else {
+  pill.textContent = names.join(", ");
+  pill.classList.toggle("tb-hidden", !names.length);
+}
+  });
+} catch {}
             };
             render();
             
@@ -1368,32 +1406,35 @@ this.setSortMode(filterKey, currentSortMode);
 // --- Capture (+) Button for inline board ---
 const captureBtn = document.createElement("span");
 captureBtn.className = "clickable-icon todoist-add-task-btn";
-captureBtn.style.transform = "scale(1.25)";
-captureBtn.style.opacity = "0.6"; // match faded look
-captureBtn.style.display = "flex";
-captureBtn.style.alignItems = "center";
-captureBtn.style.justifyContent = "center";
-captureBtn.style.cursor = "pointer";
+captureBtn.classList.add(
+  "tb-scale-125",
+  "tb-opacity-60",
+  "tb-flex",
+  "tb-ai-center",
+  "tb-justify-center",
+  "tb-cursor-pointer"
+);
 setIcon(captureBtn, "plus-circle");
 captureBtn.title = "Add Task";
 captureBtn.onclick = () => {
   this.openAddTaskModal();
 };
 // Match hover style
-captureBtn.addEventListener("mouseenter", () => captureBtn.style.opacity = "1");
-captureBtn.addEventListener("mouseleave", () => captureBtn.style.opacity = "0.6");
+// Hover/focus opacity now handled in CSS via .tb-opacity-60 default and hover rule
 a11yButton(captureBtn, "Add task");
 toolbar.appendChild(captureBtn);
 // --- End Capture (+) Button ---
 // --- Copy List Button ---
 const copyBtn = document.createElement("span");
 copyBtn.className = "clickable-icon";
-copyBtn.style.transform = "scale(1.1)";
-copyBtn.style.opacity = "0.6";
-copyBtn.style.display = "flex";
-copyBtn.style.alignItems = "center";
-copyBtn.style.justifyContent = "center";
-copyBtn.style.cursor = "pointer";
+copyBtn.classList.add(
+  "tb-scale-110",
+  "tb-opacity-60",
+  "tb-flex",
+  "tb-ai-center",
+  "tb-justify-center",
+  "tb-cursor-pointer"
+);
 setIcon(copyBtn, "copy");
 copyBtn.title = "Copy list";
 copyBtn.onclick = async () => {
@@ -1421,8 +1462,7 @@ copyBtn.onclick = async () => {
       // Fallback for environments without Clipboard API permissions
       const ta = document.createElement("textarea");
       ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.left = "-10000px";
+      ta.classList.add("tb-fixed-offscreen");
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");
@@ -1434,8 +1474,7 @@ copyBtn.onclick = async () => {
     new Notice("Copy failed");
   }
 };
-copyBtn.addEventListener("mouseenter", () => (copyBtn.style.opacity = "1"));
-copyBtn.addEventListener("mouseleave", () => (copyBtn.style.opacity = "0.6"));
+// Hover opacity handled in CSS
 a11yButton(copyBtn, "Copy task list");
 toolbar.appendChild(copyBtn);
 // --- End Copy List Button ---
@@ -1611,7 +1650,7 @@ el.prepend(toolbar);
     const source = defaultFilterRow.getAttribute("data-filter") || "today";
     const prev = container.getAttribute("data-current-filter");
 if (prev !== String(source)) container.setAttribute("data-current-filter", String(source));
-container.innerHTML = "";
+clearEl(container);
 (this as TodoistBoardPlugin).renderTodoistBoard(
       container as HTMLElement,
       `filter: ${String(source)}`,
@@ -1815,7 +1854,7 @@ try {
         // Defensive copy, but preserve order as provided
         tasks = [...taskList];
       }
-      container.innerHTML = "";
+      clearEl(container);
       const currentKey = `${currentFilter}:${tasks?.length || 0}`;
       container.setAttribute("data-prev-render-key", currentKey);
 
@@ -1827,8 +1866,8 @@ try {
       }
 
       if (this.loadingOverlay) {
-        this.loadingOverlay.style.display = "flex";
-      }
+  this.loadingOverlay.classList.add("is-visible");
+}
 
       let cachedTasks = tasks;
       let defaultFilter = currentFilter;
@@ -1856,17 +1895,16 @@ listWrapper.classList.toggle("compact-mode", this.compactMode);
       // Hide the entire toolbar for inline boards (markdown blocks / reading mode)
       const inlineBoard = container.classList.contains("block-language-todoist-board") || !!container.closest(".markdown-reading-view");
       if (inlineBoard) {
-        requestAnimationFrame(() => {
-          toolbar.style.setProperty("display", "none", "important");
-        });
-      }
+  requestAnimationFrame(() => {
+    toolbar.classList.add("tb-hidden");
+  });
+}
       // Toggle compact-mode class on container only
       container.classList.toggle("compact-mode", this.compactMode);
       const skipToolbar = hideToolbar || inlineBoard;
       if (skipToolbar) {
-        toolbar.classList.add("hide-toolbar");
-        toolbar.style.display = "none";
-      } else {
+  toolbar.classList.add("hide-toolbar", "tb-hidden");
+} else {
         this.renderToolbar(toolbar, filterOptions, source, container, ctx, apiKey, listWrapper);
       }
 
@@ -1897,48 +1935,73 @@ listWrapper.classList.toggle("compact-mode", this.compactMode);
             });
             children.forEach((n) => listWrapper.appendChild(n));
 
-            // Hide child metadata AND mark parents (sidebar/plugin board)
+    // Hide child metadata AND mark parents (sidebar/plugin board)
 try {
   const byId = new Map(viewTasks.map((t: any) => [String(t.id), t]));
-const childParentIds = new Set(
-  Object.values(this.taskStore || {})
-    .filter((t: any) => t && t.parentId)
-    .map((t: any) => String(t.parentId))
-);
-const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+  const childParentIds = new Set(
+    Object.values(this.taskStore || {})
+      .filter((t: any) => t && t.parentId)
+      .map((t: any) => String(t.parentId))
+  );
+  const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
 
-nodes.forEach((node) => {
-  const id = String(node.dataset.taskId || "");
-  const t = byId.get(id);
+  nodes.forEach((node) => {
+    const id = String(node.dataset.taskId || "");
+    const t = byId.get(id);
 
-  if (t && t.parentId) {
-    node.classList.add("is-child-task");
-    const hideSel =
-      ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
-    node.querySelectorAll(hideSel).forEach((el) => ((el as HTMLElement).style.display = "none"));
-  }
-
-  if (childParentIds.has(id)) {
-    node.classList.add("has-children", "parent-task");
-
-    const titleEl =
-      node.querySelector<HTMLElement>(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
-      node.querySelector<HTMLElement>(".task-content-wrapper") ||
-      node;
-
-    if (titleEl && !titleEl.querySelector(".parent-mark")) {
-      const mark = document.createElement("span");
-      mark.className = "parent-mark";
-      mark.textContent = "☰";
-      mark.style.marginLeft = "6px";
-      mark.style.opacity = "0.8";
-      mark.style.display = "inline-block";
-      titleEl.appendChild(mark);
+    // Hide meta for child rows
+    if (t && t.parentId) {
+      node.classList.add("is-child-task");
+      const hideSel =
+        ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
+      node.querySelectorAll(hideSel).forEach((el) => (el as HTMLElement).classList.add("tb-hidden"));
     }
-  }
-});
+
+    // Mark parent rows
+    if (childParentIds.has(id)) {
+      node.classList.add("has-children", "parent-task");
+
+      const titleEl =
+        node.querySelector<HTMLElement>(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
+        node.querySelector<HTMLElement>(".task-content-wrapper") ||
+        node;
+
+      if (titleEl && !titleEl.querySelector(".parent-mark")) {
+        const mark = document.createElement("span");
+        mark.className = "parent-mark";
+        mark.textContent = "🔢";
+        mark.classList.add("tb-ml-6", "tb-opacity-80", "tb-inline");
+        titleEl.appendChild(mark); // placed at the end of the title content
+      }
+    }
+  });
 } catch {}
+
           }
+          // --- Populate label pill text (sidebar/plugin board) ---
+    try {
+      const nodes2 = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+      const byId2 = new Map(viewTasks.map((t: any) => [String(t.id), t]));
+      nodes2.forEach((node) => {
+        const id = String(node.dataset.taskId || "");
+        const task = byId2.get(id);
+        const pill = node.querySelector("span.pill.label-pill") as HTMLElement | null;
+        if (!pill) return;
+
+        const labs = Array.isArray(task?.labels) ? (task!.labels as (number | string)[]) : [];
+        const names = labs.map((lab) => {
+          const hit = (this.labelCache || []).find((l: any) => String((l as any).id) === String(lab) || String((l as any).name) === String(lab));
+          return String(hit?.name ?? lab);
+        }).filter((s) => s && s.trim().length > 0);
+
+        if (pill.querySelector(".label-part")) {
+  pill.classList.toggle("tb-hidden", !names.length);
+} else {
+  pill.textContent = names.join(", ");
+  pill.classList.toggle("tb-hidden", !names.length);
+}
+      });
+    } catch {}
         } catch {}
 
         // PATCH: Fetch metadata in background if stale, then re-render
@@ -1948,18 +2011,18 @@ nodes.forEach((node) => {
 
         if (!metadataFresh) {
           this.fetchMetadataFromSync(apiKey).then(metadata => {
-  this.projectCache = metadata.projects;
-  this.labelCache = metadata.labels;
-  this.projectCacheTimestamp = now;
-  this.labelCacheTimestamp = now;
+            this.projectCache = metadata.projects;
+            this.labelCache = metadata.labels;
+            this.projectCacheTimestamp = now;
+            this.labelCacheTimestamp = now;
 
-  // Inline boards keep their own sort & render
-  if (container.classList.contains("todoist-inline-board")) {
-    container.dispatchEvent(new CustomEvent("todoist-inline-refresh", { bubbles: true }));
-  } else {
-    this.renderTodoistBoard(container, source, ctx, apiKey);
-  }
-});
+            // Inline boards keep their own sort & render
+            if (container.classList.contains("todoist-inline-board")) {
+              container.dispatchEvent(new CustomEvent("todoist-inline-refresh", { bubbles: true }));
+            } else {
+              this.renderTodoistBoard(container, source, ctx, apiKey);
+            }
+          });
         }
 
         this.setupGlobalEventListeners();
@@ -1976,21 +2039,21 @@ nodes.forEach((node) => {
 
       } finally {
         if (this.loadingOverlay) {
-          this.loadingOverlay.style.display = "none";
-        }
+  this.loadingOverlay.classList.remove("is-visible");
+}
       }
     } finally {
-  const still = container.getAttribute("data-render-token");
-if (still === renderToken) {
-  container.removeAttribute("data-rendering");
-  container.removeAttribute("data-render-token");
-  // If a rerender was requested while we were busy, run it now
-  if (container.getAttribute("data-render-pending") === "1") {
-    container.removeAttribute("data-render-pending");
-    queueMicrotask(() => this.renderTodoistBoard(container, source, ctx, apiKey));
-  }
-}
-}
+      const still = container.getAttribute("data-render-token");
+      if (still === renderToken) {
+        container.removeAttribute("data-rendering");
+        container.removeAttribute("data-render-token");
+        // If a rerender was requested while we were busy, run it now
+        if (container.getAttribute("data-render-pending") === "1") {
+          container.removeAttribute("data-render-pending");
+          queueMicrotask(() => this.renderTodoistBoard(container, source, ctx, apiKey));
+        }
+      }
+    }
   }
 
   private setupContainer(container: HTMLElement) {
@@ -2089,7 +2152,13 @@ selectedFilterIndex = initialIndex;
     filterOptions.forEach((opt, idx) => {
       const filterRow = document.createElement("div");
       filterRow.className = "filter-row";
-      filterRow.innerHTML = `<span class="filter-icon"></span><span class="filter-title">${opt.title}</span>`;
+      clearEl(filterRow);
+
+const iconSpan = filterRow.createSpan({ cls: "filter-icon" });
+// If you have an icon name on the option, use it; else fall back.
+try { setIcon(iconSpan, String((opt as any)?.icon ?? "filter")); } catch {}
+
+filterRow.createSpan({ cls: "filter-title", text: String((opt as any)?.title ?? "") });
       filterRow.setAttribute("data-filter", opt.filter);
       const iconEl = filterRow.querySelector(".filter-icon") as HTMLElement;
       setIcon(iconEl, opt.icon || "star");
@@ -2208,7 +2277,7 @@ private getOrCreateModalHost(): HTMLDivElement {
 
 private showSkeletonModal(title = "Edit Task"): HTMLDivElement {
   const host = this.getOrCreateModalHost();
-  host.innerHTML = "";
+  clearEl(host);
   // Outer wrapper matches your CSS scope
 const box = document.createElement("div");
 box.className = "todoist-edit-task-modal";
@@ -2222,18 +2291,43 @@ Object.assign(inner.style, {
   maxWidth: "92vw"
 });
 
-inner.innerHTML = `
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-    <div class="modal-title" style="font-weight:600;">${title}</div>
-    <div class="spinner" style="margin-left:auto;width:16px;height:16px;border-radius:50%;
-      border:2px solid var(--text-muted);border-top-color:transparent;animation:spin .9s linear infinite;"></div>
-  </div>
-  <div class="skeleton-lines">
-    <div style="height:36px;background:var(--background-modifier-border);border-radius:8px;margin-bottom:8px;"></div>
-    <div style="height:92px;background:var(--background-modifier-border);border-radius:8px;margin-bottom:8px;"></div>
-    <div style="height:36px;background:var(--background-modifier-border);border-radius:8px;margin-bottom:8px;"></div>
-  </div>
-`;
+clearEl(inner);
+
+// Build body without string HTML
+const modalBody = inner.createDiv({ cls: "todoist-modal-body" });
+
+// Title
+const titleRow = modalBody.createDiv({ cls: "taskmodal-title-row" });
+titleRow.createEl("label", { text: "Title", cls: "taskmodal-label" });
+const titleInput = titleRow.createEl("input", { cls: "taskmodal-input", type: "text" });
+
+// Description
+const descRow = modalBody.createDiv({ cls: "taskmodal-desc-row" });
+descRow.createEl("label", { text: "Description", cls: "taskmodal-label" });
+const descInput = descRow.createEl("textarea", { cls: "taskmodal-textarea" });
+
+// Due
+const dueRow = modalBody.createDiv({ cls: "taskmodal-due-row" });
+dueRow.createEl("label", { text: "Due", cls: "taskmodal-label" });
+const dueInput = dueRow.createEl("input", { cls: "taskmodal-input", type: "date" });
+
+// Project
+const projRow = modalBody.createDiv({ cls: "taskmodal-project-row" });
+projRow.createEl("label", { text: "Project", cls: "taskmodal-label" });
+const projectSelect = projRow.createEl("select", { cls: "taskmodal-select" });
+
+// Labels
+const labelsRow = modalBody.createDiv({ cls: "taskmodal-labels-row" });
+labelsRow.createEl("label", { text: "Labels", cls: "taskmodal-label" });
+const labelList = labelsRow.createDiv({ cls: "taskmodal-label-list" });
+
+// Buttons
+const buttonRow = modalBody.createDiv({ cls: "taskmodal-button-row" });
+const cancelBtn = buttonRow.createEl("button", { cls: "taskmodal-button-cancel", text: "Cancel" });
+const saveBtn   = buttonRow.createEl("button", { cls: "taskmodal-button-save", text: "Save" });
+
+// keep your existing save handler right after this block
+(cancelBtn as HTMLButtonElement).onclick = () => { try { this.closeModal(); } catch {} };
 
 box.appendChild(inner);
   if (!host.parentElement) document.body.appendChild(host);
@@ -2574,7 +2668,7 @@ requestAnimationFrame(() => {
           // If modal is still open, update dropdowns
           const projectSelect = modal.contentEl.querySelector(".taskmodal-project-select") as HTMLSelectElement;
           if (projectSelect && Array.isArray(this.projectCache)) {
-            projectSelect.innerHTML = "";
+            clearEl(projectSelect);
             for (const project of this.projectCache) {
               const option = document.createElement("option");
               option.value = project.id;
@@ -2585,7 +2679,7 @@ requestAnimationFrame(() => {
 
           const labelList = modal.contentEl.querySelector(".taskmodal-label-list");
           if (labelList && Array.isArray(this.labelCache)) {
-            labelList.innerHTML = "";
+            clearEl(labelList);
             this.labelCache.forEach((label: any) => {
               const labelCheckbox = document.createElement("label");
               labelCheckbox.className = "taskmodal-label-checkbox";
@@ -2738,7 +2832,7 @@ private setupMutationObserver(container: HTMLElement) {
       // Find the list wrapper inside the container
       const listWrapper = container.querySelector(".list-wrapper") as HTMLElement;
       if (listWrapper) {
-        listWrapper.innerHTML = "";
+        clearEl(listWrapper);
         const tasksResponse = await this.fetchFilteredTasksFromREST(this.settings.apiKey, currentFilter);
         const tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
         // --- Fetch and update project/label metadata as part of manual sync ---
@@ -2825,7 +2919,7 @@ private setupMutationObserver(container: HTMLElement) {
         const cachedTasks = JSON.parse(localStorage.getItem(`todoistTasksCache:${currentFilter}`) || "[]");
         const board = boardContainer as HTMLElement;
         if (board) {
-          board.innerHTML = "";
+          clearEl(board);
           const currentFilterStr = `filter: ${currentFilter}`;
           localStorage.setItem(`todoistTasksCache:${currentFilter}`, JSON.stringify(cachedTasks));
           this.renderTodoistBoard(board, currentFilterStr, {}, this.settings.apiKey, {
@@ -2989,7 +3083,7 @@ private setupMutationObserver(container: HTMLElement) {
         const iconCell = row.createEl("td");
         // Trigger div
         const iconTrigger = iconCell.createDiv({ cls: "icon-trigger" });
-        iconTrigger.innerHTML = "";
+        clearEl(iconTrigger);
         setIcon(iconTrigger, f.icon || "star");
         iconTrigger.style.cursor = "pointer";
         iconTrigger.style.fontSize = "1.6em";
@@ -3071,7 +3165,7 @@ private setupMutationObserver(container: HTMLElement) {
           iconBtn.onclick = (e) => {
             e.preventDefault();
             thisFilter.icon = iconName;
-            iconTrigger.innerHTML = "";
+            clearEl(iconTrigger);
             setIcon(iconTrigger, iconName);
             iconPickerWrapper.classList.remove("visible");
             iconPickerWrapper.querySelectorAll(".icon-grid-btn").forEach((b: HTMLElement) => b.classList.remove("selected"));
@@ -3206,7 +3300,7 @@ private setupMutationObserver(container: HTMLElement) {
         document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
           const container = el as HTMLElement;
           const source = container.getAttribute("data-current-filter") || "";
-          container.innerHTML = "";
+          clearEl(container);
           this.renderTodoistBoard(container, source, {}, (this.settings && this.settings.apiKey) || "");
         });
 
@@ -4071,7 +4165,7 @@ const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save",
         document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
           const container = el as HTMLElement;
           const source = container.getAttribute("data-current-filter") || "";
-          container.innerHTML = "";
+          clearEl(container);
           this.renderTodoistBoard(container, source, {}, this.settings.apiKey);
         });
         // Now close the modal after UI and storage updates
@@ -4166,7 +4260,7 @@ const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save",
           document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
             const container = el as HTMLElement;
             const source = container.getAttribute("data-current-filter") || "";
-            container.innerHTML = "";
+            clearEl(container);
             this.renderTodoistBoard(container, source, {}, this.settings.apiKey);
           });
 
@@ -4229,7 +4323,7 @@ const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save",
 
     const projectSelect = modal.contentEl.querySelector(".taskmodal-project-select") as HTMLSelectElement;
     if (projectSelect && Array.isArray(this.projectCache)) {
-      projectSelect.innerHTML = "";
+      clearEl(projectSelect);
       for (const project of this.projectCache) {
         const option = document.createElement("option");
         option.value = project.id;
@@ -4241,7 +4335,7 @@ const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save",
 
     const labelList = modal.contentEl.querySelector(".taskmodal-label-list");
     if (labelList && Array.isArray(this.labelCache)) {
-      labelList.innerHTML = "";
+      clearEl(labelList);
       const labelListData = Array.isArray(this.labelCache)
         ? this.labelCache
         : Array.isArray((this.labelCache as any)?.results)
@@ -4432,7 +4526,7 @@ const saveBtn = createEl("button", { cls: "taskmodal-button-save", text: "Save",
     left.className = "task-content";
 
     const titleSpan = document.createElement("span");
-    titleSpan.innerHTML = "";
+    clearEl(titleSpan);
 MarkdownRenderer.renderMarkdown(task.content, titleSpan, "", this);
     titleSpan.className = "task-title";
 
@@ -4653,29 +4747,124 @@ private getDayLabel(dt: DateTime): string {
     projectPill.className = "pill project-pill";
     projectPill.setAttribute("data-type", "project");
 
-    const projName = projectMap[projectId] || "Unknown Project";
-    const projectColorId = projects.find((p: any) => p.id === projectId)?.color;
-    const projectHexColor = TODOIST_COLORS[projectColorId];
+    // Resolve project name (string keys to avoid number/string mismatch)
+    const projName = projectMap[String(projectId)] || "Unknown Project";
 
-    projectPill.innerHTML = projName === "Inbox"
-      ? `<span class="project-hash" style="color:${projectHexColor};">#</span> 📥 Inbox`
-      : `<span class="project-hash" style="color:${projectHexColor};">#</span> ${projName}`;
+    // Find the project by id (robust to number/string)
+    const proj = Array.isArray(projects)
+      ? projects.find((p: any) => String(p.id) === String(projectId))
+      : undefined;
+
+    // Resolve color: Todoist gives a named color (e.g., "violet", "charcoal")
+    let projHex = "";
+    const colorVal: any = proj?.color;
+    if (typeof colorVal === "string" && colorVal.trim()) {
+      const c = colorVal.trim();
+      // Pass through hex/rgb; otherwise map named color using TODOIST_COLORS
+      projHex = (c.startsWith("#") || c.startsWith("rgb")) ? c : ((TODOIST_COLORS as any)[c] || "");
+    }
+
+    // Store color id/name as attribute for CSS if you need it later
+    if (colorVal) projectPill.setAttribute("data-project-color-id", String(colorVal));
+
+    // Provide CSS var + direct color on the hash; remove any stale var first
+    projectPill.style.removeProperty("--project-color");
+    if (projHex) projectPill.style.setProperty("--project-color", projHex);
+
+    // Build content
+    clearEl(projectPill);
+
+    const pname = String(projName || "Unknown");
+    if (pname.toLowerCase() === "inbox") projectPill.classList.add("project-pill-inbox");
+
+    const hash = document.createElement("span");
+    hash.className = "project-hash";
+    hash.textContent = "#";
+    if (projHex) (hash as HTMLElement).style.color = projHex; // visible even if theme overrides var
+    projectPill.appendChild(hash);
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "project-name";
+    nameSpan.textContent = pname.toLowerCase() === "inbox" ? "📥 Inbox" : pname;
+    projectPill.appendChild(nameSpan);
 
     return projectPill;
   }
 
-  private createLabelPill(labels: number[], labelMap: Record<string, string>, labelColorMap: Record<string, string>): HTMLElement | null {
-    if (!labels || labels.length === 0) return null;
+  private createLabelPill(
+    labels: (number | string)[],
+    labelMap: Record<string, string>,
+    labelColorMap: Record<string, string>
+  ): HTMLElement | null {
+    if (!Array.isArray(labels) || labels.length === 0) return null;
 
     const labelPill = document.createElement("span");
     labelPill.className = "pill label-pill";
     labelPill.setAttribute("data-type", "label");
 
-    labelPill.innerHTML = labels.map((id: number) => {
-      const name = labelMap[id] || id;
-      const color = labelColorMap[id] || "#9333ea";
-      return `<span><span style="color:${color}; font-size: 1.05em;">@ </span>${name}</span>`;
-    }).join(`<span class="label-separator">,</span>`);
+    // Helper: resolve id key from id or name
+    const resolveIdKey = (val: string): string | null => {
+      const s = String(val);
+      if ((labelMap as any)[s] !== undefined) return s;
+      const n = Number(s);
+      if (!Number.isNaN(n) && (labelMap as any)[n] !== undefined) return String(n);
+      for (const [id, name] of Object.entries(labelMap)) {
+        if (String(name) === s) return id;
+      }
+      return null;
+    };
+
+    labels.forEach((raw, idx) => {
+      const input = String(raw);
+      const idKey = resolveIdKey(input);
+      const name = idKey ? ((labelMap as any)[idKey] ?? input) : input;
+
+      // --- Resolve color ---
+      // Try the provided color map first (by id or original input)
+      let rawColor: any = idKey ? (labelColorMap as any)[idKey] : undefined;
+      if (!rawColor && (labelColorMap as any)[input] !== undefined) {
+        rawColor = (labelColorMap as any)[input];
+      }
+      // Fallback to plugin labelCache (some flows only hydrate this)
+      if (!rawColor && Array.isArray((this as any).labelCache)) {
+        const hit = (this as any).labelCache.find((l: any) => String(l.id) === input || String(l.id) === idKey || String(l.name) === input);
+        rawColor = hit?.color;
+      }
+
+      let color = "";
+      if (typeof rawColor === "string" && rawColor.trim()) {
+        const c = rawColor.trim();
+        color = (c.startsWith("#") || c.startsWith("rgb")) ? c : (((TODOIST_COLORS as any)[c]) || c);
+      }
+
+      // Piece: "@ " + name
+      const part = document.createElement("span");
+      part.className = "label-part";
+
+      const at = document.createElement("span");
+      at.className = "label-at";
+      at.textContent = "@ ";
+
+      if (color) {
+        (labelPill as HTMLElement).style.setProperty("--label-color", color);
+        (part as HTMLElement).style.setProperty("--label-color", color);
+        (at as HTMLElement).style.setProperty("--label-color", color);
+        (at as HTMLElement).classList.add("label-at");
+        // Extra guard: append inline declaration so DevTools shows the winning rule
+        (at as HTMLElement).style.cssText += `; --label-color: ${color}; color: ${color} !important;`;
+      }
+
+      part.appendChild(at);
+      part.appendChild(document.createTextNode(String(name)));
+      labelPill.appendChild(part);
+
+      if (idx < labels.length - 1) {
+        const sep = document.createElement("span");
+        sep.className = "label-separator";
+        sep.textContent = ",";
+        labelPill.appendChild(sep);
+      }
+    });
 
     return labelPill;
   }
@@ -4756,7 +4945,7 @@ const beginDrag = (e?: PointerEvent) => {
 const listView = listWrapper.closest(".list-view");
 if (listView) {
   listView.classList.add("drag-scroll-block");
-  (listView as HTMLElement).style.touchAction = "none";
+  (listView as HTMLElement)?.classList.add("tb-touch-none", "tb-overflow-hidden");
 }
   // NOW prevent default since we're starting a drag
   if (e && e.cancelable) {
@@ -4766,22 +4955,15 @@ if (listView) {
   
 
   // NOW set these drag properties
-  row.style.touchAction = "none";
+  row?.classList.add("tb-touch-none");
   document.body.classList.add("drag-disable");
-          document.body.style.overflow = 'hidden';
-          document.body.style.position = 'fixed';
-          document.body.style.width = '100%';
-          document.body.style.height = '100%';
-
-        // PATCH: Prevent select on iOS during drag
-        document.body.style.webkitUserSelect = 'none';
-        document.body.style.userSelect = 'none';
+          document.body.classList.add("tb-scroll-lock");
         
-        listWrapper.style.touchAction = 'none';
+        listWrapper?.classList.add("tb-touch-none");
         // NEW (reuse the existing listView variable):
 if (listView) {
-  (listView as HTMLElement).style.touchAction = "none";
-  (listView as HTMLElement).style.overflow = "hidden";
+  (listView as HTMLElement)?.classList.add("tb-touch-none", "tb-overflow-hidden");
+  (listView as HTMLElement)?.classList.add("tb-overflow-hidden");
 }
         // PATCH: Also block touchAction on .list-view
         if (listWrapper.closest(".list-view")) {
@@ -4797,7 +4979,7 @@ if (listView) {
         // PATCH: block scroll in list-view while dragging
         if (listView) {
           listView.classList.add("drag-scroll-block");
-          (listView as HTMLElement).style.touchAction = "none";
+          (listView as HTMLElement)?.classList.add("tb-touch-none", "tb-overflow-hidden");
         }
           const obsidianContainers = [
           document.querySelector('.workspace-leaf-content'),
@@ -4808,8 +4990,8 @@ if (listView) {
         obsidianContainers.forEach(container => {
     if (container) {
       const el = container as HTMLElement;
-      el.style.touchAction = 'none';
-      el.style.overflow = 'hidden';
+      el?.classList.add("tb-touch-none");
+      el?.classList.add("tb-overflow-hidden");
       // Store original values to restore later
       el.dataset.originalTouchAction = el.style.touchAction;
       el.dataset.originalOverflow = el.style.overflow;
@@ -4873,19 +5055,14 @@ if (listView) {
 
           row.classList.remove("dragging-row");
           // PATCH: unblock scroll in list-view after dragging
-          document.body.style.overflow = '';
-          document.body.style.position = '';
-          document.body.style.width = '';
-          document.body.style.height = '';
-          document.body.style.webkitUserSelect = '';
-          document.body.style.userSelect = '';
+          document.body.classList.remove("tb-scroll-lock");
           // PATCH: unblock scroll in list-view after dragging
           
           if (listView) listView.classList.remove("drag-scroll-block");
           if (listView) (listView as HTMLElement).style.touchAction = "";
-          listWrapper.style.touchAction = '';
+          listWrapper?.classList.remove("tb-touch-none");
           if (listView) {
-          (listView as HTMLElement).style.touchAction = "";
+          (listView as HTMLElement)?.classList.remove("tb-touch-none", "tb-overflow-hidden");
           (listView as HTMLElement).style.overflow = "";
           listView.classList.remove("drag-scroll-block");
     }
@@ -4964,7 +5141,7 @@ if (listView) {
             listView.classList.remove("drag-scroll-block");
           }
           if (listView) (listView as HTMLElement).style.touchAction = "";
-          row.style.touchAction = "";
+          row?.classList.remove("tb-touch-none");
           // PATCH: Remove drag-disable and drag-scroll-block classes
           document.body.classList.remove("drag-disable");
           listWrapper.classList.remove("drag-scroll-block");
@@ -5073,8 +5250,13 @@ if (listView) {
     checkbox.className = "todoist-checkbox";
     
     const rowPrioColor = priorityColors[priority] || "#999";
-    checkbox.style.borderColor = rowPrioColor;
-    checkbox.style.background = `${rowPrioColor}0D`;
+    const rowEl =
+  checkbox.closest<HTMLElement>(".todoist-card") ||
+  checkbox.closest<HTMLElement>(".task") ||
+  checkbox.closest<HTMLElement>(".task-row") ||
+  (checkbox.parentElement as HTMLElement | null);
+
+if (rowEl) rowEl.style.setProperty("--prio-color", rowPrioColor);
 
     // Prevent task selection when clicking checkbox
     checkbox.addEventListener("click", async (e) => {
@@ -5092,8 +5274,7 @@ if (listView) {
         row.classList.add("completed");
         // TypeScript fix: cast row to HTMLElement for .style
         const rowEl = row as HTMLElement;
-        rowEl.style.transition = "opacity 0.2s ease-out";
-        rowEl.style.opacity = "0.4";
+        rowEl.classList.add("tb-dimming");
         setTimeout(() => {
           // Optionally remove from DOM after 300ms
           if (rowEl.parentElement) rowEl.parentElement.removeChild(rowEl);
@@ -5186,11 +5367,10 @@ class TodoistBoardSettingTab extends PluginSettingTab {
 
         const submitBtn = document.createElement("button");
         submitBtn.textContent = "Submit";
-        submitBtn.style.marginLeft = "8px";
+        submitBtn.classList.add("tb-ml-8");
 
         const indicator = document.createElement("span");
-        indicator.style.marginLeft = "8px";
-        indicator.style.fontWeight = "bold";
+        indicator.classList.add("tb-ml-8", "tb-bold");
 
         submitBtn.onclick = async () => {
           indicator.textContent = "⏳";
@@ -5225,12 +5405,24 @@ class TodoistBoardSettingTab extends PluginSettingTab {
       .setDesc("If you like how this plugin is shaping up, please consider supporting my work by buying me a coffee or TEN!")
       .addButton((button) => {
         button.setButtonText("☕ Coffee Season");
-        button.buttonEl.style.backgroundColor = "var(--interactive-accent)";
-        button.buttonEl.style.color = "white";
+        button.buttonEl.classList.add("tb-cta");
         button.onClick(() => {
           window.open("https://ko-fi.com/jamiedaghaim", "_blank");
         });
       });
+      // Console logging toggle
+new Setting(containerEl)
+  .setName("Console logging")
+  .setDesc("Print debug output of Todoist Board to the developer console.")
+  .addToggle((toggle) => {
+    toggle
+      .setValue(!!this.plugin.settings.enableLogs)
+      .onChange(async (value) => {
+        this.plugin.settings.enableLogs = value;
+        await this.plugin.saveSettings();
+        new Notice(value ? "Console logging: ON" : "Console logging: OFF", 1500);
+      });
+  });
 
     // --- Timezone Mode Settings ---
     new Setting(containerEl)

@@ -688,12 +688,27 @@ input.todoist-checkbox.priority-2 {
 }
 
 
+/* Keep hover effects but don’t overwrite priority colors */
 input.todoist-checkbox:hover {
-  border-color: #6366f1;
   animation: checkbox-check var(--transition-spring) ease-out;
   transform: scale(1.05);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
   z-index: 1000;
+}
+/* Only non-priority checkboxes get the neutral hover border */
+input.todoist-checkbox:not(.priority-2):not(.priority-3):not(.priority-4):hover {
+  border-color: #505050;
+}
+
+/* Hue‑matched hover glow for priority checkboxes */
+input.todoist-checkbox.priority-4:hover { /* P1 red */
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+input.todoist-checkbox.priority-3:hover { /* P2 amber */
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.14);
+}
+input.todoist-checkbox.priority-2:hover { /* P3 blue */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 input.todoist-checkbox:active {
@@ -908,6 +923,12 @@ input.todoist-checkbox::after {
   flex-wrap: wrap;
   line-height: 1;
 }
+/* label pill pieces */
+.pill.label-pill { --label-color: var(--pill-text); }
+.pill.label-pill .label-part { display: inline-flex; align-items: center; }
+.pill.label-pill .label-part .label-at { color: #9333ea !important; margin-right: 2px; } /* var(--label-color) will be used in future updates */
+.pill.label-pill .label-separator { margin: 0 4px; opacity: 0.6; }
+
  .todoist-board .task-description {
   position: relative;
   display: flex;
@@ -1065,6 +1086,36 @@ input.todoist-checkbox::after {
   padding: 4px 12px 8px 22px;
   transform: scale(0.97) translate3d(0, 0, 0);
   transition: all var(--transition-medium);
+}
+
+/* --- Normalize drag/placeholder content to the compact layout --- */
+.dragging-row .task-metadata,
+.task-placeholder .task-metadata,
+.dragging-row .task-meta,
+.task-placeholder .task-meta,
+.dragging-row .meta,
+.task-placeholder .meta,
+.dragging-row .metadata,
+.task-placeholder .metadata {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Keep compact 'when' row sizing consistent while dragging */
+.dragging-row .task-when,
+.task-placeholder .task-when {
+  font-size: 0.74rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Extra safety: prevent selection/drag artifacts inside the ghost */
+.dragging-row *,
+.task-placeholder * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
 .drag-scroll-block {
@@ -2590,6 +2641,10 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
   display: inline-block;
   vertical-align: baseline;
 }
+/* Hide parent-mark when a task is selected */
+.todoist-board .task.selected-task .parent-mark {
+  display: none !important;
+}
 /* ================================
    Dark mode: Enhanced Task Modal Inputs & Fields
    ================================ */
@@ -2718,3 +2773,67 @@ div.block-language-todoist-board.todoist-board > div.list-toolbar {
 .list-wrapper.compact-mode .task:not(.selected-task) .task-meta-compact {
   display: none !important;
 }
+
+
+/* ===== Utilities toggled by JS (consolidated) ===== */
+.todoist-board .tb-hidden { display: none !important; }
+
+/* Layout & spacing */
+.todoist-board .tb-flex { display: flex; }
+.todoist-board .tb-gap-8 { gap: 8px; }
+.todoist-board .tb-mb-8 { margin-bottom: 8px; }
+.todoist-board .tb-ml-4 { margin-left: 4px; }
+.todoist-board .tb-ml-6 { margin-left: 6px; }
+
+/* Typography */
+.todoist-board .tb-fs-08 { font-size: 0.8em; }
+.todoist-board .tb-bold { font-weight: 700; }
+
+/* Display helpers */
+.todoist-board .tb-inline { display: inline-block; }
+
+/* Opacity */
+.todoist-board .tb-opacity-80 { opacity: 0.8; }
+.todoist-board .tb-opacity-60 { opacity: 0.6; }
+/* Generic hover to unfade any tb-opacity-60 element */
+.todoist-board .tb-opacity-60:hover { opacity: 1; }
+
+/* Alignment */
+.todoist-board .tb-ai-center { align-items: center; }
+.todoist-board .tb-justify-center { justify-content: center; }
+
+/* Pointer */
+.todoist-board .tb-cursor-pointer { cursor: pointer; }
+
+/* Scale helpers */
+.todoist-board .tb-scale-125 { transform: scale(1.25); }
+.todoist-board .tb-scale-110 { transform: scale(1.1); }
+
+/* Overflow helpers */
+.todoist-board .tb-overflow-hidden { overflow: hidden; }
+.todoist-board .tb-maxh-160 { max-height: 160px; }
+.todoist-board .tb-ovy-auto { overflow-y: auto; }
+
+/* Offscreen positioning for clipboard textarea */
+.todoist-board .tb-fixed-offscreen { position: fixed; left: -10000px; }
+
+/* Dimming effect */
+.todoist-board .tb-dimming { transition: opacity .2s ease-out; opacity: .4; }
+
+/* Scroll lock on body during drags/modals */
+body.tb-scroll-lock {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Loading overlay visibility toggle */
+.loading-overlay { display: none; }
+.loading-overlay.is-visible { display: flex; }
+
+/* Label @ color via CSS variable (JS sets --label-color) */
+.todoist-board .label-at { color: var(--label-color, var(--pill-text)) !important; }
+
