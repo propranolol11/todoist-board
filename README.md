@@ -1,3 +1,5 @@
+_this readme is under construction_ 🚧
+
 An [Obsidian](https://obsidian.md) plugin that brings your [Todoist](https://todoist.com) tasks into beautiful, interactive boards; right inside your notes.
 
 Supports both **inline boards** (embedded in notes) and a **dedicated sidebar board** for quick task management.
