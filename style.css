@@ -640,7 +640,7 @@ input.todoist-checkbox {
   box-shadow: none;
   width: 22px;
   height: 22px;
-  border: 2.5px solid #d1d5db;
+  border: 2.5px solid #9ca3af;
   border-radius: 50%;
   cursor: pointer;
   margin-right: 4px;
@@ -670,13 +670,25 @@ input.todoist-checkbox.priority-4 {
   background-color: #fee2e2; /* Light red */
   border-color: #dc2626;     /* Red border */
 }
+body.theme-dark input.todoist-checkbox.priority-4 {
+  background-color: #991b1b58; /* slightly lighter red than #7f1d1d */
+  border-color: #dc2626;
+}
 input.todoist-checkbox.priority-3 {
   background-color: #fef3c7; /* Light amber */
   border-color: #d97706;     /* Amber border */
 }
+body.theme-dark input.todoist-checkbox.priority-3 {
+  background-color: #92410e68; /* slightly lighter amber than #78350f */
+  border-color: #d97706;
+}
 input.todoist-checkbox.priority-2 {
   background-color: #dbeafe; /* Light blue */
   border-color: #2563eb;     /* Blue border */
+}
+body.theme-dark input.todoist-checkbox.priority-2 {
+  background-color: #1d4fd85c; /* slightly lighter blue than #1e3a8a */
+  border-color: #2563eb;
 }
 
  .todoist-board .selected-task input.todoist-checkbox {
@@ -692,12 +704,14 @@ input.todoist-checkbox.priority-2 {
 input.todoist-checkbox:hover {
   animation: checkbox-check var(--transition-spring) ease-out;
   transform: scale(1.05);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
   z-index: 1000;
 }
 /* Only non-priority checkboxes get the neutral hover border */
+/* Neutral (non-priority) hover: same soft glow as priority variants, no harsh dark border */
 input.todoist-checkbox:not(.priority-2):not(.priority-3):not(.priority-4):hover {
-  border-color: #505050;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+  border-color: #9ca3af;
 }
 
 /* Hue‑matched hover glow for priority checkboxes */
@@ -714,6 +728,12 @@ input.todoist-checkbox.priority-2:hover { /* P3 blue */
 input.todoist-checkbox:active {
   transform: scale(0.95);
   transition: transform 80ms ease-out;
+}
+
+/* Match Todoist-like focus ring for all checkboxes */
+input.todoist-checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 
@@ -1526,12 +1546,12 @@ input.todoist-checkbox::after {
   }
 
   /* Reading Mode: fix horizontal scroll and alignment */
-  .markdown-rendered .block-language-todoist-board.todoist-board.reading-mode {
+  .markdown-rendered .block-language-todoist-board.todoist-board, .markdown-preview-view .block-language-todoist-board .todoist-board .todoist-inline-board {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow-x: hidden;
@@ -2732,10 +2752,10 @@ div.block-language-todoist-board.todoist-board > div.list-toolbar {
 /* inline deadline chunk */
 .deadline-inline {
   font-weight: 600;
-  color: #6b21a8; /* matches your deadline theme */
+  color: #8630cc; /* matches your deadline theme */
   opacity: 0.95;
 }
-
+body.theme-dark .deadline-inline { color: #c084fc; }
 /* always hide the old pill stack container */
 .task .task-metadata { display: none !important; }
 
