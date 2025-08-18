@@ -2840,4 +2840,7 @@ body.tb-scroll-lock {
 
 /* Label @ color via CSS variable (JS sets --label-color) */
 .todoist-board .label-at { color: var(--label-color, var(--pill-text)) !important; }
-
+/* Make edit block button clickable */
+.cm-preview-code-block.cm-lang-todoist-board .edit-block-button {
+  z-index: 1005;
+}
