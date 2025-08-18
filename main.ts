@@ -2251,7 +2251,30 @@ toolbar.appendChild(queueWrapper);
 toolbar.appendChild(captureBtn);
 toolbar.appendChild(settingsRefreshWrapper);
   }
- // ======================= ✏️ Async Edit Modal (instant open, lazy hydrate) =======================
+// ======================= ✏️ Async Edit Modal (instant open, lazy hydrate) =======================
+  /**
+   * Move a task to a new project/section/parent using the official REST endpoint.
+   * Used as a fallback if SDK moveTasks is unavailable or fails.
+   */
+  private async moveTaskREST(taskId: string, payload: { project_id?: string | null; section_id?: string | null; parent_id?: string | null; }) {
+    const url = `https://api.todoist.com/api/v1/tasks/${encodeURIComponent(String(taskId))}/move`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${this.settings.apiKey}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`[Todoist Board] moveTaskREST failed ${res.status}: ${text}`);
+    }
+    // Some deployments return 204 No Content on success
+    const raw = await res.text().catch(() => "");
+    return raw ? JSON.parse(raw) : null;
+  }
 private modalHost: HTMLDivElement | null = null;
 
 private getOrCreateModalHost(): HTMLDivElement {
@@ -2341,7 +2364,7 @@ private closeModal() {
   }
 }
 
-public async openEditTaskModalAsync(taskOrId: string | { id: string }, row?: HTMLElement, filters?: string[]) {
+  public async openEditTaskModalAsync(taskOrId: string | { id: string }, row?: HTMLElement, filters?: string[]) {
   const taskId = typeof taskOrId === "string" ? taskOrId : String(taskOrId?.id);
   // Phase 1: instant shell
   const box = this.showSkeletonModal("Edit Task");
@@ -2356,7 +2379,7 @@ public async openEditTaskModalAsync(taskOrId: string | { id: string }, row?: HTM
       try {
         const live = await this.todoistApi.getTask(taskId);
         if (live && live.id) {
-          this.taskStore[String(live.id)] = live as any;
+          // Use live copy for modal fields, but do not overwrite store here to avoid clobbering edits
           task = live as any;
         }
       } catch {}
@@ -2367,73 +2390,163 @@ public async openEditTaskModalAsync(taskOrId: string | { id: string }, row?: HTM
       description: String((task as any)?.description ?? ""),
       due: (() => {
         const d = (task as any)?.due;
-        return d?.datetime || d?.date || "";
+        if (!d) return "";
+        // Prefer date; if only datetime exists, use YYYY-MM-DD for the <input type="date">
+        if (d?.date) return String(d.date);
+        if (d?.datetime) return String(d.datetime).slice(0, 10);
+        return "";
       })(),
       projectId: String((task as any)?.projectId ?? ""),
-      labels: Array.isArray((task as any)?.labels) ? (task as any).labels : []
+      // Normalize labels to names; SDK expects array of label NAMES (not ids)
+      labels: (() => {
+        const raw = (task as any)?.labels;
+        if (!Array.isArray(raw)) return [] as string[];
+        return raw.map((lab: any) => {
+          if (typeof lab === "string") return lab; // already a name
+          const hit = (this.labelCache || []).find((l: any) => String(l.id) === String(lab) || String(l.name) === String(lab));
+          return String(hit?.name ?? lab);
+        });
+      })()
     };
 
     const contentInner = this.buildTaskModalContent(
       fields,
       "Save",
       async (data) => {
+        // ✅ FIX: Close the modal immediately for a faster user experience.
+        this.closeModal();
+
+        const id = String(taskId);
+        const prevProjectId = String((this.taskStore[id] ?? task)?.projectId || "");
+        const targetProjectId = String(data.projectId || "");
+
         try {
-          // Remember current project before updating fields
-const oldProjectId = String((this.taskStore[String(taskId)] ?? task)?.projectId || "");
+          // 1) Move first if project changed (server truth)
+          const prevProjectIdStr = String((prevProjectId ?? (task as any)?.projectId ?? "")).trim();
+          const targetProjectIdStr = String((targetProjectId ?? "")).trim();
+          if (targetProjectIdStr && targetProjectIdStr !== prevProjectIdStr) {
+            if (this.settings?.enableLogs) {
+              console.info("[Todoist Board] moving task", String(id), "from", prevProjectIdStr, "to", targetProjectIdStr);
+            }
 
-// 1) Update editable fields (no projectId here)
-await this.todoistApi.updateTask(taskId, {
-  content: data.title,
-  description: data.description,
-  dueString: data.due || undefined,
-  labels: data.labels
-});
+            let moved: any = null;
 
-// 2) If project changed, move the task using moveTasks
-if (data.projectId && String(data.projectId) !== oldProjectId) {
-  await this.todoistApi.moveTasks([String(taskId)], { projectId: String(data.projectId) }); // must be separate call
-  // keep local copy consistent immediately
-  const local = this.taskStore[String(taskId)] ?? task;
-  if (local) (local as any).projectId = String(data.projectId);
-}
+            // Try SDK first – treat resolved promise as success even if it returns void
+            try {
+              await this.todoistApi.moveTasks([String(id)], { projectId: targetProjectIdStr });
+              moved = { projectId: targetProjectIdStr }; // avoid duplicate REST move
+            } catch (e) {
+              if (this.settings?.enableLogs) console.warn("[Todoist Board] SDK moveTasks failed, falling back to REST", e);
+            }
 
-// 3) Re-fetch the task to ensure we have the server-truth
-const updated = await this.todoistApi.getTask(taskId);
-          if (updated) {
-            this.taskStore[String(taskId)] = updated as any;
-            // refresh visible boards
-            this.refreshAllInlineBoards();
-            document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
-              const f = (el as HTMLElement).getAttribute("data-current-filter") || "today";
-              const tasks = this.getViewTasks(f);
-              this.renderTodoistBoard(el as HTMLElement, `filter: ${f}`, {}, this.settings.apiKey, {
-                tasks,
-                projects: this.projectCache,
-                labels: this.labelCache
-              });
-            });
+            // Fallback to official REST endpoint using snake_case keys
+            if (!moved) {
+              moved = await this.moveTaskREST(String(id), { project_id: targetProjectIdStr });
+            }
+
+            // Keep local store consistent immediately (preserve camelCase shape expected by renderer)
+            {
+              const local = (this.taskStore[String(id)] ?? (task as any)) || {};
+
+              const movedProjectId = (moved && (moved.projectId ?? moved.project_id)) ?? targetProjectIdStr;
+              const movedParentId = moved ? (moved.parentId ?? moved.parent_id ?? undefined) : undefined;
+              const movedSectionId = moved ? (moved.sectionId ?? moved.section_id ?? undefined) : undefined;
+
+              (local as any).projectId = String(movedProjectId || "");
+              if (movedParentId !== undefined) (local as any).parentId = movedParentId ? String(movedParentId) : null;
+              if (movedSectionId !== undefined) (local as any).sectionId = movedSectionId ? String(movedSectionId) : null;
+
+              this.taskStore[String(id)] = local;
+            }
+            if (this.settings?.enableLogs) {
+              console.info("[Todoist Board] moved task locally → projectId:", (this.taskStore[String(id)] as any)?.projectId);
+            }
+
+            // Make sure the destination project exists in caches (prevents blank project pill)
+            if (!this.projectMap.has(targetProjectIdStr)) {
+              try {
+                const dest = await this.todoistApi.getProject(targetProjectIdStr);
+                if (dest) {
+                  if (!Array.isArray(this.projectCache)) this.projectCache = [];
+                  const idx = this.projectCache.findIndex((p: any) => String(p.id) === String(dest.id));
+                  if (idx >= 0) this.projectCache[idx] = dest as any;
+                  else this.projectCache.push(dest as any);
+                  this.projectMap.set(String(dest.id), dest as any);
+                }
+              } catch (e) {
+                console.warn("[Todoist Board] Could not fetch destination project metadata", e);
+              }
+            }
+
+            // Make sure the destination project exists in caches (prevents blank project pill)
+            if (!this.projectMap.has(targetProjectId)) {
+              try {
+                const dest = await this.todoistApi.getProject(targetProjectId);
+                if (dest) {
+                  if (!Array.isArray(this.projectCache)) this.projectCache = [];
+                  const idx = this.projectCache.findIndex((p: any) => String(p.id) === String(dest.id));
+                  if (idx >= 0) this.projectCache[idx] = dest as any;
+                  else this.projectCache.push(dest as any);
+                  this.projectMap.set(String(dest.id), dest as any);
+                }
+              } catch (e) {
+                console.warn("[Todoist Board] Could not fetch destination project metadata", e);
+              }
+            }
           }
-        } finally {
-          this.closeModal();
+
+          // 2) Update other editable fields
+          await this.todoistApi.updateTask(id, {
+            content: data.title,
+            description: data.description,
+            ...(data.due ? { dueDate: data.due } : { dueString: "no date" }),
+            // SDK expects label NAMES
+            labels: Array.isArray(data.labels) ? data.labels : []
+          });
+
+          // 3) Re-fetch fresh server copy, then update UI
+          const fresh = await this.todoistApi.getTask(id);
+          if (fresh) {
+            this.taskStore[id] = fresh as any;
+          }
+
+          // Re-render boards
+          this.refreshAllInlineBoards();
+          document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
+            const f = (el as HTMLElement).getAttribute("data-current-filter") || "today";
+            const tasks = this.getViewTasks(f);
+            this.renderTodoistBoard(el as HTMLElement, `filter: ${f}`, {}, this.settings.apiKey, {
+              tasks,
+              projects: this.projectCache,
+              labels: this.labelCache
+            });
+          });
+        } catch (err) {
+          console.warn("[Todoist Board] Edit modal save failed", err);
+          try { new Notice("Update failed"); } catch {}
         }
       }
     );
-// match your CSS scope: .todoist-edit-task-modal .taskmodal-wrapper
-const wrapper = document.createElement("div");
-wrapper.className = "todoist-edit-task-modal";
-const inner = document.createElement("div");
-inner.className = "taskmodal-wrapper";
-inner.appendChild(contentInner);
-wrapper.appendChild(inner);
 
-requestAnimationFrame(() => {
-  box.replaceWith(wrapper);
-  setTimeout(() => {
-    const first = wrapper.querySelector(".taskmodal-title-input") as HTMLInputElement | null;
-    first?.focus();
-    first?.select?.();
-  }, 10);
-});
+    // ✅ FIX: The cancel button was missing its click handler. This adds it.
+    (contentInner as any)._cancelBtn.onclick = () => this.closeModal();
+    
+    // match your CSS scope: .todoist-edit-task-modal .taskmodal-wrapper
+    const wrapper = document.createElement("div");
+    wrapper.className = "todoist-edit-task-modal";
+    const inner = document.createElement("div");
+    inner.className = "taskmodal-wrapper";
+    inner.appendChild(contentInner);
+    wrapper.appendChild(inner);
+
+    requestAnimationFrame(() => {
+      box.replaceWith(wrapper);
+      setTimeout(() => {
+        const first = wrapper.querySelector(".taskmodal-title-input") as HTMLInputElement | null;
+        first?.focus();
+        first?.select?.();
+      }, 10);
+    });
 
     await refresh;
   });
@@ -2614,21 +2727,12 @@ requestAnimationFrame(() => {
         // userDueString: the user-provided due string (from modal input)
         const userDueString = due;
         await this.todoistApi.addTask({
-          content: title,
-          description,
-          projectId: projectId || inboxId,
-          ...(userDueString
-            ? {
-                due: {
-                  string: userDueString,
-                  timezone: this.settings.timezoneMode === "manual"
-                    ? this.settings.manualTimezone
-                    : null
-                }
-              }
-            : {}),
-          ...(labels && labels.length > 0 ? { labels } : {})
-        });
+  content: title,
+  description,
+  projectId: projectId || inboxId,
+  ...(userDueString ? { dueString: userDueString } : {}),
+  ...(labels && labels.length > 0 ? { labels } : {})
+});
         await this.preloadFilters();
         this.app.workspace.trigger("markdown-preview-rendered");
       },
@@ -3937,7 +4041,7 @@ private setupMutationObserver(container: HTMLElement) {
         filters = [board.getAttribute("data-current-filter")!];
       }
       if (!filters.length) filters = ["today"];
-      this.openEditTaskModal(task, row, filters);
+      this.openEditTaskModalAsync(task, row, filters);
     };
     chinContainer.appendChild(editBtn);
 

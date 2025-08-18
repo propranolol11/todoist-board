@@ -653,6 +653,14 @@ input.todoist-checkbox {
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
 }
 
+/* Kill any theme-provided checkmark images to avoid double ticks */
+.todoist-board input.todoist-checkbox,
+.todoist-board input.todoist-checkbox:checked {
+  background-image: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
 /* Hide browser default checkmark for all major engines */
 input.todoist-checkbox::-webkit-checkmark,
 input.todoist-checkbox::checkmark,
@@ -734,30 +742,6 @@ input.todoist-checkbox:active {
 input.todoist-checkbox:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
-}
-
-
-
-input.todoist-checkbox:checked::before {
-  content: "";
-  position: absolute;
-  transform-origin: center;
-  top: 0;
-  left: 0.5em;
-  width: 5px;
-  height: 10px;
-  border: solid currentColor;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-  z-index: 1000;
-}
-
-body.theme-light input.todoist-checkbox:checked::before {
-  border-color: #1f2937;
-}
-
-body.theme-dark input.todoist-checkbox:checked::before {
-  border-color: #f9fafb;
 }
 
 /* Always show the checkmark container, but only display the tick visually on hover or checked */

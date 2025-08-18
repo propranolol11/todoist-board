@@ -1,7 +1,7 @@
 {
   "id": "todoist-board",
   "name": "Todoist Board",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "0.15.0",
   "description": "Display Todoist tasks as draggable cards with full sync support.",
   "author": "JD",
