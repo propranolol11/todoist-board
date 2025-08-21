@@ -1,3 +1,9 @@
+## Coming in next updates:
+- Grouping
+- Great performance improvement (code done, will ship with grouping)
+- Better sorting
+
+
 _this readme is under construction_ 🚧
 
 An [Obsidian](https://obsidian.md) plugin that brings your [Todoist](https://todoist.com) tasks into beautiful, interactive boards; right inside your notes.
