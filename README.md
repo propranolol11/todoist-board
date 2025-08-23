@@ -16,7 +16,7 @@ filter: any valid todoist filter (see examples below)
 
 Some most commonly used filter to try are:
 - filter: today (*shows tasks due today*)
-- filter: # project-name *(shows tasks in that project)*
+- filter: #projectname *(shows tasks in that project)*
 - filter: p1 *(shows p1/high priority tasks)*
 - filter: today & (p1 | p2) *(tasks due today AND either p1 or p2 priority)*
 - filter: created after: -7 days *(tasks that were created in the last 7 days)*
