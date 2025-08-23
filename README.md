@@ -23,6 +23,7 @@ Some most commonly used filter to try are:
 - filter: view all *(shows ALL your tasks)*
 - filter: due after: today & due before: in 8 days *(Upcoming tasks within the next week)*
 
+Also check this article from Todoist [24 Todoist Filters to Keep You Super Organized](https://www.todoist.com/inspiration/todoist-filters)
 
 Supports both **inline boards** (embedded in notes) and a **dedicated sidebar board** for quick task management.
 
