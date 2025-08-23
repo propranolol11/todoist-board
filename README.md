@@ -1,22 +1,29 @@
-## Coming in next updates:
-- Grouping
-- Great performance improvement (code done, will ship with grouping)
-- Better sorting
-
-
-_this readme is under construction_ 🚧
-
 An [Obsidian](https://obsidian.md) plugin that brings your [Todoist](https://todoist.com) tasks into beautiful, interactive boards; right inside your notes.
+## **How to Use**:
+- ✌️ **Two board types**
+    1. **Sidebar board** for quick access and overview. 
+    2.  **Inline board** for embedding project or filtered task lists directly in a note.
 
-## Usage: 
-- Sidebar Board: Open via Command Bar
-- Inline Board: Use via Codeblock
-- drag-and-drop to sort manually
+- To open Todoist Board in the sidebar, do it via Command Palette
+	- Cmd + P on Mac; type Todoist Board, you'll see command there.
+	- Ctrl + P on Windows
+- To embed a Todoist Board in a note, simply write:
 ````
 ```todoist-board
-filter: today (or ANY valid filter in todoist)
+filter: any valid todoist filter (see examples below)
 ```
 ````
+
+Some most commonly used filter to try are:
+- filter: today (*shows tasks due today*)
+- filter: # project-name *(shows tasks in that project)*
+- filter: p1 *(shows p1/high priority tasks)*
+- filter: today & (p1 | p2) *(tasks due today AND either p1 or p2 priority)*
+- filter: created after: -7 days *(tasks that were created in the last 7 days)*
+- filter: view all *(shows ALL your tasks)*
+- filter: due after: today & due before: in 8 days *(Upcoming tasks within the next week)*
+
+
 Supports both **inline boards** (embedded in notes) and a **dedicated sidebar board** for quick task management.
 
 <img width="1584" height="1110" alt="CleanShot 2025-08-14 at 7  28 44@2x" src="https://github.com/user-attachments/assets/6a9f23ae-98cb-4f6e-8624-5c03fa9579ef" />
