@@ -27,8 +27,8 @@ Some most commonly used filter to try are:
 
 Also check this article from Todoist [24 Todoist Filters to Keep You Super Organized](https://www.todoist.com/inspiration/todoist-filters)
 
-Supports both **inline boards** (embedded in notes) and a **dedicated sidebar board** for quick task management.
-
+***
+## Screenshots
 <img width="1584" height="1110" alt="CleanShot 2025-08-14 at 7  28 44@2x" src="https://github.com/user-attachments/assets/6a9f23ae-98cb-4f6e-8624-5c03fa9579ef" />
 
 ![CleanShot 2025-08-17 at 8  50 04](https://github.com/user-attachments/assets/8031cdab-ade9-4e8a-963f-cc946fe5561d)
