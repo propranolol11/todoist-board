@@ -15,13 +15,15 @@ filter: any valid todoist filter (see examples below)
 ````
 
 Some most commonly used filter to try are:
-- filter: today (*shows tasks due today*)
-- filter: #projectname *(shows tasks in that project)*
-- filter: p1 *(shows p1/high priority tasks)*
-- filter: today & (p1 | p2) *(tasks due today AND either p1 or p2 priority)*
-- filter: created after: -7 days *(tasks that were created in the last 7 days)*
-- filter: view all *(shows ALL your tasks)*
-- filter: due after: today & due before: in 8 days *(Upcoming tasks within the next week)*
+| Filter Query                                     | What it does                                                  |
+|--------------------------------------------------|---------------------------------------------------------------|
+| `filter: today`                                  | Shows tasks due today                                         |
+| `filter: #projectname`                           | Shows tasks in that project                                   |
+| `filter: p1`                                     | Shows P1 (high priority) tasks                                |
+| `filter: today & (p1 \| p2)`                     | Tasks due today AND either P1 or P2 priority                  |
+| `filter: created after: -7 days`                 | Tasks that were created in the last 7 days                   |
+| `filter: view all`                               | Shows **all** your tasks                                      |
+| `filter: due after: today & due before: in 8 days`| Upcoming tasks within the next week                          |
 
 Also check this article from Todoist [24 Todoist Filters to Keep You Super Organized](https://www.todoist.com/inspiration/todoist-filters)
 
