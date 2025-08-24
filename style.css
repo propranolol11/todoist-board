@@ -1,3 +1,4 @@
+
 /* ========== CSS Variables ========== */
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -2370,9 +2371,7 @@ body.theme-dark .add-task-btn {
 
 
 /* ========== Subtask Visual Hierarchy ========== */
-/* ========== Subtask Row Compact Design ========== */
 /* ========== Subtask Row Compact Design with Expansion Toggle ========== */
-/* ========== Subtask Row Compact Design ========== */
 .subtask-row {
   padding: 0 !important;
   margin: 0 0 0 1rem;
@@ -2768,10 +2767,6 @@ body.theme-dark .deadline-inline { color: #c084fc; }
   opacity: 0.9;
 }
 
-
-/* Hide 'when' + compact metadata in compact mode */
-.todoist-board.compact-mode .task:not(.selected-task) .task-when,
-.todoist-board.compact-mode .task:not(.selected-task) .task-meta-compact,
 .list-wrapper.compact-mode .task:not(.selected-task) .task-when,
 .list-wrapper.compact-mode .task:not(.selected-task) .task-meta-compact {
   display: none !important;
@@ -2843,3 +2838,17 @@ body.tb-scroll-lock {
 .cm-preview-code-block.cm-lang-todoist-board .edit-block-button {
   z-index: 1005;
 }
+
+/* Ensure the left sidebar (file explorer) always gets clicks */
+.workspace-split.mod-left-split,
+.workspace-split.mod-left-split * {
+  pointer-events: auto !important;
+}
+
+/* If you ever use a body-wide drag lock, do NOT disable the explorer */
+.drag-disable .workspace-split.mod-left-split,
+.drag-disable .workspace-split.mod-left-split * {
+  pointer-events: auto !important;
+}
+
+.tb-dim, .dimmed, .queue-dim { opacity: 0.2; filter: blur(0.5px); transition: all var(--transition-smooth); }

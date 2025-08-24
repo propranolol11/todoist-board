@@ -1,11 +1,6 @@
 import type { Task } from "@doist/todoist-api-typescript";
 import type { Project } from "@doist/todoist-api-typescript";
 import type { Label } from "@doist/todoist-api-typescript";
-// @ts-ignore
-// ======================= 🔄 Polling for Task Changes =======================
-let lastFetchTime: number = Date.now();
-let _todoistPollInterval: number | undefined;
-let _activityHandlers: { event: string; fn: () => void }[] = [];
 import {
   TodoistApi,
   AddTaskArgs,
@@ -17,6 +12,11 @@ import {
   revokeAuthToken,
 } from '@doist/todoist-api-typescript';
 import { DateTime } from "luxon";
+// @ts-ignore
+// ======================= 🔄 Polling for Task Changes =======================
+let lastFetchTime: number = Date.now();
+let _todoistPollInterval: number | undefined;
+let _activityHandlers: { event: string; fn: () => void }[] = [];
 // ======================= 🧩 Small Utilities =======================
 const a11yButton = (el: HTMLElement, label: string) => {
   el.setAttribute("role", "button");
@@ -41,7 +41,6 @@ const readJSON = <T>(key: string, fallback: T): T => {
 const writeJSON = (key: string, value: unknown) => {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
 };
-
 // Safe clear helper to avoid innerHTML writes
 const clearEl = (el: Element | null | undefined) => {
   if (!el) return;
@@ -74,7 +73,33 @@ if (ro && typeof ro.hour12 === "boolean") {
     return _hour12;
   }
 };
+// Persistent Hidden (Dimmed) tasks
+const hiddenKey = (): string => {
+  try {
+    const vaultName = (window as any)?.app?.vault?.getName?.();
+    return `todoistHiddenTasks:${vaultName ?? "default"}`;
+  } catch {
+    return "todoistHiddenTasks:default";
+  }
+};
+const getHiddenSet = (): Set<string> => new Set(readJSON<string[]>(hiddenKey(), []));
+const saveHiddenSet = (s: Set<string>) => writeJSON(hiddenKey(), Array.from(s));
 
+// Per-inline-board compact mode persistence (by note path + filter key)
+const inlineCompactKey = (path: string, filterKey: string) => `todoistInlineCompact:${path || "__unknown__"}:${String(filterKey)}`;
+const getInlineCompact = (path: string, filterKey: string): boolean => {
+  return !!readJSON<boolean>(inlineCompactKey(path, filterKey), false);
+};
+const setInlineCompact = (path: string, filterKey: string, on: boolean) => {
+  try { writeJSON(inlineCompactKey(path, filterKey), !!on); } catch {}
+};
+
+// Apply/remove the same dimming classes used by queue/focus mode
+// (covers common names used in styles to maximize compatibility)
+const applyDimClass = (el: HTMLElement, on: boolean) => {
+  const cls = ["tb-dim", "dimmed", "queue-dim"];
+  cls.forEach(c => el.classList.toggle(c, on));
+};
 // Centralized count lookup for a filter
 const getCountForFilter = (filterKey: string, memCache: Record<string, any[]>): number => {
   const ids = readJSON<string[]>(`todoistFilterIndex:${String(filterKey)}`, []);
@@ -673,9 +698,13 @@ if (d?.datetime) {
   private currentRenderToken: string = "";
   private compactMode: boolean = false;
   private _globalClickListener = (e: MouseEvent) => {
-    const openDropdown = document.querySelector(".menu-dropdown:not(.hidden)");
-    if (openDropdown) openDropdown.classList.add("hidden");
-  };
+  const t = e.target as HTMLElement;
+  // Do nothing for clicks inside the left sidebar (file explorer)
+  if (t && t.closest(".workspace-split.mod-left-split")) return;
+
+  const openDropdown = document.querySelector(".menu-dropdown:not(.hidden)");
+  if (openDropdown) openDropdown.classList.add("hidden");
+};
     // --- Timezone tracking for cache invalidation ---
     private lastKnownTimezone: string | null = null;
     private todoistApi!: InstanceType<typeof TodoistApi>;
@@ -728,15 +757,23 @@ public taskCache: Record<string, any[]> = {};            // legacy (kept for com
 
   
 // ---- Single-source helpers ----
-public upsertTasks(filterKey: string, tasks: any[]) {
+public upsertTasks(filterKey: string, tasks: any[], opts?: { silentSidebar?: boolean; preferExisting?: boolean }) {
   const ids: string[] = [];
+  const prevIds = Array.isArray(this.filterIndex[filterKey]) ? this.filterIndex[filterKey].slice() : [];
   for (const t of (Array.isArray(tasks) ? tasks : [])) {
     const id = String(t?.id ?? "");
     if (!id) continue;
-    this.taskStore[id] = t;
+    if (opts?.preferExisting && this.taskStore[id]) {
+  // keep existing newer version (do not overwrite from cache)
+} else {
+  this.taskStore[id] = t;
+}
     ids.push(id);
   }
   this.filterIndex[filterKey] = ids;
+  const idsSameLength = prevIds.length === ids.length;
+const sameOrder = idsSameLength && prevIds.every((v, i) => v === ids[i]);
+const changed = !(idsSameLength && sameOrder);
 
   // persist
   try {
@@ -746,6 +783,26 @@ public upsertTasks(filterKey: string, tasks: any[]) {
     localStorage.setItem(`todoistTasksCache:${filterKey}`, JSON.stringify(ids.map(id => this.taskStore[id])));
     localStorage.setItem(`todoistTasksCacheTimestamp:${filterKey}`, String(Date.now()));
   } catch {}
+  // Re-render all visible sidebar boards immediately (event-driven, like inline)
+// Avoid echo loops when upsert is called from within render paths
+if (changed && !opts?.silentSidebar) {
+  try {
+    const boards = Array.from(document.querySelectorAll(".todoist-board.plugin-view")) as HTMLElement[];
+    boards.forEach((board) => {
+      const f = board.getAttribute("data-current-filter") || "today";
+      const tasksForView = this.getViewTasks(f);
+      this.renderTodoistBoard(
+        board,
+        `filter: ${f}`,
+        {},
+        this.settings.apiKey,
+        { tasks: tasksForView, projects: this.projectCache, labels: this.labelCache }
+      );
+      const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`) as HTMLElement | null;
+      if (badge) badge.textContent = String(tasksForView.length);
+    });
+  } catch {}
+}
   this.refreshAllInlineBoards();
 }
 
@@ -772,7 +829,7 @@ public getViewTasks(filterKey: string): any[] {
   // fallback to legacy cache if index not populated yet
   const legacy = readJSON<any[]>(`todoistTasksCache:${filterKey}`, []);
   if (Array.isArray(legacy) && legacy.length) {
-    this.upsertTasks(filterKey, legacy);
+    this.upsertTasks(filterKey, legacy, { silentSidebar: true, preferExisting: true });
     return legacy;
   }
   return [];
@@ -869,9 +926,8 @@ document.querySelectorAll(".todoist-inline-board").forEach((el) => {
 // update sidebar boards right away
 document.querySelectorAll(".todoist-board.plugin-view").forEach((el) => {
   const on = !!this.settings.compactMode;
-  el.classList.toggle("compact-mode", on);
   const list = el.querySelector(".list-wrapper");
-  if (list) list.classList.toggle("compact-mode", on);
+  if (list) (list as HTMLElement).classList.toggle("compact-mode", on);
 });
 }
 
@@ -918,9 +974,9 @@ refreshAllInlineBoards() {
   this.taskCacheTimestamps[key] = Date.now();
 }
 
-          const currentFilter = document.querySelector(".todoist-board")?.getAttribute("data-current-filter");
+          const currentFilter = document.querySelector(".todoist-board.plugin-view")?.getAttribute("data-current-filter");
           if (hasChanges && currentFilter === key) {
-            const container = document.querySelector(".todoist-board") as HTMLElement;
+            const container = document.querySelector(".todoist-board.plugin-view") as HTMLElement;
             if (container) {
               clearEl(container);
               this.renderTodoistBoard(container, `filter: ${key}`, {}, this.settings.apiKey);
@@ -1098,39 +1154,52 @@ if (storedTimezone !== effectiveZone) {
           // Add classes for code block container
           el.classList.add("block-language-todoist-board", "todoist-board", "todoist-inline-board");
           const sourcePath = ctx.sourcePath || "reading-mode-placeholder";
-          let filter = "today";
-          // Parse block params for filter
+          // Determine filter robustly: prefer explicit in source; else reuse prior; else default
+          const priorFilter = el.getAttribute("data-current-filter");
+          let filter = String(priorFilter || "");
+
+          // Parse block params for filter (supports both `Filter:` and `filter:` anywhere in block)
           function parseBlockParams(raw: string): Record<string, any> {
-            const lines = raw.split("\n");
+            const lines = (raw || "").split("\n");
             const params: Record<string, any> = {};
             for (let line of lines) {
-              const m = line.match(/^([a-zA-Z0-9_]+):\s*(.*)$/);
-              if (m) {
-                params[m[1].trim()] = m[2].trim();
-              }
+              const m = line.match(/^\s*([a-zA-Z0-9_]+):\s*(.*)$/);
+              if (m) params[m[1].trim()] = m[2].trim();
             }
             return params;
           }
-          const parsed = parseBlockParams(source);
+
+          const parsed = parseBlockParams(source || "");
           this.dbg("📦 Raw source:", source);
           this.dbg("🧩 Parsed block params:", parsed);
-          if (parsed.Filter && typeof parsed.Filter === "string") {
-            filter = parsed.Filter;
+
+          // 1) Explicit Filter param wins
+          if (typeof parsed.Filter === "string" && parsed.Filter.trim()) {
+            filter = parsed.Filter.trim();
           } else {
-            const match = source.match(/filter:\s*(.*)/);
-            if (match) {
-              filter = match[1].trim();
-            } else {
-              const defaultFilterObj = this.settings.filters?.find(f => f.isDefault);
-              if (defaultFilterObj) filter = defaultFilterObj.filter;
+            // 2) Loose regex for `filter:` (case-insensitive)
+            const m = (source || "").match(/\bfilter\s*:\s*(.+)/i);
+            if (m && m[1] && m[1].trim()) {
+              filter = m[1].trim();
             }
+          }
+
+          // 3) If still empty, fall back to user's default ONLY if there was no prior filter
+          if (!filter) {
+            const df = this.settings.filters?.find(f => f.isDefault)?.filter
+                   ?? this.settings.filters?.[0]?.filter
+                   ?? "today";
+            filter = String(df);
           }
           // Keep Todoist filter as a plain string (the API expects a query string)
 const timezone = getZone(this.settings);
 const parsedFilter = String(filter);
 const filterKey = parsedFilter;
 this.dbg("🎯 Final filter used:", filterKey);
-el.setAttribute("data-current-filter", filterKey);
+// Only update the attribute if it changed or was empty
+if (el.getAttribute("data-current-filter") !== filterKey) {
+  el.setAttribute("data-current-filter", filterKey);
+}
 // Offline metadata hydration (so projects/labels resolve)
 if (!Array.isArray(this.projectCache) || this.projectCache.length === 0) {
   const proj = readJSON<Project[]>("todoistProjectsCache", []);
@@ -1148,6 +1217,8 @@ if (!Array.isArray(this.labelCache) || this.labelCache.length === 0) {
               projects: this.projectCache || [],
               labels: this.labelCache || [],
             };
+            // Per-inline-board compact mode persistence key
+            const persistedCompactKeyPath = sourcePath;
             // Clear container
             clearEl(el);
             // Create a wrapper for the filter row and task list, as in createLayout
@@ -1185,13 +1256,17 @@ sortLabel.textContent = `Sort: ${currentSortMode}`;
             sortButton.setAttribute("role", "button");
             a11yButton(sortButton, "Sort tasks");
             const render = () => {
+              // Apply per-inline persisted compact mode (isolated from sidebar setting)
+              const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
+              const compactOn = getInlineCompact(persistedCompactKeyPath, currentFilterKey);
+              el.classList.toggle("compact-mode", compactOn);
+
               // Remove previous list if any
               const prevList = el.querySelector(".list-wrapper");
               if (prevList) prevList.remove();
 
               // Build fresh base from cache or fetched "tasks"
-              const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
-const base: Task[] = this.getViewTasks(currentFilterKey);
+              const base: Task[] = this.getViewTasks(currentFilterKey);
 
               const { mode, viewTasks, projects, labels } = this.buildRenderInput(base, el as HTMLElement, currentFilterKey);
 
@@ -1199,6 +1274,12 @@ const base: Task[] = this.getViewTasks(currentFilterKey);
               const listWrapper = document.createElement("div");
               listWrapper.className = "list-wrapper";
               el.appendChild(listWrapper);
+              // Ensure the newly created list reflects the inline board's own compact mode
+              if (compactOn) {
+                listWrapper.classList.add("compact-mode");
+              } else {
+                listWrapper.classList.remove("compact-mode");
+              }
 
               this.projectMap.clear();
               for (const p of (projects || [])) this.projectMap.set(String((p as any).id), p);
@@ -1321,7 +1402,18 @@ try {
 }
   });
 } catch {}
+              // ——— Apply persisted dimming (inline board) ———
+              try {
+                const hidden = getHiddenSet();
+                const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+                nodes.forEach((node) => {
+                  const id = String(node.dataset.taskId || "");
+                  if (!id) return;
+                  applyDimClass(node, hidden.has(id));
+                });
+              } catch {}
             };
+            
             render();
             
 
@@ -1522,11 +1614,12 @@ toolbar.appendChild(copyBtn);
             setIcon(compactButton, "list");
             compactButton.title = "Toggle Compact Mode";
             compactButton.onclick = () => {
-              el.classList.toggle("compact-mode");
-              const listWrapper = el.querySelector(".list-wrapper");
-              if (listWrapper) {
-                listWrapper.classList.toggle("compact-mode");
-              }
+              const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
+              const next = !el.classList.contains("compact-mode");
+              el.classList.toggle("compact-mode", next);
+              const lw = el.querySelector(".list-wrapper");
+              if (lw) (lw as HTMLElement).classList.toggle("compact-mode", next);
+              setInlineCompact(persistedCompactKeyPath, currentFilterKey, next);
             };
             a11yButton(compactButton, "Toggle compact mode");
             toolbar.appendChild(compactButton);
@@ -1543,7 +1636,7 @@ el.prepend(toolbar);
   const fallback = this.getViewTasks(filterKey);
   if (Array.isArray(fallback) && fallback.length) {
     cachedTasks = fallback as Task[];
-    this.upsertTasks(filterKey, cachedTasks); // populate filterIndex for this session
+    this.upsertTasks(filterKey, cachedTasks, { silentSidebar: true, preferExisting: true });
     renderWithSortToolbar(cachedTasks);
   }
 }
@@ -1555,7 +1648,7 @@ el.prepend(toolbar);
     this.dbg("📦 Cached tasks for", filterKey, ":", cachedTasks);
     if (Array.isArray(cachedTasks)) {
       this.taskCache[typeof filterKey === "string" ? filterKey : JSON.stringify(filterKey)] = cachedTasks;
-      this.upsertTasks(filterKey, cachedTasks); // make sure filterIndex is ready
+      this.upsertTasks(filterKey, cachedTasks, { silentSidebar: true, preferExisting: true });
       if (
         el.classList.contains("block-language-todoist-board") ||
         el.classList.contains("todoist-inline-board")
@@ -1629,7 +1722,7 @@ el.prepend(toolbar);
 
       // (Removed polling-based initial render block; handled in TodoistBoardView.onOpen)
 
-      document.addEventListener("click", this._globalClickListener);
+      this.registerDomEvent(document, "click", this._globalClickListener as any);
 
       // Start polling for task changes after initial rendering and setup
       pollForTaskChanges(); // cleanup handled via _todoistPollInterval
@@ -1644,8 +1737,8 @@ el.prepend(toolbar);
     // Wait for DOM to be ready (filter bar and board container rendered)
     // We'll use a short interval to check for elements.
     const tryRenderDefault = () => {
-  const defaultFilterRow = document.querySelector(".filter-row[data-filter]");
-  const container = document.querySelector(".todoist-board");
+  const container = document.querySelector(".todoist-board.plugin-view");
+  const defaultFilterRow = container?.querySelector(".filter-row[data-filter]");
   if (defaultFilterRow && container) {
     const source = defaultFilterRow.getAttribute("data-filter") || "today";
     const prev = container.getAttribute("data-current-filter");
@@ -1677,9 +1770,7 @@ clearEl(container);
       if (tryRenderDefault() || ++tries > 20) clearInterval(interval);
     }, 50);
   }
-
-
-
+  
   // ======================= 🧹 Persistence & Cleanup =======================
   async savePluginData() {
     await this.saveData(this.settings);
@@ -1689,7 +1780,8 @@ clearEl(container);
   onunload() {
     // Remove global event listener
     document.removeEventListener("click", this._globalClickListener);
-
+      // Failsafe: always clear drag/body locks
+  document.body.classList.remove("drag-disable", "tb-scroll-lock");
     // Remove activity listeners registered by pollForTaskChanges
     if (Array.isArray(_activityHandlers) && _activityHandlers.length > 0) {
       _activityHandlers.forEach(({ event, fn }) => window.removeEventListener(event, fn as any));
@@ -1842,24 +1934,22 @@ try {
       const taskList = initialData.tasks || [];
       // --- PATCH: Fallback to localStorage for tasks if needed ---
       if ((!Array.isArray(taskList) || taskList.length === 0) && currentFilter) {
-        const local = localStorage.getItem(`todoistTasksCache:${currentFilter}`);
-        let fallback = [];
-        try {
-          fallback = JSON.parse(local || "[]");
-        } catch {}
-        this.taskCache[currentFilter] = fallback;
-        // console.warn("⚠️ Fallback to localStorage tasks for filter:", currentFilter, fallback);
-        tasks = fallback;
-      } else {
-        // Defensive copy, but preserve order as provided
-        tasks = [...taskList];
-      }
+  const local = localStorage.getItem(`todoistTasksCache:${currentFilter}`);
+  let fallback: any[] = [];
+  try { fallback = JSON.parse(local || "[]"); } catch {}
+  // merge cache non-destructively into the store
+  this.upsertTasks(currentFilter, Array.isArray(fallback) ? fallback : [], { silentSidebar: true, preferExisting: true });
+  // always render from the authoritative store
+  tasks = this.getViewTasks(currentFilter);
+} else {
+  tasks = [...taskList];
+}
       clearEl(container);
       const currentKey = `${currentFilter}:${tasks?.length || 0}`;
       container.setAttribute("data-prev-render-key", currentKey);
 
       // Sync in-memory cache with current tasks
-      this.upsertTasks(currentFilter, tasks);
+      this.upsertTasks(currentFilter, tasks, { silentSidebar: true });
       // PATCH: If no tasks or not an array, skip render and warn
       if (!tasks || !Array.isArray(tasks)) {
         return;
@@ -1875,7 +1965,9 @@ try {
       try {
         if (!container.dataset.sortMode) container.dataset.sortMode = localStorage.getItem(`todoistSortMode:${currentFilter}`) || "Due Date";
         this.setupContainer(container);
-        container.classList.toggle("compact-mode", this.compactMode);
+        if (container.classList.contains("plugin-view")) {
+          container.classList.toggle("compact-mode", this.compactMode);
+        }
         // 🧪 Log compact mode application
         // if (this.settings?.enableLogs) console.log("🧪 Compact mode applied?", this.compactMode, "→ container:", container, "→ has class?", container.classList.contains("compact-mode"));
         const filterOptions = this.getFilterOptions();
@@ -1891,7 +1983,11 @@ try {
         }
 
       const { toolbar, listWrapper } = this.createLayout(container);
-listWrapper.classList.toggle("compact-mode", this.compactMode);
+// Only apply compact to the sidebar's list wrapper
+{
+  const isSidebar = container.classList.contains("plugin-view");
+  if (isSidebar) listWrapper.classList.toggle("compact-mode", this.compactMode);
+}
       // Hide the entire toolbar for inline boards (markdown blocks / reading mode)
       const inlineBoard = container.classList.contains("block-language-todoist-board") || !!container.closest(".markdown-reading-view");
       if (inlineBoard) {
@@ -1899,8 +1995,6 @@ listWrapper.classList.toggle("compact-mode", this.compactMode);
     toolbar.classList.add("tb-hidden");
   });
 }
-      // Toggle compact-mode class on container only
-      container.classList.toggle("compact-mode", this.compactMode);
       const skipToolbar = hideToolbar || inlineBoard;
       if (skipToolbar) {
   toolbar.classList.add("hide-toolbar", "tb-hidden");
@@ -2002,6 +2096,16 @@ try {
 }
       });
     } catch {}
+            // ——— Apply persisted dimming (sidebar/plugin board) ———
+        try {
+          const hidden = getHiddenSet();
+          const nodes2 = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+          nodes2.forEach((node) => {
+            const id = String(node.dataset.taskId || "");
+            if (!id) return;
+            applyDimClass(node, hidden.has(id));
+          });
+        } catch {}
         } catch {}
 
         // PATCH: Fetch metadata in background if stale, then re-render
@@ -2203,7 +2307,7 @@ filterRow.createSpan({ cls: "filter-title", text: String((opt as any)?.title ?? 
         filterRow.classList.add("selected");
 
         // Update data-current-filter attribute and always force a re-render, even if the same filter is clicked again
-        const todoistBoardEl = container.closest(".todoist-board") as HTMLElement | null;
+        const todoistBoardEl = container.closest(".todoist-board.plugin-view") as HTMLElement | null;
         if (todoistBoardEl) {
           todoistBoardEl.setAttribute("data-current-filter", String(opt.filter));
 // Always force a re-render, even if the same filter is clicked again
@@ -3075,11 +3179,14 @@ private setupMutationObserver(container: HTMLElement) {
     // Hide dropdown on outside click
     // This event listener is global and should be cleaned up if needed
     // (Consider registering and removing if you want to be extra clean)
-    document.addEventListener("click", (e) => {
-      if (!menuDropdown.classList.contains("hidden")) {
-        menuDropdown.classList.add("hidden");
-      }
-    });
+    this.registerDomEvent(document, "click", (e: MouseEvent) => {
+  const t = e.target as HTMLElement;
+  // Ignore clicks in the file explorer area
+  if (t && t.closest(".workspace-split.mod-left-split")) return;
+  if (!menuDropdown.classList.contains("hidden")) {
+    menuDropdown.classList.add("hidden");
+  }
+});
 
     // Prevent click inside dropdown from closing  it
     menuDropdown.addEventListener("click", (e) => {
@@ -3584,6 +3691,16 @@ private setupMutationObserver(container: HTMLElement) {
           }
         }
       });
+      // ——— Apply persisted dimming (preload path) ———
+try {
+  const hidden = getHiddenSet();
+  const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+  nodes.forEach((node) => {
+    const id = String(node.dataset.taskId || "");
+    if (!id) return;
+    applyDimClass(node, hidden.has(id));
+  });
+} catch {}
       // --- Insert empty quote if no tasks ---
       if (taskList.length === 0) {
         const quoteDiv = document.createElement("div");
@@ -3722,6 +3839,16 @@ private setupMutationObserver(container: HTMLElement) {
         row.appendChild(subtaskWrapper);
       }
     });
+    // ——— Apply persisted dimming (non-preload path) ———
+try {
+  const hidden = getHiddenSet();
+  const nodes2 = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+  nodes2.forEach((node) => {
+    const id = String(node.dataset.taskId || "");
+    if (!id) return;
+    applyDimClass(node, hidden.has(id));
+  });
+} catch {}
     // --- Insert empty quote if no tasks ---
     if (taskList.length === 0) {
       const quoteDiv = document.createElement("div");
@@ -3757,6 +3884,7 @@ private setupMutationObserver(container: HTMLElement) {
     row.dataset.id = task.id;
     // PATCH: Set the row id to the task id for later DOM removal
     row.id = task.id;
+    row.setAttribute("data-task-id", String(task.id));
     // Set project color CSS variable
     row.style.setProperty("--project-color", getProjectHexColor(task, projects));
 
@@ -4044,7 +4172,42 @@ private setupMutationObserver(container: HTMLElement) {
       this.openEditTaskModalAsync(task, row, filters);
     };
     chinContainer.appendChild(editBtn);
+// --- Hide/Unhide (Dim) toggle ---
+(() => {
+  try {
+    const id = String(task.id);
+    const hidden = getHiddenSet();
 
+    const hideBtn = document.createElement("button");
+    hideBtn.className = "chin-btn task-hide-btn";
+    setIcon(hideBtn, hidden.has(id) ? "eye-off" : "eye");
+    hideBtn.title = hidden.has(id) ? "Unhide (undim)" : "Hide (dim)";
+    a11yButton(hideBtn, hideBtn.title);
+
+    hideBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const node = (e.currentTarget as HTMLElement)?.closest('[data-task-id], [data-id]') as HTMLElement | null;
+      const set = getHiddenSet();
+      if (set.has(id)) {
+        set.delete(id);
+        saveHiddenSet(set);
+        if (node) applyDimClass(node, false);
+        setIcon(hideBtn, "eye");
+        hideBtn.title = "Hide (dim)";
+      } else {
+        set.add(id);
+        saveHiddenSet(set);
+        if (node) applyDimClass(node, true);
+        setIcon(hideBtn, "eye-off");
+        hideBtn.title = "Unhide (undim)";
+      }
+    };
+
+    chinContainer.appendChild(hideBtn);
+  } catch {}
+})();
+// --- End Hide/Unhide toggle ---
     // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "chin-btn delete-btn";
@@ -5289,14 +5452,16 @@ if (listView) {
   }
 
   private setupGlobalEventListeners() {
-    document.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      // Updated logic: if inside .fixed-chin, do nothing
-      if (target.closest(".fixed-chin")) return;
-      if (!target.closest(".task-inner")) {
-        this.clearSelectedTaskHighlight();
-      }
-    });
+    this.registerDomEvent(this.app.workspace.containerEl, "click", (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (!target) return;
+  // Don’t react to clicks in the file explorer
+  if (target.closest(".workspace-split.mod-left-split")) return;
+  if (target.closest(".fixed-chin")) return;
+  if (!target.closest(".task-inner")) {
+    this.clearSelectedTaskHighlight();
+  }
+});
       // Cancel click inside modal
   document.addEventListener('click', (ev) => {
     const t = ev.target as HTMLElement | null;
