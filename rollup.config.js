@@ -1,7 +1,7 @@
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
-import { watch } from 'fs';
+import terser from '@rollup/plugin-terser';
 
 
 function onwarn(warning, warn) {
@@ -14,13 +14,14 @@ export default {
   output: {
     file: 'main.js',
     format: 'cjs',
-    sourcemap: true,
+    sourcemap: false,
     exports: 'named'
   },
   plugins: [
     resolve({ browser: true, preferBuiltins: false }),
     commonjs(),
-    typescript()
+    typescript(),
+    terser({ format: { comments: false } })
   ],
   watch: {
     include: ['main.ts', 'styles.css'],

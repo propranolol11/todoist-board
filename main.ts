@@ -3641,7 +3641,7 @@ export default class TodoistBoardPlugin extends Plugin {
       }
     });
     // Cancel click inside modal
-    activeDocument.addEventListener('click', (ev) => {
+    this.registerDomEvent(activeDocument, "click", (ev: MouseEvent) => {
       const t = ev.target as HTMLElement | null;
       if (!t) return;
 
@@ -3663,7 +3663,7 @@ export default class TodoistBoardPlugin extends Plugin {
     }, { capture: true });
 
     // Escape closes modal
-    activeDocument.addEventListener('keydown', (ev: KeyboardEvent) => {
+    this.registerDomEvent(activeDocument, "keydown", (ev: KeyboardEvent) => {
       if (ev.key === 'Escape' && activeDocument.querySelector('.todoist-modal')) {
         ev.preventDefault();
         this.closeAnyModal();

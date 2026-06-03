@@ -1,4 +1,14 @@
 An [Obsidian](https://obsidian.md) plugin that brings your [Todoist](https://todoist.com) tasks into beautiful, interactive boards; right inside your notes.
+
+## Disclosures
+
+- Requires a Todoist account and a Todoist API token.
+- Connects to the Todoist REST and Sync APIs to fetch, create, update, and complete tasks.
+- Stores the Todoist API token and plugin preferences locally with Obsidian's plugin data storage. The token is not committed to this repository.
+- Caches task metadata and display preferences locally for responsiveness.
+- Does not collect analytics or send data to any service other than Todoist.
+- Includes an optional funding link in the plugin settings and manifest.
+
 ## **How to Use**:
 - ✌️ **Two board types**
     1. **Sidebar board** for quick access and overview. 
@@ -36,5 +46,4 @@ Also check this article from Todoist [24 Todoist Filters to Keep You Super Organ
 ![CleanShot 2025-08-17 at 8  37 03](https://github.com/user-attachments/assets/6cc0ad33-8e6d-48e0-911f-863bde8d7fa5)
 
 ![CleanShot 2025-08-17 at 8  41 39](https://github.com/user-attachments/assets/41e8ff5d-caf4-414d-816f-dbfcceafebb5)
-
 

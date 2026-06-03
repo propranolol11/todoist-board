@@ -2,7 +2,6 @@
 *
 
 # But track these explicitly
-!main.js
 !manifest.json
 !styles.css
 !main.ts
