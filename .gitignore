@@ -4,7 +4,16 @@
 # But track these explicitly
 !main.js
 !manifest.json
-!style.css
+!styles.css
+!main.ts
+!package.json
+!package-lock.json
+!tsconfig.json
+!rollup.config.js
+!eslint.config.mjs
+!src/
+!src/**/
+!src/**/*.ts
 
 # Always ignore OS + logs
 !.gitignore

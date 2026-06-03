@@ -1,4 +1,3 @@
-
 /* ========== CSS Variables ========== */
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -9,20 +8,20 @@
   --deadline-bg: #d8d5ff;
   --deadline-text: #6b21a8;
   --meta-text: #6b7280;
-  
+
   /* Enhanced animation variables for native feel */
   --transition-fast: 100ms cubic-bezier(0.3, 0.7, 0.4, 1);
   --transition-medium: 280ms cubic-bezier(0.33, 1, 0.68, 1);
   --transition-smooth: 420ms cubic-bezier(0.25, 0.8, 0.25, 1);
   --transition-spring: 300ms cubic-bezier(0.3, 1, 0.5, 1);
-  
-  --shadow-light: 0 1px 3px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-medium: 0 2px 8px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.05);
+
+  --shadow-light: 0 1px 3px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05);
   --shadow-heavy: 0 4px 16px rgba(0, 0, 0, 0.15);
-  --shadow-interactive: 0 1px 2px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.08);
+  --shadow-interactive: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
-.html {
+html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -43,8 +42,6 @@
   overflow: visible;
   isolation: unset;
   z-index: 1000;
-  /* Hardware acceleration */
-  will-change: scroll-position;
   transform: translate3d(0, 0, 0);
 }
 
@@ -52,11 +49,11 @@
   display: block;
   max-width: 768px;
   min-height: auto;
-  margin: 0 auto;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem; 
-  line-height: 1.5; 
-  position: relative; 
+  /* margin: 0 auto; */
+  /* padding: 0.5rem 1rem; */
+  font-size: 0.9rem;
+  line-height: 1.5;
+  position: relative;
   opacity: 1;
   touch-action: pan-y;
 }
@@ -64,6 +61,7 @@
 .list-wrapper {
   display: block;
   touch-action: pan-y;
+  container-type: inline-size;
 }
 
 /* ========== Enhanced Toolbar Styles ========== */
@@ -80,7 +78,7 @@
   border-radius: 16px;
   /* Inset effect for toolbar */
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
-              inset 0 -1px 2px rgba(0, 0, 0, 0.04);
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04);
   /* background-color: #f9fafb; */
   transition: background-color 0.2s ease;
   /* Remove background and shadow by default */
@@ -103,8 +101,8 @@
 .list-toolbar.sticky {
   background-color: #1e1e1e;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
-              inset 0 -1px 2px rgba(0, 0, 0, 0.04),
-              0 1px 4px rgba(0, 0, 0, 0.15);
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ========== MODULE: Filter Bar ========== */
@@ -236,55 +234,68 @@
 
 /* Ensure badge background appears behind the icon for selected filters */
 .filter-row.selected .filter-icon {
-  z-index: 2;
-  position: relative; 
+  z-index: 1;
+  position: relative;
 }
 
-.filter-row.selected .filter-icon > svg {
+.filter-row.selected .filter-icon>svg {
   stroke-width: 1.5;
   scale: 1.2;
   stroke: currentColor;
 }
 
-body.theme-light .filter-row.selected .filter-icon > svg {
+body.theme-light .filter-row.selected .filter-icon>svg {
   color: black;
 }
 
-body.theme-dark .filter-row.selected .filter-icon > svg {
+body.theme-dark .filter-row.selected .filter-icon>svg {
   color: white;
 }
 
 .filter-row.selected .filter-badge {
-  z-index: 0;
+  z-index: 4;
 }
 
-  .filter-badge {
+.filter-badge {
   position: absolute;
   top: -0.5em;
   right: -0.9em;
-  width: 1.5em;
+  min-width: 1.45em;
   height: 1.25em;
+  padding: 0 0.25em;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 4;
 }
-.filter-row.selected .filter-icon::before {
+
+.filter-badge::before {
   content: "";
   position: absolute;
-  top: -0.5em;
-  right: -0.9em;
-  width: 1.5em;
-  height: 1.25em;
-  background-color: var(--badge-bg, #6366f1);
-  border-radius: 9999px;
-  z-index: -10;
+  inset: 0;
+  background: var(--badge-bg, #e44332);
+  border: 1px solid var(--background-primary);
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  z-index: 0;
+}
+
+.filter-badge-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--badge-bg, #e44332);
+  border: 1px solid var(--background-primary);
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  z-index: 0;
 }
 
 .filter-icon {
   position: relative;
 }
-.filter-icon > svg {
+
+.filter-icon>svg {
   scale: 1.15;
   transform-origin: top left;
   transition: transform var(--transition-fast);
@@ -293,10 +304,23 @@ body.theme-dark .filter-row.selected .filter-icon > svg {
 
 .filter-badge-count {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   font-size: 10px;
   font-weight: bold;
-  color: white;
+  color: var(--badge-color, #fff);
+  line-height: 1;
+}
+
+.filter-row:not(.selected) .filter-badge {
+  display: none !important;
+}
+
+.filter-row.selected .filter-badge {
+  display: flex !important;
+}
+
+.filter-row.is-loading .filter-badge-count {
+  letter-spacing: 1px;
 }
 
 /* Make inactive filter badges smaller and faded */
@@ -360,6 +384,18 @@ body.theme-dark .queue-wrapper {
   flex-shrink: 0;
 }
 
+.settings-refresh-wrapper .icon-button {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.settings-refresh-wrapper .icon-button:hover {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
 .icon-button {
   border: none;
   background: transparent;
@@ -387,14 +423,14 @@ body.theme-dark .queue-wrapper {
   transition: transform 80ms ease-out;
 }
 
- 
+
 /* ========== MODULE: Task ========== */
 /* ========== Enhanced Task Styles ========== */
 /* ================================
    Modern Nesting: Task Styles
    ================================ */
- .todoist-board .task {
-  background: white;
+.todoist-board .task {
+  background: transparent;
   border-radius: 0;
   border: 1px solid transparent;
   padding-block: 0.75rem;
@@ -409,7 +445,6 @@ body.theme-dark .queue-wrapper {
   position: relative;
   outline: none;
   transition: all var(--transition-spring);
-  will-change: transform, box-shadow;
   transform: translate3d(0, 0, 0);
 
   /* --- Modern Nesting for ::before, :focus, :hover, .selected-task --- */
@@ -420,14 +455,16 @@ body.theme-dark .queue-wrapper {
     right: 0;
     top: 0;
     height: 1px;
-    background: linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.02) 100%);
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.02) 100%);
     pointer-events: none;
     transform: translate3d(0, 0, 0);
   }
+
   &:focus {
     outline: none !important;
     box-shadow: none !important;
   }
+
   @media (hover: hover) and (pointer: fine) {
     &:hover:not(.selected-task) {
       background: #f9fafb;
@@ -436,13 +473,16 @@ body.theme-dark .queue-wrapper {
       transition: all var(--transition-fast);
     }
   }
+
   &.no-transition::before {
     transition: none !important;
   }
+
   &.freeze-transition {
     transition: none !important;
     transform: none !important;
   }
+
   /* --- Completed task row styling --- */
   &.completed .task-content {
     text-decoration: line-through;
@@ -450,11 +490,13 @@ body.theme-dark .queue-wrapper {
     transition: all 0.3s ease;
   }
 }
+
 .task-inner p {
   margin: 0;
   display: inline;
 }
- .todoist-board .task-inner {
+
+.todoist-board .task-inner {
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -473,12 +515,12 @@ body.theme-dark .queue-wrapper {
   animation: none !important; */
 }
 
- .todoist-board .task-content {
+.todoist-board .task-content {
   display: flex;
   flex: 1;
 }
 
- .todoist-board .task-content-wrapper {
+.todoist-board .task-content-wrapper {
   position: relative;
   touch-action: pan-y;
   display: flex;
@@ -490,12 +532,10 @@ body.theme-dark .queue-wrapper {
   overflow: visible;
 }
 
- .todoist-board .task-title {
+.todoist-board .task-title {
   position: relative;
-  padding-bottom: 0.85rem;
   cursor: text;
   font-size: 0.92rem;
-  will-change: auto;
   line-height: 1.4;
   display: block;
   font-weight: 500;
@@ -504,11 +544,12 @@ body.theme-dark .queue-wrapper {
   color: #111827;
 }
 
+
 body.theme-dark .todoist-board .task-title {
   color: #f9fafb;
 }
 
- .todoist-board .selected-task .task-title {
+.todoist-board .selected-task .task-title {
   max-height: 1000px;
   opacity: 1;
   transition:
@@ -517,24 +558,25 @@ body.theme-dark .todoist-board .task-title {
 }
 
 
- .todoist-board .task-deadline {
+.todoist-board .task-deadline {
   position: absolute;
   top: 0.75rem;
   right: 10px;
   z-index: 5;
   opacity: 0.7;
 }
- .todoist-board .selected-task .task-deadline  {
+
+.todoist-board .selected-task .task-deadline {
   opacity: 1;
-  transition: fade-in 1300ms ease-in-out;
 }
 
- .todoist-board .deadline-label {
+.todoist-board .deadline-label {
   align-self: center;
 }
+
 /* ========== Enhanced Task Selection ========== */
 /* --- Modern Nesting: Selected Task --- */
- .todoist-board .selected-task {
+.todoist-board .selected-task {
   display: flex;
   flex-direction: row;
   justify-content: stretch;
@@ -542,9 +584,10 @@ body.theme-dark .todoist-board .task-title {
   position: relative;
   z-index: 0;
   min-height: 4rem;
+  background-color: var(--selected-bg);
   box-shadow:
-   rgba(6, 24, 44, 0.4) 0px 0px 0px 0.1px, 
-   rgba(6, 24, 44, 0.65) 0px 4px 4px -3px,
+    rgba(6, 24, 44, 0.4) 0px 0px 0px 0.1px,
+    rgba(6, 24, 44, 0.65) 0px 4px 4px -3px,
     rgba(255, 255, 255, 0.08) -3px 1px 0px 0px;
   transform: scale(1.005) translateY(-2px);
   border-radius: 12px;
@@ -558,14 +601,15 @@ body.theme-dark .todoist-board .task-title {
     border 360ms ease,
     border-radius 360ms ease;
   /* Improve animation smoothness on mobile and hardware acceleration */
-  will-change: transform, box-shadow, opacity;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0) scale(1.005) translateY(-2px);
+
   &::before {
     display: none;
   }
+
   /* Modern Nesting: Hide ::before on next .task */
-  + .task::before {
+  +.task::before {
     display: none;
   }
 }
@@ -578,12 +622,13 @@ body:has(.todoist-board .selected-task) .todoist-board .task:not(.selected-task)
 }
 
 
- .todoist-board .task-scroll-wrapper {
+.todoist-board .task-scroll-wrapper {
   display: flex;
   width: 100%;
 }
+
 /* --- Task Scroll Wrapper for selected-task --- */
- .todoist-board .selected-task .task-scroll-wrapper {
+.todoist-board .selected-task .task-scroll-wrapper {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -593,18 +638,18 @@ body:has(.todoist-board .selected-task) .todoist-board .task:not(.selected-task)
   position: relative;
 }
 
- .todoist-board .selected-task .task-inner {
+.todoist-board .selected-task .task-inner {
   flex: 0 0 auto;
 }
 
 
- .todoist-board .selected-task .task-content {
+.todoist-board .selected-task .task-content {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
 }
 
- .todoist-board .selected-task .task-content-wrapper {
+.todoist-board .selected-task .task-content-wrapper {
   flex: 1 1 auto;
   display: flex;
   justify-content: flex-start;
@@ -616,14 +661,14 @@ body:has(.todoist-board .selected-task) .todoist-board .task:not(.selected-task)
   padding-bottom: 0.5rem;
 }
 
- .todoist-board .selected-task .task-description,
- .todoist-board .selected-task .task-metadata {
+.todoist-board .selected-task .task-description,
+.todoist-board .selected-task .task-metadata {
   flex-grow: 0;
   flex-shrink: 0;
   flex-basis: auto;
 }
 
- .todoist-board .selected-task .task-title {
+.todoist-board .selected-task .task-title {
   flex-shrink: 0;
 }
 
@@ -631,7 +676,7 @@ body:has(.todoist-board .selected-task) .todoist-board .task:not(.selected-task)
 
 /* Improved deselection */
 
- .todoist-board .task.no-transition::before {
+.todoist-board .task.no-transition::before {
   transition: none !important;
 }
 
@@ -645,7 +690,7 @@ input.todoist-checkbox {
   box-shadow: none;
   width: 22px;
   height: 22px;
-  border: 2.5px solid #d1d5db;
+  border: 2.5px solid #9ca3af;
   border-radius: 50%;
   cursor: pointer;
   margin-right: 4px;
@@ -655,7 +700,15 @@ input.todoist-checkbox {
   vertical-align: middle;
   backface-visibility: hidden;
   z-index: 10;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Kill any theme-provided checkmark images to avoid double ticks */
+.todoist-board input.todoist-checkbox,
+.todoist-board input.todoist-checkbox:checked {
+  background-image: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 }
 
 /* Hide browser default checkmark for all major engines */
@@ -666,25 +719,53 @@ input.todoist-checkbox::-ms-check {
   background: none !important;
   color: transparent !important;
 }
+
 input.todoist-checkbox:checked {
   background-color: #6366f1;
   overflow: hidden;
 }
+
 /* Priority-based checkbox styling */
 input.todoist-checkbox.priority-4 {
-  background-color: #fee2e2; /* Light red */
-  border-color: #dc2626;     /* Red border */
-}
-input.todoist-checkbox.priority-3 {
-  background-color: #fef3c7; /* Light amber */
-  border-color: #d97706;     /* Amber border */
-}
-input.todoist-checkbox.priority-2 {
-  background-color: #dbeafe; /* Light blue */
-  border-color: #2563eb;     /* Blue border */
+  background-color: #fee2e2;
+  /* Light red */
+  border-color: #dc2626;
+  /* Red border */
 }
 
- .todoist-board .selected-task input.todoist-checkbox {
+body.theme-dark input.todoist-checkbox.priority-4 {
+  background-color: #991b1b58;
+  /* slightly lighter red than #7f1d1d */
+  border-color: #dc2626;
+}
+
+input.todoist-checkbox.priority-3 {
+  background-color: #fef3c7;
+  /* Light amber */
+  border-color: #d97706;
+  /* Amber border */
+}
+
+body.theme-dark input.todoist-checkbox.priority-3 {
+  background-color: #92410e68;
+  /* slightly lighter amber than #78350f */
+  border-color: #d97706;
+}
+
+input.todoist-checkbox.priority-2 {
+  background-color: #dbeafe;
+  /* Light blue */
+  border-color: #2563eb;
+  /* Blue border */
+}
+
+body.theme-dark input.todoist-checkbox.priority-2 {
+  background-color: #1d4fd85c;
+  /* slightly lighter blue than #1e3a8a */
+  border-color: #2563eb;
+}
+
+.todoist-board .selected-task input.todoist-checkbox {
   max-height: 1000px;
   opacity: 1;
   transition:
@@ -693,12 +774,35 @@ input.todoist-checkbox.priority-2 {
 }
 
 
+/* Keep hover effects but don’t overwrite priority colors */
 input.todoist-checkbox:hover {
-  border-color: #6366f1;
   animation: checkbox-check var(--transition-spring) ease-out;
   transform: scale(1.05);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
   z-index: 1000;
+}
+
+/* Only non-priority checkboxes get the neutral hover border */
+/* Neutral (non-priority) hover: same soft glow as priority variants, no harsh dark border */
+input.todoist-checkbox:not(.priority-2):not(.priority-3):not(.priority-4):hover {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+  border-color: #9ca3af;
+}
+
+/* Hue‑matched hover glow for priority checkboxes */
+input.todoist-checkbox.priority-4:hover {
+  /* P1 red */
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.14);
+}
+
+input.todoist-checkbox.priority-3:hover {
+  /* P2 amber */
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.14);
+}
+
+input.todoist-checkbox.priority-2:hover {
+  /* P3 blue */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }
 
 input.todoist-checkbox:active {
@@ -706,28 +810,10 @@ input.todoist-checkbox:active {
   transition: transform 80ms ease-out;
 }
 
-
-
-input.todoist-checkbox:checked::before {
-  content: "";
-  position: absolute;
-  transform-origin: center;
-  top: 0;
-  left: 0.5em;
-  width: 5px;
-  height: 10px;
-  border: solid currentColor;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-  z-index: 1000;
-}
-
-body.theme-light input.todoist-checkbox:checked::before {
-  border-color: #1f2937;
-}
-
-body.theme-dark input.todoist-checkbox:checked::before {
-  border-color: #f9fafb;
+/* Match Todoist-like focus ring for all checkboxes */
+input.todoist-checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 /* Always show the checkmark container, but only display the tick visually on hover or checked */
@@ -744,15 +830,16 @@ input.todoist-checkbox::after {
   background: var(--pill-bg);
   color: var(--pill-text);
   border-radius: 12px;
-  padding-block: 0.25rem;
-  padding-inline: 0.625rem;
+  padding-block: 0.125rem;
+  padding-inline: 0.50rem;
   font-size: 0.625rem;
   font-weight: 500;
   display: inline-block;
   white-space: nowrap;
   user-select: none;
   transition: all var(--transition-fast);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
   /* Modern Nesting for variants */
   &.deadline {
     display: flex;
@@ -766,6 +853,7 @@ input.todoist-checkbox::after {
     height: auto;
     vertical-align: middle;
   }
+
   &.deadline-date {
     font-weight: 700;
     font-size: 0.55rem;
@@ -784,6 +872,17 @@ input.todoist-checkbox::after {
   }
 }
 
+.pill.project-pill {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
 /* --- Grouped Pill Variants with :is() for shared logic --- */
 .pill:is(.today, .overdue, .soon, .future) {
   color: white;
@@ -794,61 +893,64 @@ input.todoist-checkbox::after {
   font-weight: 600;
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
+
 .pill.today {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
+
 .pill.overdue {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
   animation: pulse-urgent 2s ease-in-out infinite;
 }
+
 .pill.soon {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
 }
+
 .pill.future {
   background: linear-gradient(135deg, #10b981, #059669);
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
 /* ========== Enhanced Task Metadata ========== */
- .todoist-board .task-description,
- .todoist-board .task-metadata {
+.todoist-board .task-description,
+.todoist-board .task-metadata {
   overflow: hidden;
   max-height: 0;
   opacity: 0;
-  transition: 
+  transition:
     max-height var(--transition-medium) cubic-bezier(0.4, 0, 0.2, 1),
     opacity var(--transition-medium);
 }
 
- .todoist-board .selected-task .task-description,
- .todoist-board .selected-task .task-metadata {
+.todoist-board .selected-task .task-description,
+.todoist-board .selected-task .task-metadata {
   max-height: 1000px;
   opacity: 1;
-  transition: 
+  transition:
     max-height var(--transition-smooth) cubic-bezier(0.4, 0, 0.2, 1),
     opacity var(--transition-medium);
 }
 
 /* Restrict height and allow scrolling for long descriptions in selected task */
- .todoist-board .selected-task .task-description {
+.todoist-board .selected-task .task-description {
   max-height: 80px;
   padding-bottom: 0.5rem;
   overflow-y: auto;
   position: relative;
-  background: rgba(255, 239, 213, 0.07);
 }
 
 
- .todoist-board .task-metadata > .pill:not(:first-child):not(.deadline-date) {
+.todoist-board .task-metadata>.pill:not(:first-child):not(.deadline-date) {
   position: relative;
   margin-left: 12px;
   font-weight: inherit;
 }
 
- .todoist-board .task-metadata > .pill:not(:first-child):not(.deadline-date)::before {
+.todoist-board .task-metadata>.pill:not(:first-child):not(.deadline-date)::before {
   content: "";
   background: var(--meta-text);
   display: inline-block;
@@ -863,7 +965,7 @@ input.todoist-checkbox::after {
   opacity: 0.3;
 }
 
- .todoist-board .label-separator {
+.todoist-board .label-separator {
   opacity: 0.4;
   margin: 0 4px;
 }
@@ -871,7 +973,7 @@ input.todoist-checkbox::after {
 /* ================================
    Modern Nesting: Task Metadata
    ================================ */
- .todoist-board .task-metadata {
+.todoist-board .task-metadata {
   display: flex;
   flex-wrap: nowrap;
   gap: 2px 2px;
@@ -892,20 +994,41 @@ input.todoist-checkbox::after {
   animation: fade-in-up var(--transition-spring) ease-out both;
 }
 
- .todoist-board .selected-task .task-metadata {
+.todoist-board .selected-task .task-metadata {
   white-space: normal;
   display: flex;
   flex-wrap: nowrap;
   /* Don't override padding-bottom here; let base .task-metadata rule apply */
 }
 
- .todoist-board .selected-task .pill.label-pill {
+.todoist-board .selected-task .pill.label-pill {
   display: flex;
   flex-wrap: wrap;
   line-height: 1;
-  padding-right: 2px
 }
- .todoist-board .task-description {
+
+/* label pill pieces */
+.pill.label-pill {
+  --label-color: var(--pill-text);
+}
+
+.pill.label-pill .label-part {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pill.label-pill .label-part .label-at {
+  color: #9333ea !important;
+  margin-right: 2px;
+}
+
+/* var(--label-color) will be used in future updates */
+.pill.label-pill .label-separator {
+  margin: 0 4px;
+  opacity: 0.6;
+}
+
+.todoist-board .task-description {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -921,12 +1044,12 @@ input.todoist-checkbox::after {
   white-space: pre-line;
 }
 
- 
+
 
 
 
 /* ========== Enhanced Deadline Styles ========== */
- .todoist-board .deadline-wrapper {
+.todoist-board .deadline-wrapper {
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -935,7 +1058,7 @@ input.todoist-checkbox::after {
   position: relative;
 }
 
- .todoist-board .deadline-label {
+.todoist-board .deadline-label {
   font-size: 0.5rem;
   opacity: 0.6;
   margin-bottom: 4px;
@@ -955,16 +1078,34 @@ input.todoist-checkbox::after {
   background: rgba(31, 41, 55, 0.8);
   color: white;
   border: none;
-  box-shadow: 
-    0 4px 12px rgba(0,0,0,0.15),
-    0 2px 4px rgba(0,0,0,0.1),
-    inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   font-size: 0.75rem;
   transition: all var(--transition-fast);
   animation: toolbar-slide-up var(--transition-spring) ease-out;
   position: relative;
   width: 60%;
   max-width: 220px;
+}
+
+/* Space reserved for chin/mini‑toolbar */
+:root {
+  --chin-height: 16px;
+}
+
+/* desktop/tablet default */
+@media (max-width: 600px) {
+  :root {
+    --chin-height: 22px;
+  }
+}
+
+/* mobile */
+
+.todoist-board .selected-task:has(#mini-toolbar-wrapper, .fixed-chin) .task-content-wrapper {
+  padding-bottom: var(--chin-height) !important;
 }
 
 .selected-task .mini-toolbar {
@@ -975,6 +1116,7 @@ input.todoist-checkbox::after {
   z-index: 100;
   pointer-events: auto;
 }
+
 
 .mini-toolbar-btn {
   background: transparent;
@@ -1024,7 +1166,7 @@ input.todoist-checkbox::after {
   transition: transform 80ms ease-out;
 }
 
-.mini-toolbar-btn:hover + .mini-toolbar-label {
+.mini-toolbar-btn:hover+.mini-toolbar-label {
   opacity: 0.9;
 }
 
@@ -1056,6 +1198,36 @@ input.todoist-checkbox::after {
   transition: all var(--transition-medium);
 }
 
+/* --- Normalize drag/placeholder content to the compact layout --- */
+.dragging-row .task-metadata,
+.task-placeholder .task-metadata,
+.dragging-row .task-meta,
+.task-placeholder .task-meta,
+.dragging-row .meta,
+.task-placeholder .meta,
+.dragging-row .metadata,
+.task-placeholder .metadata {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Keep compact 'when' row sizing consistent while dragging */
+.dragging-row .task-when,
+.task-placeholder .task-when {
+  font-size: 0.74rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Extra safety: prevent selection/drag artifacts inside the ghost */
+.dragging-row *,
+.task-placeholder * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
 .drag-scroll-block {
   touch-action: none !important;
   overflow: hidden !important;
@@ -1065,7 +1237,6 @@ input.todoist-checkbox::after {
 /* ========== Enhanced Queue Mode ========== */
 .queue-dimmed {
   opacity: 0.2;
-  will-change: opacity;
   pointer-events: none;
   filter: blur(0.5px);
   transition: all var(--transition-smooth);
@@ -1075,7 +1246,6 @@ input.todoist-checkbox::after {
   opacity: 1;
   filter: none;
   transition: all var(--transition-smooth);
-  will-change: opacity, filter;
 }
 
 .queue-focused-title {
@@ -1084,7 +1254,6 @@ input.todoist-checkbox::after {
   transform: scale(1.02);
   color: #374151;
   transition: all var(--transition-fast);
-  will-change: transform, font-weight, color;
 }
 
 /* ========== Enhanced Loading Overlay ========== */
@@ -1154,7 +1323,7 @@ input.todoist-checkbox::after {
   border: 2px solid #6366f1;
   color: #6366f1;
   transform: scale(1.02) translate3d(0, 0, 0);
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(99, 102, 241, 0.1),
     var(--shadow-medium);
   animation: settings-select var(--transition-spring) ease-out;
@@ -1209,9 +1378,6 @@ input.todoist-checkbox::after {
   transition: transform 80ms ease-out;
 }
 
-.settings-save-row {
-  margin-top: 24px;
-}
 
 /* ========== MODULE: Filter Bar ========== */
 /* ========== Enhanced Filter Bar ========== */
@@ -1224,7 +1390,7 @@ input.todoist-checkbox::after {
   padding: 1rem 0.875rem 0.875rem 0.875rem;
   flex-wrap: nowrap;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   width: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1290,6 +1456,7 @@ input.todoist-checkbox::after {
     opacity: 0;
     transform: translateX(-50%) translateY(12px) scale(0.95) translate3d(0, 0, 0);
   }
+
   100% {
     opacity: 1;
     transform: translateX(-50%) translateY(0) scale(1) translate3d(0, 0, 0);
@@ -1300,9 +1467,11 @@ input.todoist-checkbox::after {
   0% {
     transform: scale(1) translate3d(0, 0, 0);
   }
+
   50% {
     transform: scale(1.08) translate3d(0, 0, 0);
   }
+
   100% {
     transform: scale(1.02) translate3d(0, 0, 0);
   }
@@ -1312,18 +1481,42 @@ input.todoist-checkbox::after {
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }
 }
 
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
 @keyframes fade-in-scale {
   from {
     opacity: 0;
     transform: translateX(-50%) scale(0.95) translate3d(0, 0, 0);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) scale(1) translate3d(0, 0, 0);
@@ -1337,6 +1530,7 @@ input.todoist-checkbox::after {
     opacity: 0;
     transform: translateX(-50%) translateY(-50%) scale(0.8) translate3d(0, 0, 0);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(-50%) scale(1) translate3d(0, 0, 0);
@@ -1344,10 +1538,13 @@ input.todoist-checkbox::after {
 }
 
 @keyframes pulse-urgent {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.9;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.02);
@@ -1358,6 +1555,7 @@ input.todoist-checkbox::after {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -1374,7 +1572,7 @@ input.todoist-checkbox::after {
     padding: 0 !important;
     margin: 0 !important;
   }
-  
+
   .todoist-board .task {
     font-size: 0.85rem;
     -webkit-user-select: none !important;
@@ -1382,13 +1580,14 @@ input.todoist-checkbox::after {
     -webkit-touch-callout: none !important;
     padding: 0.875rem 0.125rem 0.5rem 1rem;
   }
-  
-  .task-placeholder, .dragging-row {
+
+  .task-placeholder,
+  .dragging-row {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
   }
-  
+
   .pill {
     font-size: 0.6rem;
     padding: 0.2rem 0.5rem;
@@ -1397,15 +1596,15 @@ input.todoist-checkbox::after {
   .todoist-board .task-inner {
     touch-action: pan-y !important;
   }
-  
+
   .list-toolbar {
     border-radius: 12px;
   }
-  
+
   .filter-btn {
     padding: 4px;
   }
-  
+
   .mini-toolbar {
     border-radius: 16px;
     padding: 0.25rem 0.625rem;
@@ -1416,14 +1615,14 @@ input.todoist-checkbox::after {
     padding-left: 0;
     padding-right: 0;
   }
-  
+
   /* Disable hover effects on mobile */
   .todoist-board .task:hover:not(.selected-task) {
     transform: translate3d(0, 0, 0);
     background: transparent;
     box-shadow: none;
   }
-  
+
   .filter-btn:hover,
   .queue-btn:hover,
   .icon-button:hover {
@@ -1436,6 +1635,7 @@ input.todoist-checkbox::after {
     padding-bottom: 0.5rem;
     margin-bottom: 1rem;
   }
+
   .todoist-board .selected-task .task-description {
     max-height: none;
     overflow-y: visible;
@@ -1444,6 +1644,7 @@ input.todoist-checkbox::after {
 }
 
 @media only screen and (max-width: 768px) {
+
   .markdown-preview-view .cm-preview-code-block.cm-embed-block.cm-lang-todoist-board,
   .markdown-source-view.mod-cm6 .block-language-todoist-board.todoist-board,
   .markdown-rendered .block-language-todoist-board.todoist-board,
@@ -1463,12 +1664,13 @@ input.todoist-checkbox::after {
   }
 
   /* Reading Mode: fix horizontal scroll and alignment */
-  .markdown-rendered .block-language-todoist-board.todoist-board.reading-mode {
+  .markdown-rendered .block-language-todoist-board.todoist-board,
+  .markdown-preview-view .block-language-todoist-board .todoist-board .todoist-inline-board {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow-x: hidden;
@@ -1485,6 +1687,7 @@ input.todoist-checkbox::after {
 
 /* ========== Accessibility & Motion ========== */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -1492,22 +1695,22 @@ input.todoist-checkbox::after {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
+
   .todoist-board .task:hover:not(.selected-task) {
     transform: translate3d(0, 0, 0);
   }
-  
-  
+
+
   .pill.overdue {
     animation: none;
   }
 }
 
 /* ========== Focus Management ========== */
- .todoist-board .task:focus-visible {
-   outline: 2px solid #6366f1;
-   outline-offset: 2px;
- }
+.todoist-board .task:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
 
 .filter-btn:focus-visible,
 .queue-btn:focus-visible,
@@ -1523,6 +1726,7 @@ body.theme-dark {
   --pill-bg: #374151;
   --pill-text: #d1d5db;
   --meta-text: #9ca3af;
+  --selected-bg: #262626;
 }
 
 body.theme-dark .list-toolbar {
@@ -1530,27 +1734,23 @@ body.theme-dark .list-toolbar {
   border: 1px solid rgba(55, 65, 81, 0.3);
   /* Inset effect for dark theme toolbar */
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
-              inset 0 -1px 2px rgba(0, 0, 0, 0.04);
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04);
   transition: background-color 0.2s ease;
 }
+
 body.theme-dark .list-toolbar.sticky {
   background-color: #1e1e1e;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05),
-              inset 0 -1px 2px rgba(0, 0, 0, 0.04),
-              0 1px 4px rgba(0, 0, 0, 0.15);
+    inset 0 -1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 body.theme-dark .todoist-board .task {
   color: #f9fafb;
 }
 
-body.theme-dark .todoist-board .task:hover:not(.selected-task) {
-  background: #1f2937;
-}
-
-
 body.theme-dark .todoist-board .task::before {
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
 
 body.theme-dark .settings-input,
@@ -1576,16 +1776,16 @@ body.theme-light .todoist-board .task {
 
 body.theme-dark .todoist-board .task:hover:not(.selected-task) {
   background: #1f2937;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 /* ========== iOS/Safari Fixes ========== */
- .todoist-board .task.dragging-row {
-   touch-action: none !important;
-   user-select: none !important;
-   -webkit-user-select: none !important;
-   -webkit-touch-callout: none !important;
- }
+.todoist-board .task.dragging-row {
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
 
 .list-view.drag-scroll-block {
   touch-action: none !important;
@@ -1602,17 +1802,20 @@ body.drag-disable {
   user-select: none !important;
   -webkit-touch-callout: none !important;
 }
+
 /* --- Checkbox completion animation --- */
- .todoist-board .task-checked-anim {
-   transition: transform 0.2s ease;
-   transform: scale(0.96);
- }
- /* --- Completed task row styling --- */
- .todoist-board .task.completed .task-content {
-   text-decoration: line-through;
-   opacity: 0.5;
-   transition: all 0.3s ease;
- }
+.todoist-board .task-checked-anim {
+  transition: transform 0.2s ease;
+  transform: scale(0.96);
+}
+
+/* --- Completed task row styling --- */
+.todoist-board .task.completed .task-content {
+  text-decoration: line-through;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+}
+
 /* --- Icon grid for settings --- */
 /* Icon picker trigger and popup */
 .icon-trigger {
@@ -1632,6 +1835,7 @@ body.drag-disable {
   padding: 0;
   margin: 0;
 }
+
 .icon-picker-wrapper .icon-grid-btn {
   background: none;
   border: none;
@@ -1642,18 +1846,22 @@ body.drag-disable {
   justify-content: center;
   overflow: visible;
 }
+
 .icon-picker-wrapper .icon-grid-btn:hover {
   transform: scale(1.1);
 }
+
 .icon-picker-wrapper .icon-grid-btn.selected {
   border-color: #007aff;
   background-color: #e6f0ff;
 }
+
 .icon-grid-btn svg {
   width: 20px;
   height: 20px;
   overflow: visible;
 }
+
 /* --- Icon color picker row --- */
 .icon-color-row {
   display: flex;
@@ -1668,7 +1876,8 @@ body.drag-disable {
   box-sizing: border-box;
   grid-column: 1 / -1;
 }
-input .icon-color-picker {
+
+input.icon-color-picker {
   width: 28px;
   height: 24px;
 }
@@ -1683,15 +1892,6 @@ input .icon-color-picker {
 }
 
 /* --- Icon button style --- */
-.icon-button {
-  background: none;
-  border: none;
-  padding: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .icon-color-swatch {
   width: 20px;
   height: 20px;
@@ -1700,19 +1900,23 @@ input .icon-color-picker {
   border: 2px solid white;
   box-shadow: 0 0 0 1px #ccc;
 }
+
 .icon-color-swatch:hover {
   box-shadow: 0 0 0 2px #888;
 }
+
 /* ================================
    Modern Nesting: Non-task Note
    ================================ */
 /* ================================
    Modern Nesting: Non-task Note
    ================================ */
-.non-task-note, .non-task-note .task-title {
+.non-task-note,
+.non-task-note .task-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1f2937; /* dark gray for visibility */
+  color: #1f2937;
+  /* dark gray for visibility */
   padding-inline: 1rem;
   margin-block: 0.5rem;
   margin-inline: 0;
@@ -1731,7 +1935,8 @@ body.theme-dark .non-task-note {
 .non-task-note .chin-inner {
   height: 0.1rem;
 }
-.non-task-note.selected-task { 
+
+.non-task-note.selected-task {
   border: none;
   box-shadow: none;
   margin-bottom: 2rem;
@@ -1739,7 +1944,8 @@ body.theme-dark .non-task-note {
 
 /* ========== Hide metadata and description for non-task notes ========== */
 .non-task-note .task-metadata,
-.non-task-note .task-description, .non-task-note .todoist-checkbox {
+.non-task-note .task-description,
+.non-task-note .todoist-checkbox {
   display: none !important;
   max-height: 0 !important;
   opacity: 0 !important;
@@ -1751,10 +1957,12 @@ body.theme-dark .non-task-note {
   min-height: 4rem;
   padding-bottom: 0.5rem;
 }
+
 .non-task-note .task-content-wrapper {
-position: absolute;
-bottom: -1rem;
+  position: absolute;
+  bottom: -1rem;
 }
+
 .non-task-note .task-title {
   color: #374151;
 }
@@ -1787,7 +1995,6 @@ bottom: -1rem;
   margin: 0 auto;
 }
 
-/* Hide delete button by default, only show when selected-task is active */
 
 .selected-task .mini-toolbar-wrapper .circle-btn.delete-btn {
   display: flex;
@@ -1803,9 +2010,11 @@ bottom: -1rem;
   padding: 4px 0;
   transition: none !important;
 }
+
 .selected-task .mini-toolbar-wrapper .circle-btn.delete-btn:hover {
   color: red;
 }
+
 .mini-toolbar-dates-wrapper {
   display: flex;
   gap: 0.5rem;
@@ -1838,6 +2047,7 @@ bottom: -1rem;
   background: rgba(99, 102, 241, 0.08);
   transform: scale(1.05);
 }
+
 .mini-toolbar-wrapper {
   position: relative;
   display: flex;
@@ -1848,13 +2058,14 @@ bottom: -1rem;
 }
 
 
-.icon-button.refresh-btn.syncing > svg {
+.icon-button.refresh-btn.syncing>svg {
   animation: spin 1s linear infinite;
   transform-origin: center;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
+
 /* ========== Chin-Style Mini Toolbar ========== */
 
 .fixed-chin {
@@ -1885,12 +2096,14 @@ bottom: -1rem;
   width: 100%;
   justify-content: flex-start;
   flex-wrap: wrap;
-  background-color: rgba(243, 244, 246, 0.2); /* light gray background */
+  background-color: rgba(243, 244, 246, 0.2);
+  /* light gray background */
   border-radius: 6px;
   padding: 0.5rem 0.75rem;
 }
+
 body.theme-dark .selected-task .chin-inner {
-  background-color: var(--background-primary);
+  background-color: var(--background-primary, #1e1e1e);
   border-radius: 12px;
 }
 
@@ -1943,18 +2156,23 @@ body.theme-dark .chin-btn:hover {
   right: 0;
   margin-left: auto;
 }
+
 .selected-task .mini-toolbar-wrapper .delete-btn .lucide {
   stroke: red;
 }
+
 .selected-task .edit-btn svg {
-  stroke: #FDB600; 
+  stroke: #FDB600;
 }
+
 .selected-task .tomorrow-btn svg {
   stroke: #a176e6;
 }
+
 .selected-task .today-btn svg {
-  stroke: #0764fa; 
+  stroke: #0764fa;
 }
+
 .selected-task .mini-toolbar .today-btn .date-subtitle {
   font-size: 0.5rem;
   color: #9ca3af;
@@ -1968,6 +2186,7 @@ body.theme-dark .chin-btn:hover {
 .selected-task .task-metadata {
   animation: none;
 }
+
 /* ========== Always show trash/delete SVG icon in settings modal ========== */
 .settings-filter-table .icon-button svg {
   width: 16px;
@@ -1977,14 +2196,16 @@ body.theme-dark .chin-btn:hover {
   opacity: 1;
   visibility: visible;
 }
+
 /* ========== Filter Badge Z-Index Fix ========== */
-.filter-badge span,
+.filter-badge span:not(.filter-badge-bg),
 .filter-badge svg {
   position: relative;
   z-index: 2;
 }
+
 /* Container Query Example for .task */
-@container style (max-width: 500px) {
+@container (max-width: 500px) {
   .task {
     font-size: 0.8rem;
   }
@@ -1993,7 +2214,7 @@ body.theme-dark .chin-btn:hover {
 /* --- Settings filter table styling --- */
 .settings-filter-table th,
 .settings-filter-table td {
-  padding: 4px 6px;
+  padding: 2px 3px;
   vertical-align: middle;
 }
 
@@ -2006,6 +2227,7 @@ body.theme-dark .chin-btn:hover {
   text-align: center;
   vertical-align: middle;
 }
+
 .settings-filter-table input[type="radio"] {
   transform: scale(1.3);
   margin: 0;
@@ -2033,6 +2255,7 @@ body.theme-dark .chin-btn:hover {
   background: #fff;
   min-width: 38px;
 }
+
 /* ========== Smooth Deselection Transition ========== */
 .deselecting {
   opacity: 0.6;
@@ -2063,7 +2286,11 @@ body.theme-dark .chin-btn:hover {
   min-width: 260px;
   font-size: 0.85rem;
   width: 100%;
+  max-width: 600px;
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
+
 body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   background-color: #1e1e1e;
 }
@@ -2097,6 +2324,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   font-size: 0.9rem;
   width: 100%;
 }
+
 .todoist-edit-task-modal .taskmodal-title-input:focus {
   outline: none;
   border-color: #6366f1;
@@ -2112,6 +2340,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   resize: vertical;
   min-height: 4rem;
 }
+
 .todoist-edit-task-modal .taskmodal-description-input:focus {
   outline: none;
   border-color: #6366f1;
@@ -2126,6 +2355,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   font-size: 0.9rem;
   text-align: center;
 }
+
 .todoist-edit-task-modal .taskmodal-date-input:focus {
   outline: none;
   border-color: #6366f1;
@@ -2141,7 +2371,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   max-height: 120px;
   overflow-y: auto;
   resize: vertical;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .todoist-edit-task-modal .taskmodal-label-list {
@@ -2214,6 +2444,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-wrapper {
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
 }
+
 /* ========== Hamburger Dropdown Styles ========== */
 .menu-dropdown {
   position: absolute;
@@ -2258,10 +2489,11 @@ body.theme-dark .menu-dropdown-item:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-body > div.app-container > div.horizontal-main-container > div > div.workspace-split.mod-vertical.mod-root > div > div.workspace-tab-container > div > div > div.view-content > div.markdown-source-view.cm-s-obsidian.mod-cm6.node-insert-event.is-readable-line-width.is-live-preview.is-folding > div > div.cm-scroller > div.cm-sizer > div.cm-contentContainer > div > div.cm-preview-code-block.cm-embed-block.markdown-rendered.cm-lang-todoist-board {
+.cm-embed-block.cm-lang-todoist-board {
   border: none;
   box-shadow: none;
 }
+
 /* ========== Enlarge and Thicken Focus/Queue and Add Task Icons ========== */
 .queue-btn svg,
 .add-task-btn svg {
@@ -2273,13 +2505,16 @@ body > div.app-container > div.horizontal-main-container > div > div.workspace-s
 
 .queue-btn,
 .add-task-btn {
-  color: #1f2937; /* dark gray for light theme */
+  color: #1f2937;
+  /* dark gray for light theme */
 }
 
 body.theme-dark .queue-btn,
 body.theme-dark .add-task-btn {
-  color: #f9fafb; /* light gray for dark theme */
+  color: #f9fafb;
+  /* light gray for dark theme */
 }
+
 /* ========== Reading Mode Layout Fix ========== */
 .markdown-reading-view .block-language-todoist-board.todoist-board {
   all: unset;
@@ -2287,6 +2522,7 @@ body.theme-dark .add-task-btn {
   padding: 0;
   margin: 0;
 }
+
 .change-indicator {
   display: inline-block;
   position: absolute;
@@ -2306,10 +2542,12 @@ body.theme-dark .add-task-btn {
     transform: scale(1);
     opacity: 0.7;
   }
+
   50% {
     transform: scale(1.2);
     opacity: 1;
   }
+
   100% {
     transform: scale(1);
     opacity: 0.7;
@@ -2319,9 +2557,7 @@ body.theme-dark .add-task-btn {
 
 
 /* ========== Subtask Visual Hierarchy ========== */
-/* ========== Subtask Row Compact Design ========== */
 /* ========== Subtask Row Compact Design with Expansion Toggle ========== */
-/* ========== Subtask Row Compact Design ========== */
 .subtask-row {
   padding: 0 !important;
   margin: 0 0 0 1rem;
@@ -2333,8 +2569,8 @@ body.theme-dark .add-task-btn {
   display: flex;
   align-items: center;
 }
-.subtask-row .task-metadata,
-.subtask-row .task-description {
+
+.view-content .subtask-row .task-meta-compact .subtask-row .task-description {
   display: none !important;
   max-height: 0 !important;
   opacity: 0 !important;
@@ -2373,10 +2609,12 @@ body.theme-dark .add-task-btn {
   overflow: visible;
   max-height: unset;
 }
+
 .subtask-wrapper .task-scroll-wrapper {
   overflow-y: hidden;
 }
-.subtask-row::before { 
+
+.subtask-row::before {
   position: absolute;
   top: -0.25rem;
 }
@@ -2384,6 +2622,7 @@ body.theme-dark .add-task-btn {
 body.theme-dark .subtask-row {
   border-left: 2px solid #374151;
 }
+
 /* Hide metadata in subtasks unless selected */
 .subtask-row .task-meta {
   display: none;
@@ -2392,44 +2631,44 @@ body.theme-dark .subtask-row {
 .subtask-row.selected .task-meta {
   display: flex;
 }
+
 /* Hide <small> elements in unselected subtasks */
 .subtask-row:not(.selected) small {
   display: none;
 }
 
-/* ========== Parent Task Visual Distinction ========== */
-.task.parent-task {
-  position: relative;
+
+/* Hide metadata on child tasks (extra safety) */
+.todoist-board .is-child-task .due-inline,
+.todoist-board .is-child-task .project-pill,
+.todoist-board .is-child-task .project-badge,
+.todoist-board .is-child-task .label-pill,
+.todoist-board .is-child-task .labels,
+.todoist-board .is-child-task .task-meta,
+.todoist-board .is-child-task .meta,
+.todoist-board .is-child-task .meta-span,
+.todoist-board .is-child-task .metadata,
+.todoist-board .is-child-task .task-when,
+.todoist-board .is-child-task .task-meta-compact {
+  display: none !important;
 }
 
-.task.parent-task .parent-icon {
-  position: absolute;
-  padding-left: 0.5rem;
-  bottom: 0.75rem;
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
-  width: 16px;
-  height: 16px;
+.todoist-board .task-description:empty,
+.todoist-board .task-metadata:empty {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-.task.parent-task.selected-task .parent-icon {
-  opacity: 0;
+.todoist-board .task-description .desc-empty {
+  display: none;
 }
 
- .todoist-board .task-description:empty,
- .todoist-board .task-metadata:empty {
-   display: none !important;
-   max-height: 0 !important;
-   opacity: 0 !important;
-   padding: 0 !important;
-   margin: 0 !important;
- }
- .todoist-board .task-description .desc-empty {
-   display: none;
- }
- .todoist-board .date-subtitle {
- display: none;
- }
+.todoist-board .date-subtitle {
+  display: none;
+}
 
 .menu-dropdown-item {
   display: flex;
@@ -2440,15 +2679,17 @@ body.theme-dark .subtask-row {
   vertical-align: middle;
   margin-right: 8px;
 }
+
 /* Subtask checkbox style */
 
 
 /* ========== Custom cursor for task, selected-task, and add-task-btn ========== */
- .todoist-board .task,
- .todoist-board .selected-task,
- .add-task-btn {
-   cursor: pointer;
- }
+.todoist-board .task,
+.todoist-board .selected-task,
+.add-task-btn {
+  cursor: pointer;
+}
+
 .empty-filter {
   font-size: 0.85rem;
   font-style: italic;
@@ -2461,26 +2702,88 @@ body.theme-dark .subtask-row {
   line-height: 1.5;
 }
 
+.task-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 2.5rem 1rem;
+  min-height: 8rem;
+}
+
+.task-loading-inline {
+  min-height: 0;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.task-loading-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--background-modifier-border);
+  border-top-color: #6366f1;
+  animation: todoist-board-spin 800ms linear infinite;
+  flex: 0 0 auto;
+}
+
+.todoist-load-more-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0 1.5rem;
+}
+
+.todoist-load-more {
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border-radius: 8px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.todoist-load-more:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+}
+
+.todoist-load-more:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+@keyframes todoist-board-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 body.theme-dark .empty-filter {
   color: #d1d5db;
   opacity: 0.7;
 }
 
 /* Compact mode styles for todoist-board, including reading mode */
- .block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) {
-   max-height: 3rem;
-   overflow: hidden;
-   border-left: 4px solid var(--project-color, #e5e7eb);
-   padding-left: 0.75rem;
- }
- .block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) .task-metadata,
- .block-language-todoist-board.todoist-board.compact-mode .task:not(.selected-task) .task-description {
-   display: none !important;
-   max-height: 0 !important;
-   opacity: 0 !important;
-   padding: 0 !important;
-   margin: 0 !important;
- }
+/* Compact mode styles for todoist-board-list, including reading mode */
+/* Compact mode styles for list-wrapper, including reading mode */
+.list-wrapper.compact-mode .task:not(.selected-task) {
+  max-height: 3rem;
+  overflow: hidden;
+  border-left: 4px solid var(--project-color, #e5e7eb);
+  padding-left: 0.75rem;
+}
+
+.list-wrapper.compact-mode .task:not(.selected-task) .task-metadata,
+.list-wrapper.compact-mode .task:not(.selected-task) .task-description {
+  display: none !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
 .menu-dropdown-wrapper {
   position: relative;
   overflow: visible;
@@ -2492,6 +2795,7 @@ body.theme-dark .empty-filter {
   top: 100%;
   right: 0;
 }
+
 /* For dark theme, apply to .taskmodal-wrapper and .taskmodal-labels-select */
 body.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {
   background-color: transparent;
@@ -2515,21 +2819,24 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-labels-select {
 input.taskmodal-date-input {
   height: 2rem;
 }
+
 /* Dark mode: make the label pills use the dark bg/text vars */
 body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
   background: var(--pill-bg);
   color: var(--pill-text);
 }
+
 /* Mobile keyboard-safe modal alignment */
-  .todoist-edit-task-modal .modal-content {
-    /* push the wrapper toward the top */
-    align-items: flex-start;
-    justify-content: center;
-  }
+.todoist-edit-task-modal .modal-content {
+  /* push the wrapper toward the top */
+  align-items: flex-start;
+  justify-content: center;
+}
+
 @media only screen and (max-width: 600px) {
 
   /* 2. Anchor the modal itself to the bottom of that container */
-  body > div.modal-container.todoist-edit-task-modal.mod-dim > div.modal {
+  body>div.modal-container.todoist-edit-task-modal.mod-dim>div.modal {
     position: absolute;
     top: 15%;
     max-height: fit-content;
@@ -2545,6 +2852,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
     justify-content: center;
   }
 }
+
 /* 📘 Reading Mode Support */
 .todoist-board.reading-mode {
   padding-bottom: 0 !important;
@@ -2555,6 +2863,7 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
 
 .todoist-board.reading-mode .list-wrapper {
   padding-bottom: 0;
+  container-type: inline-size;
 }
 
 .todoist-board.reading-mode .todoist-edit-task-modal,
@@ -2567,23 +2876,40 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-label-checkbox {
   position: fixed !important;
   z-index: 9999;
 }
- .todoist-board .task .repeat-icon {
-   position: absolute;
-   padding-left: 0.5rem;
-   bottom: 0.75rem;
-   opacity: 0.3;
-   width: 16px;
-   height: 16px;
- }
 
- .todoist-board .task.selected-task .repeat-icon {
-   opacity: 0;
- }
-/* === Hide Icons in Compact Mode === */
-.block-language-todoist-board.todoist-board.compact-mode .parent-icon,
-.block-language-todoist-board.todoist-board.compact-mode .repeat-icon {
-  display: none !important; 
+.todoist-board .task .repeat-icon {
+  position: absolute;
+  padding-left: 0.5rem;
+  bottom: 0.75rem;
+  opacity: 0.3;
+  width: 16px;
+  height: 16px;
 }
+
+.todoist-board .task.selected-task .repeat-icon {
+  opacity: 0;
+}
+
+/* === Hide Icons in Compact Mode === */
+/* === Hide Icons in Compact Mode === */
+/* === Hide Icons in Compact Mode for list-wrapper === */
+.list-wrapper.compact-mode .repeat-icon {
+  display: none !important;
+}
+
+/* Inline parent marker (emoji) */
+.parent-mark {
+  margin-left: 6px;
+  opacity: 0.8;
+  display: inline-block;
+  vertical-align: baseline;
+}
+
+/* Hide parent-mark when a task is selected */
+.todoist-board .task.selected-task .parent-mark {
+  display: none !important;
+}
+
 /* ================================
    Dark mode: Enhanced Task Modal Inputs & Fields
    ================================ */
@@ -2626,4 +2952,1320 @@ body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="d
 body.theme-dark .todoist-edit-task-modal .taskmodal-date-input-row input[type="date"]::placeholder {
   color: #9ca3af;
   opacity: 0.6;
+}
+
+div.block-language-todoist-board.todoist-board>div.list-toolbar {
+  justify-content: flex-end;
+}
+
+/* Scope modal width and padding only to plugin settings modal */
+.modal-container.todoist-settings-modal>.modal {
+  width: 640px;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .modal-container.todoist-settings-modal>.modal {
+    width: 100%;
+    padding: 0;
+  }
+}
+
+/* compact 3-line layout used for ALL tasks */
+.task .task-when,
+.task .task-meta-compact {
+  display: flex;
+  align-items: baseline;
+  /* gap: 6px; */
+  font-size: 0.74rem;
+  line-height: 1.2;
+  color: var(--meta-text);
+  opacity: 0.95;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.mid-sep {
+  opacity: 0.5;
+  padding: 0 6px;
+}
+
+/* make due look like text inline */
+.task .task-when .due-pill {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* inline deadline chunk */
+.deadline-inline {
+  font-weight: 600;
+  color: #8630cc;
+  /* matches your deadline theme */
+  opacity: 0.95;
+}
+
+body.theme-dark .deadline-inline {
+  color: #c084fc;
+}
+
+/* always hide the old pill stack container */
+.task .task-metadata {
+  display: none !important;
+}
+
+/* Order stack: Title → Description → When → Meta */
+.todoist-board .task-title {
+  order: 0;
+  margin-bottom: 0.25rem;
+}
+
+.todoist-board .task-description {
+  order: 1;
+  margin: 0 0 0.5rem 0;
+  display: none;
+}
+
+.todoist-board .selected-task .task-description,
+.todoist-board .task-description.show-description {
+  display: block;
+}
+
+.todoist-board .desc-empty {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.todoist-board .task-when {
+  order: 2;
+}
+
+.todoist-board .task-meta-compact {
+  order: 3;
+}
+
+/* Your description already collapses when not selected; this only controls position */
+.task .task-when .due-inline {
+  font-weight: 600;
+  color: var(--meta-text);
+  opacity: 0.95;
+  padding-inline: 0.125rem;
+}
+
+.subtask-row .task-meta-compact {
+  display: none !important;
+}
+
+.subtask-row {
+  align-items: center;
+}
+
+.task .task-when,
+.task .task-when .due-inline,
+.deadline-inline {
+  font-weight: 500 !important;
+  opacity: 0.9;
+}
+
+.list-wrapper.compact-mode .task:not(.selected-task) .task-when,
+.list-wrapper.compact-mode .task:not(.selected-task) .task-meta-compact {
+  display: none !important;
+}
+
+
+/* ===== Utilities toggled by JS (consolidated) ===== */
+.todoist-board .tb-hidden {
+  display: none !important;
+}
+
+/* Layout & spacing */
+.todoist-board .tb-flex {
+  display: flex;
+}
+
+.todoist-board .tb-gap-8 {
+  gap: 8px;
+}
+
+.todoist-board .tb-mb-8 {
+  margin-bottom: 8px;
+}
+
+.todoist-board .tb-ml-4 {
+  margin-left: 4px;
+}
+
+.todoist-board .tb-ml-6 {
+  margin-left: 6px;
+}
+
+/* Typography */
+.todoist-board .tb-fs-08 {
+  font-size: 0.8em;
+}
+
+.todoist-board .tb-bold {
+  font-weight: 700;
+}
+
+/* Display helpers */
+.todoist-board .tb-inline {
+  display: inline-block;
+}
+
+/* Opacity */
+.todoist-board .tb-opacity-80 {
+  opacity: 0.8;
+}
+
+.todoist-board .tb-opacity-60 {
+  opacity: 0.6;
+}
+
+/* Generic hover to unfade any tb-opacity-60 element */
+.todoist-board .tb-opacity-60:hover {
+  opacity: 1;
+}
+
+/* Alignment */
+.todoist-board .tb-ai-center {
+  align-items: center;
+}
+
+.todoist-board .tb-justify-center {
+  justify-content: center;
+}
+
+/* Pointer */
+.todoist-board .tb-cursor-pointer {
+  cursor: pointer;
+}
+
+/* Scale helpers */
+.todoist-board .tb-scale-125 {
+  transform: scale(1.25);
+}
+
+.todoist-board .tb-scale-110 {
+  transform: scale(1.1);
+}
+
+/* Overflow helpers */
+.tb-overflow-hidden {
+  overflow: hidden;
+}
+
+.tb-touch-none {
+  touch-action: none;
+}
+
+.todoist-board .tb-overflow-hidden {
+  overflow: hidden;
+}
+
+.todoist-board .tb-maxh-160 {
+  max-height: 160px;
+}
+
+.todoist-board .tb-ovy-auto {
+  overflow-y: auto;
+}
+
+/* Offscreen positioning for clipboard textarea */
+.todoist-board .tb-fixed-offscreen {
+  position: fixed;
+  left: -10000px;
+}
+
+/* Dimming effect */
+.todoist-board .tb-dimming {
+  transition: opacity .2s ease-out;
+  opacity: .4;
+}
+
+/* Scroll lock on body during drags/modals */
+body.tb-scroll-lock {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Loading overlay visibility toggle */
+.loading-overlay {
+  display: none;
+}
+
+.loading-overlay.is-visible {
+  display: flex;
+}
+
+/* Label @ color via CSS variable (JS sets --label-color) */
+.todoist-board .label-at {
+  color: var(--label-color, var(--pill-text)) !important;
+}
+
+/* Make edit block button clickable */
+.cm-preview-code-block.cm-lang-todoist-board .edit-block-button {
+  z-index: 1005;
+}
+
+/* Ensure the left sidebar (file explorer) always gets clicks */
+.workspace-split.mod-left-split,
+.workspace-split.mod-left-split * {
+  pointer-events: auto !important;
+}
+
+/* If you ever use a body-wide drag lock, do NOT disable the explorer */
+.drag-disable .workspace-split.mod-left-split,
+.drag-disable .workspace-split.mod-left-split * {
+  pointer-events: auto !important;
+}
+
+.tb-dim,
+.dimmed,
+.queue-dim {
+  opacity: 0.2;
+  filter: blur(0.5px);
+  transition: all var(--transition-smooth);
+}
+
+/* ========== Community Plugin Fixes ========== */
+.capture-btn {
+  margin-right: 6px;
+}
+
+.toolbar-icon {
+  margin-right: 8px;
+}
+
+.menu-dropdown-wrapper {
+  position: absolute;
+  /* top/left set dynamically */
+}
+
+.icon-trigger {
+  cursor: pointer;
+  font-size: 1.6em;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.icon-picker-wrapper {
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.custom-color-swatch {
+  padding: 0;
+  border: 2px solid #ccc;
+  background: conic-gradient(red, orange, yellow, green, cyan, blue, violet, red);
+  cursor: pointer;
+}
+
+.clear-cache-btn {
+  padding: 6px 6px;
+  margin-top: 4px;
+}
+
+.sync-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: orange;
+  opacity: 0.8;
+  z-index: 10;
+  animation: pulse 1s infinite;
+}
+
+.sync-indicator.success {
+  animation: none;
+  background-color: limegreen;
+}
+
+.sync-indicator.error {
+  animation: none;
+  background-color: red;
+}
+
+/* ========== Settings Filter Editor ========== */
+.todoist-settings-modal {
+  --todoist-red: #e44332;
+  --settings-row-bg: var(--background-secondary);
+  --settings-row-border: var(--background-modifier-border);
+  --settings-field-bg: var(--background-primary);
+}
+
+.todoist-settings-modal .modal {
+  border-radius: 18px;
+  max-width: calc(100vw - 48px);
+  width: min(760px, calc(100vw - 48px));
+}
+
+.todoist-settings-modal .modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.todoist-settings-modal .modal-content {
+  overflow-x: hidden;
+  overflow-y: visible;
+  padding-bottom: 6px;
+}
+
+.todoist-settings-modal .settings-filter-table {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  display: block;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.todoist-settings-modal .settings-filter-table thead {
+  display: none;
+}
+
+.todoist-settings-modal .settings-filter-table tbody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.todoist-settings-modal .settings-filter-table tr {
+  align-items: start;
+  background: var(--settings-row-bg);
+  border: 1px solid var(--settings-row-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px 10px;
+  grid-template-columns: 46px minmax(118px, 0.75fr) minmax(200px, 1.25fr) auto auto auto;
+  padding: 10px;
+  position: relative;
+  width: 100%;
+}
+
+.todoist-settings-modal .settings-filter-table th,
+.todoist-settings-modal .settings-filter-table td {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  position: relative;
+  vertical-align: unset;
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(1)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(2)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(3)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(4)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(5)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(6)::before {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(4)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(5)::before,
+.todoist-settings-modal .settings-filter-table td:nth-child(6)::before {
+  display: none;
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(1)::before {
+  content: "Icon";
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(2)::before {
+  content: "Title";
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(3)::before {
+  content: "Todoist filter";
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(4)::before {
+  content: "Default";
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(5)::before {
+  content: "Delete";
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(6)::before {
+  content: "Order";
+}
+
+.todoist-settings-modal .settings-filter-table input[type="text"] {
+  background: var(--settings-field-bg);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--text-normal);
+  font-size: 0.9rem;
+  height: 34px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.todoist-settings-modal .settings-filter-table input[type="text"]:focus {
+  border-color: var(--todoist-red);
+  box-shadow: 0 0 0 3px rgba(228, 67, 50, 0.12);
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(2) input[type="text"] {
+  max-width: none;
+}
+
+.todoist-settings-modal .settings-filter-table input[type="radio"] {
+  accent-color: var(--todoist-red);
+  height: 20px;
+  margin: 21px auto 0;
+  transform: none;
+  width: 20px;
+}
+
+.todoist-settings-modal .icon-trigger {
+  background: var(--settings-field-bg);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  box-shadow: none;
+  color: var(--text-normal);
+  height: 34px;
+  width: 40px;
+}
+
+.todoist-settings-modal .icon-trigger:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--todoist-red);
+}
+
+.todoist-settings-modal .settings-filter-table button,
+.todoist-settings-modal .settings-save-row button,
+.todoist-settings-modal .settings-action-row button {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 600;
+  gap: 7px;
+  height: 36px;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.todoist-settings-modal .settings-filter-table .icon-button,
+.todoist-settings-modal .settings-reorder-btn {
+  background: var(--settings-field-bg);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: none;
+  color: var(--text-muted);
+  height: 34px;
+  padding: 0;
+  width: 34px;
+}
+
+.todoist-settings-modal .settings-filter-table .icon-button:hover {
+  background: rgba(228, 67, 50, 0.1);
+  border-color: rgba(228, 67, 50, 0.3);
+  color: var(--todoist-red);
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(6) {
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 30px;
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(6)::before {
+  grid-column: 1 / -1;
+}
+
+.todoist-settings-modal .settings-reorder-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.todoist-settings-modal .settings-reorder-btn {
+  height: 16px;
+  min-height: 0;
+  width: 30px;
+}
+
+.todoist-settings-modal .settings-reorder-btn svg {
+  height: 13px;
+  width: 13px;
+}
+
+.todoist-settings-modal .settings-filter-table td:nth-child(4),
+.todoist-settings-modal .settings-filter-table td:nth-child(5),
+.todoist-settings-modal .settings-filter-table td:nth-child(6) {
+  padding-top: 17px;
+}
+
+.todoist-settings-modal .settings-action-row,
+.todoist-settings-modal .settings-save-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.todoist-settings-modal .settings-add-filter-btn,
+.todoist-settings-modal .settings-save-btn {
+  background: var(--todoist-red);
+  border: 1px solid var(--todoist-red);
+  color: white;
+}
+
+.todoist-settings-modal .settings-add-filter-btn:hover,
+.todoist-settings-modal .settings-save-btn:hover {
+  background: #d83b2c;
+  border-color: #d83b2c;
+}
+
+.todoist-settings-modal .clear-cache-btn {
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.todoist-settings-modal .clear-cache-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.todoist-settings-modal .icon-picker-wrapper.visible {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+  grid-template-columns: repeat(6, 34px);
+  max-height: min(340px, 60vh);
+  opacity: 1;
+  overflow-y: auto;
+  padding: 12px;
+  width: min(270px, calc(100vw - 40px));
+  z-index: 10000;
+}
+
+.todoist-settings-modal .icon-picker-wrapper .icon-grid-btn {
+  border-radius: 8px;
+  color: var(--text-muted);
+  height: 34px;
+  width: 34px;
+}
+
+.todoist-settings-modal .icon-picker-wrapper .icon-grid-btn:hover,
+.todoist-settings-modal .icon-picker-wrapper .icon-grid-btn.selected {
+  background: rgba(228, 67, 50, 0.12);
+  color: var(--todoist-red);
+}
+
+.todoist-settings-modal .icon-color-row {
+  border-top: none;
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin: 0 0 4px;
+  padding: 0 0 10px;
+}
+
+/* ========== Confirm Modal ========== */
+.todoist-confirm-modal .modal {
+  border-radius: 14px;
+  width: min(360px, calc(100vw - 32px));
+}
+
+.todoist-confirm-message {
+  color: var(--text-muted);
+  margin: 0 0 18px;
+}
+
+.todoist-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.todoist-confirm-actions button {
+  border-radius: 8px;
+  font-weight: 600;
+  height: 34px;
+  padding: 0 14px;
+}
+
+.todoist-confirm-cancel {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+}
+
+.todoist-confirm-cancel:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.todoist-confirm-delete {
+  background: #e44332;
+  border: 1px solid #e44332;
+  color: white;
+}
+
+.todoist-confirm-delete:hover {
+  background: #d83b2c;
+  border-color: #d83b2c;
+}
+
+/* ========== Settings Filter Editor v2 ========== */
+.todoist-settings-modal .settings-filter-table thead {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.todoist-settings-modal .settings-filter-table thead tr {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 28px 48px minmax(120px, 0.78fr) minmax(220px, 1.25fr) 76px 38px;
+  padding: 0 10px;
+}
+
+.todoist-settings-modal .settings-filter-table th {
+  color: var(--text-muted);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+}
+
+.todoist-settings-modal .settings-filter-table tbody {
+  gap: 7px;
+}
+
+.todoist-settings-modal .settings-filter-table tbody tr {
+  align-items: center;
+  border-radius: 9px;
+  gap: 10px;
+  grid-template-columns: 28px 48px minmax(120px, 0.78fr) minmax(220px, 1.25fr) 76px 38px;
+  min-height: 58px;
+  padding: 8px 10px;
+}
+
+.todoist-settings-modal .settings-filter-table td::before {
+  display: none !important;
+}
+
+.todoist-settings-modal .settings-filter-table td {
+  align-items: stretch;
+  justify-content: center;
+  padding-top: 0 !important;
+}
+
+.todoist-settings-modal .settings-filter-table tbody td:nth-child(5),
+.todoist-settings-modal .settings-filter-table tbody td:nth-child(6) {
+  align-items: center;
+  display: flex;
+  padding-top: 0 !important;
+}
+
+.todoist-settings-modal .settings-drag-cell {
+  align-items: center !important;
+}
+
+.todoist-settings-modal .settings-drag-handle {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-faint);
+  cursor: grab;
+  height: 34px !important;
+  padding: 0 !important;
+  width: 24px !important;
+}
+
+.todoist-settings-modal .settings-drag-handle:active {
+  cursor: grabbing;
+}
+
+.todoist-settings-modal .settings-drag-handle:hover {
+  color: var(--text-muted);
+}
+
+.todoist-settings-modal .settings-filter-table tr.is-dragging {
+  opacity: 0.55;
+}
+
+.todoist-settings-modal .settings-filter-table tr.is-drag-over {
+  border-color: rgba(228, 67, 50, 0.45);
+  box-shadow: 0 0 0 3px rgba(228, 67, 50, 0.1);
+}
+
+.todoist-settings-modal .settings-filter-table input[type="text"] {
+  height: 34px;
+}
+
+.todoist-settings-modal .settings-default-cell {
+  align-items: center !important;
+}
+
+.todoist-settings-modal .settings-default-toggle {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  margin: 0 auto;
+  width: 48px;
+}
+
+.todoist-settings-modal .settings-default-toggle input {
+  appearance: none;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+  width: 0;
+}
+
+.todoist-settings-modal .settings-default-toggle svg {
+  height: 15px;
+  width: 15px;
+}
+
+.todoist-settings-modal .settings-default-toggle:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
+.todoist-settings-modal .settings-default-toggle:has(input:checked) {
+  background: var(--todoist-red);
+  border-color: var(--todoist-red);
+  color: white;
+}
+
+.todoist-settings-modal .settings-filter-table .icon-button {
+  height: 34px;
+  width: 34px;
+}
+
+@media only screen and (max-width: 760px) {
+  .todoist-settings-modal .settings-filter-table thead {
+    display: none;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody tr {
+    grid-template-columns: 28px 48px minmax(0, 1fr) 44px;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(4) {
+    grid-column: 2 / -1;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(5),
+  .todoist-settings-modal .settings-filter-table td:nth-child(6) {
+    align-items: center;
+    padding-top: 0;
+  }
+}
+
+/* ========== Obsidian-native Task Sheet Modal ========== */
+.todoist-task-sheet-modal .modal {
+  width: min(600px, calc(100vw - 32px));
+  max-width: var(--modal-max-width);
+}
+
+.todoist-task-sheet-modal .modal-content {
+  padding: 0;
+}
+
+.todoist-task-sheet-modal .taskmodal-wrapper {
+  background: var(--modal-background, var(--background-primary));
+  border: var(--modal-border-width, 1px) solid var(--modal-border-color, var(--background-modifier-border));
+  border-radius: var(--modal-radius, 12px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+  max-height: min(72vh, 620px);
+  overflow: auto;
+}
+
+.todoist-task-sheet-modal .taskmodal-title-input,
+.todoist-task-sheet-modal .taskmodal-description-input,
+.todoist-task-sheet-modal .taskmodal-date-input,
+.todoist-task-sheet-modal .taskmodal-project-select {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+}
+
+.todoist-task-sheet-modal .taskmodal-title-input:focus,
+.todoist-task-sheet-modal .taskmodal-description-input:focus,
+.todoist-task-sheet-modal .taskmodal-date-input:focus,
+.todoist-task-sheet-modal .taskmodal-project-select:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 24%, transparent);
+}
+
+.todoist-task-sheet-modal .taskmodal-clear-date {
+  align-items: center;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.todoist-task-sheet-modal .taskmodal-clear-date:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.todoist-task-sheet-modal .taskmodal-button-save {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.todoist-task-sheet-modal .taskmodal-button-save:hover {
+  background: var(--interactive-accent-hover);
+}
+
+.todoist-task-sheet-modal .taskmodal-button-cancel {
+  background: var(--background-secondary);
+  border-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.todoist-task-sheet-modal .taskmodal-skeleton-line {
+  background: linear-gradient(90deg, var(--background-secondary), var(--background-modifier-hover), var(--background-secondary));
+  background-size: 220% 100%;
+  border-radius: 6px;
+  height: 2rem;
+  animation: taskmodal-skeleton-pulse 1.15s ease-in-out infinite;
+}
+
+.todoist-task-sheet-modal .taskmodal-skeleton-title {
+  height: 2.25rem;
+}
+
+.todoist-task-sheet-modal .taskmodal-skeleton-description {
+  height: 4rem;
+}
+
+.todoist-task-sheet-modal .taskmodal-skeleton-labels {
+  height: 3rem;
+}
+
+@keyframes taskmodal-skeleton-pulse {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  body>div.modal-container.todoist-task-sheet-modal.mod-dim>div.modal {
+    bottom: var(--todoist-task-sheet-keyboard-offset, 0px);
+    box-sizing: border-box;
+    left: 0;
+    margin: 0;
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 24px);
+    max-width: 100%;
+    position: absolute;
+    right: 0;
+    top: auto;
+    width: 100%;
+  }
+
+  .todoist-task-sheet-modal .modal-content {
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 24px);
+    overflow: auto;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-wrapper {
+    border-bottom: none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-left: none;
+    border-right: none;
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 24px);
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* ========== Task Sheet Redesign ========== */
+.todoist-task-sheet-modal {
+  --todoist-red: #e44332;
+  --todoist-red-hover: #d83b2c;
+  --todoist-red-soft: rgba(228, 67, 50, 0.12);
+  --todoist-field: var(--background-secondary);
+  --todoist-field-border: var(--background-modifier-border);
+}
+
+.todoist-task-sheet-modal .modal {
+  background: var(--modal-background, var(--background-primary)) !important;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  width: min(560px, calc(100vw - 32px));
+}
+
+.todoist-task-sheet-modal .modal-title {
+  color: var(--text-normal);
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.todoist-task-sheet-modal .modal-close-button {
+  color: var(--text-muted);
+  top: 18px;
+  right: 18px;
+}
+
+.todoist-task-sheet-modal .modal-close-button:hover {
+  color: var(--text-normal);
+}
+
+.todoist-task-sheet-modal .modal-content {
+  display: block;
+  padding: 0 !important;
+}
+
+.todoist-task-sheet-modal .taskmodal-wrapper {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: min(74vh, 620px);
+  max-width: none;
+  min-width: 0;
+  overflow: auto;
+  padding: 2px 26px 22px;
+  width: 100%;
+}
+
+.todoist-task-sheet-modal .taskmodal-title-field,
+.todoist-task-sheet-modal .taskmodal-description-field,
+.todoist-task-sheet-modal .taskmodal-date-field,
+.todoist-task-sheet-modal .taskmodal-project-field,
+.todoist-task-sheet-modal .taskmodal-labels-field {
+  gap: 7px;
+}
+
+.todoist-task-sheet-modal .taskmodal-title-input {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  color: var(--text-normal);
+  font-size: 1.28rem;
+  font-weight: 560;
+  height: auto;
+  line-height: 1.35;
+  padding: 6px 0 2px;
+}
+
+.todoist-task-sheet-modal .taskmodal-title-input::placeholder {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.todoist-task-sheet-modal .taskmodal-title-input:focus {
+  box-shadow: none !important;
+  outline: none;
+}
+
+.todoist-task-sheet-modal .taskmodal-description-input {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  box-shadow: none !important;
+  color: var(--text-normal);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  min-height: 58px;
+  padding: 0;
+  resize: vertical;
+}
+
+.todoist-task-sheet-modal .taskmodal-description-input::placeholder {
+  color: var(--text-faint);
+}
+
+.todoist-task-sheet-modal .taskmodal-description-input:focus {
+  box-shadow: none !important;
+  outline: none;
+}
+
+.todoist-task-sheet-modal .taskmodal-row {
+  border-top: 1px solid var(--background-modifier-border);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.85fr);
+  padding-top: 14px;
+}
+
+.todoist-task-sheet-modal .taskmodal-date-label,
+.todoist-task-sheet-modal .taskmodal-project-label,
+.todoist-task-sheet-modal .taskmodal-labels-label {
+  align-items: center;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 600;
+  gap: 6px;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.todoist-task-sheet-modal .taskmodal-label-icon {
+  color: var(--todoist-red);
+  display: inline-flex;
+  height: 14px;
+  width: 14px;
+}
+
+.todoist-task-sheet-modal .taskmodal-control {
+  align-items: center;
+  background: var(--todoist-field);
+  border: 1px solid var(--todoist-field-border);
+  border-radius: 10px;
+  display: flex;
+  min-height: 38px;
+  overflow: hidden;
+}
+
+.todoist-task-sheet-modal .taskmodal-control:focus-within {
+  border-color: var(--todoist-red);
+  box-shadow: 0 0 0 3px var(--todoist-red-soft);
+}
+
+.todoist-task-sheet-modal .taskmodal-project-select {
+  appearance: none;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--text-normal);
+  font-size: 0.95rem;
+  height: 38px;
+  line-height: 38px;
+  padding: 0 34px 0 12px;
+  width: 100%;
+}
+
+.todoist-task-sheet-modal .taskmodal-project-control {
+  position: relative;
+}
+
+.todoist-task-sheet-modal .taskmodal-project-control::after {
+  color: var(--text-muted);
+  content: "⌄";
+  font-size: 1.05rem;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-54%);
+}
+
+.todoist-task-sheet-modal .taskmodal-date-input-row {
+  gap: 0;
+}
+
+.todoist-task-sheet-modal .taskmodal-date-input {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--text-normal);
+  flex: 1;
+  font-size: 0.95rem;
+  height: 38px;
+  min-width: 0;
+  padding: 0 10px 0 12px;
+  text-align: left !important;
+}
+
+.todoist-task-sheet-modal .taskmodal-clear-date {
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px solid var(--todoist-field-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--text-muted);
+  flex: 0 0 36px;
+  height: 38px;
+  width: 36px;
+}
+
+.todoist-task-sheet-modal .taskmodal-clear-date:hover {
+  background: var(--background-modifier-hover) !important;
+  color: var(--todoist-red);
+}
+
+.todoist-task-sheet-modal .taskmodal-labels-field {
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 14px;
+}
+
+.todoist-task-sheet-modal .taskmodal-label-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.todoist-task-sheet-modal .taskmodal-label-checkbox {
+  align-items: center;
+  background: var(--todoist-field) !important;
+  border: 1px solid transparent;
+  border-radius: 999px !important;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.84rem !important;
+  font-weight: 520;
+  gap: 6px;
+  line-height: 1;
+  max-width: 100%;
+  min-height: 30px;
+  padding: 0 11px !important;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.todoist-task-sheet-modal .taskmodal-label-checkbox:hover {
+  background: var(--background-modifier-hover) !important;
+  color: var(--text-normal);
+}
+
+.todoist-task-sheet-modal .taskmodal-label-checkbox input {
+  appearance: none;
+  background: transparent;
+  border: none;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+  width: 0;
+}
+
+.todoist-task-sheet-modal .taskmodal-label-checkbox::before {
+  color: var(--text-faint);
+  content: "@";
+  font-weight: 650;
+}
+
+.todoist-task-sheet-modal .taskmodal-label-checkbox.is-selected {
+  background: var(--todoist-red-soft) !important;
+  border-color: rgba(228, 67, 50, 0.35);
+  color: var(--todoist-red);
+}
+
+.todoist-task-sheet-modal .taskmodal-label-checkbox.is-selected::before {
+  content: "✓";
+}
+
+.todoist-task-sheet-modal .taskmodal-button-row {
+  border-top: 1px solid var(--background-modifier-border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 0;
+  padding-top: 16px;
+}
+
+.todoist-task-sheet-modal .taskmodal-button-save,
+.todoist-task-sheet-modal .taskmodal-button-cancel {
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  height: 36px;
+  padding: 0 15px;
+}
+
+.todoist-task-sheet-modal .taskmodal-button-save {
+  background: var(--todoist-red) !important;
+  border: 1px solid var(--todoist-red) !important;
+  box-shadow: none !important;
+  color: white !important;
+}
+
+.todoist-task-sheet-modal .taskmodal-button-save:hover {
+  background: var(--todoist-red-hover) !important;
+  border-color: var(--todoist-red-hover) !important;
+}
+
+.todoist-task-sheet-modal .taskmodal-button-cancel {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  color: var(--text-muted) !important;
+}
+
+.todoist-task-sheet-modal .taskmodal-button-cancel:hover {
+  background: var(--background-modifier-hover) !important;
+  color: var(--text-normal) !important;
+}
+
+@media only screen and (max-width: 600px) {
+  body>div.modal-container.todoist-task-sheet-modal.mod-dim>div.modal {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    width: 100%;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-wrapper {
+    gap: 13px;
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 88px);
+    padding: 0 18px max(18px, env(safe-area-inset-bottom));
+  }
+
+  .todoist-task-sheet-modal .taskmodal-row {
+    grid-template-columns: 1fr;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-button-row {
+    justify-content: stretch;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-button-save,
+  .todoist-task-sheet-modal .taskmodal-button-cancel {
+    flex: 1;
+  }
 }

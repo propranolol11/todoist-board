@@ -1,11 +1,11 @@
 {
   "id": "todoist-board",
   "name": "Todoist Board",
-  "version": "v1.0.0-beta1.1",
-  "minAppVersion": "0.15.0",
-  "description": "Display Todoist tasks as draggable cards inside Obsidian with full sync support.",
+  "version": "1.0.2",
+  "minAppVersion": "1.1.0",
+  "description": "Display Todoist tasks as draggable cards with full sync support.",
   "author": "JD",
-  "authorUrl": "https://github.com/propranolol11",
-  "main": "dist/main.js",
-  "isDesktopOnly": false
+  "authorUrl": "https://ko-fi.com/jamiedaghaim",
+  "isDesktopOnly": false,
+  "fundingUrl": "https://ko-fi.com/jamiedaghaim"
 }

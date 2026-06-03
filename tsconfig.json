@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "outDir": ".",
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["main.ts", "src/**/*.ts", "types"],
+  "exclude": []
+}
