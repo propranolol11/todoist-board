@@ -2557,20 +2557,136 @@ body.theme-dark .add-task-btn {
 
 
 /* ========== Subtask Visual Hierarchy ========== */
-/* ========== Subtask Row Compact Design with Expansion Toggle ========== */
-.subtask-row {
-  padding: 0 !important;
-  margin: 0 0 0 1rem;
-  border: none;
-  background: transparent;
-  border-radius: 0;
-  line-height: 1.2;
-  max-height: 2.2rem;
+/* ========== Subtask Row Compact Design ========== */
+.subtask-wrapper {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.125rem;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding-left: 0.25rem;
 }
 
-.view-content .subtask-row .task-meta-compact .subtask-row .task-description {
+.todoist-board .task.has-children .task-title {
+  padding-right: 1.75rem;
+}
+
+.todoist-board .subtask-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted, #6b7280);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.35rem;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: -0.05rem;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+  width: 1.35rem;
+  z-index: 2;
+}
+
+.todoist-board .subtask-toggle svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.todoist-board .subtask-toggle:hover,
+.todoist-board .subtask-toggle:focus-visible {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.18);
+  color: var(--text-normal, #111827);
+  outline: none;
+}
+
+.todoist-board .subtask-toggle:active {
+  transform: scale(0.94);
+}
+
+.todoist-board .task.subtasks-collapsed .subtask-wrapper {
+  display: none;
+}
+
+.list-wrapper.compact-mode .task.has-children:not(.selected-task):not(.subtasks-collapsed) {
+  max-height: none;
+}
+
+.todoist-board .subtask-wrapper .task.subtask-row {
+  width: 100%;
+  min-height: 1.75rem;
+  max-height: none;
+  padding-block: 0.125rem !important;
+  padding-inline: 0 0.125rem !important;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  opacity: 1;
+  transform: none;
+}
+
+.todoist-board .subtask-wrapper .task.subtask-row:not(:first-child)::before {
+  left: 1.6rem;
+  right: 0.25rem;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.todoist-board .subtask-wrapper .task.subtask-row:hover:not(.selected-task) {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.todoist-board .subtask-wrapper .subtask-row .task-scroll-wrapper,
+.todoist-board .subtask-wrapper .subtask-row .task-inner,
+.todoist-board .subtask-wrapper .subtask-row .task-content,
+.todoist-board .subtask-wrapper .subtask-row .task-content-wrapper {
+  min-height: unset;
+  width: 100%;
+}
+
+.todoist-board .subtask-wrapper .subtask-row .task-scroll-wrapper {
+  overflow: visible;
+}
+
+.todoist-board .subtask-wrapper .subtask-row .task-inner {
+  align-items: flex-start;
+  gap: 0;
+}
+
+.todoist-board .subtask-wrapper .subtask-row input.todoist-checkbox {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin: 0.1rem 0.1rem 0 0;
+  align-self: flex-start;
+}
+
+.todoist-board .subtask-wrapper .subtask-row .task-title {
+  font-size: 0.86rem;
+  line-height: 1.35;
+  padding: 0;
+  margin: 0;
+  color: var(--text-normal, #111827);
+}
+
+.todoist-board .subtask-wrapper .subtask-row .task-description,
+.todoist-board .subtask-wrapper .subtask-row .task-metadata,
+.todoist-board .subtask-wrapper .subtask-row .task-when,
+.todoist-board .subtask-wrapper .subtask-row .task-meta-compact,
+.todoist-board .subtask-wrapper .subtask-row .fixed-chin {
   display: none !important;
   max-height: 0 !important;
   opacity: 0 !important;
@@ -2578,49 +2694,22 @@ body.theme-dark .add-task-btn {
   margin: 0 !important;
 }
 
-/* Compact subtask title and checkbox alignment */
-.subtask-row .task-title {
-  font-size: 0.78rem;
-  padding: 0;
-  margin: 0;
-}
-
-.subtask-row input.todoist-checkbox {
-  margin-right: 6px;
-  width: 18px;
-  height: 18px;
+.todoist-board .standalone-subtask-row {
+  border-left: 2px solid rgba(148, 163, 184, 0.45);
+  padding-left: 0.75rem;
 }
 
 .subtask-row.expanded-subtask {
-  max-height: 5rem !important;
-}
-
-/* ========== Subtask Visibility ========== */
-.subtask-wrapper {
-  display: none;
-}
-
-.selected-task .subtask-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: 0.25rem;
-  width: 95%;
-  overflow: visible;
-  max-height: unset;
-}
-
-.subtask-wrapper .task-scroll-wrapper {
-  overflow-y: hidden;
+  max-height: none !important;
 }
 
 .subtask-row::before {
   position: absolute;
-  top: -0.25rem;
+  top: 0;
 }
 
 body.theme-dark .subtask-row {
-  border-left: 2px solid #374151;
+  border-left-color: #374151;
 }
 
 /* Hide metadata in subtasks unless selected */
@@ -3890,14 +3979,14 @@ body.tb-scroll-lock {
 }
 
 @media only screen and (max-width: 600px) {
-  body>div.modal-container.todoist-task-sheet-modal.mod-dim>div.modal {
+  .modal-container.todoist-task-sheet-modal.mod-dim>.modal {
     bottom: var(--todoist-task-sheet-keyboard-offset, 0px);
     box-sizing: border-box;
     left: 0;
     margin: 0;
     max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 24px);
     max-width: 100%;
-    position: absolute;
+    position: fixed;
     right: 0;
     top: auto;
     width: 100%;
@@ -4244,28 +4333,142 @@ body.tb-scroll-lock {
 }
 
 @media only screen and (max-width: 600px) {
-  body>div.modal-container.todoist-task-sheet-modal.mod-dim>div.modal {
+  .modal-container.todoist-task-sheet-modal.mod-dim>.modal {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
     width: 100%;
   }
 
+  .todoist-task-sheet-modal .modal-title {
+    font-size: 1.08rem;
+    line-height: 1.1;
+    padding: 14px 58px 8px;
+  }
+
+  .todoist-task-sheet-modal .modal-close-button {
+    height: 44px;
+    right: 14px;
+    top: 12px;
+    width: 44px;
+  }
+
+  .modal-container.todoist-task-sheet-modal.is-keyboard-open.mod-dim>.modal {
+    bottom: max(var(--todoist-task-sheet-keyboard-offset, 0px), env(safe-area-inset-bottom));
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 12px);
+  }
+
+  .todoist-task-sheet-modal.is-keyboard-open .modal-content {
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 12px);
+    overflow: auto;
+  }
+
   .todoist-task-sheet-modal .taskmodal-wrapper {
-    gap: 13px;
-    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 88px);
-    padding: 0 18px max(18px, env(safe-area-inset-bottom));
+    gap: 9px;
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 66px);
+    padding: 0 14px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .todoist-task-sheet-modal .taskmodal-title-field,
+  .todoist-task-sheet-modal .taskmodal-description-field,
+  .todoist-task-sheet-modal .taskmodal-date-field,
+  .todoist-task-sheet-modal .taskmodal-project-field,
+  .todoist-task-sheet-modal .taskmodal-labels-field {
+    gap: 5px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-title-input {
+    font-size: 1.06rem;
+    line-height: 1.2;
+    padding: 2px 0 0;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-description-input {
+    font-size: 0.88rem;
+    line-height: 1.28;
+    min-height: 34px;
   }
 
   .todoist-task-sheet-modal .taskmodal-row {
+    gap: 8px;
     grid-template-columns: 1fr;
+    padding-top: 9px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-date-label,
+  .todoist-task-sheet-modal .taskmodal-project-label,
+  .todoist-task-sheet-modal .taskmodal-labels-label {
+    font-size: 0.7rem;
+    gap: 5px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-label-icon {
+    height: 12px;
+    width: 12px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-control {
+    border-radius: 8px;
+    min-height: 32px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-project-select,
+  .todoist-task-sheet-modal .taskmodal-date-input {
+    font-size: 0.88rem;
+    height: 32px;
+    line-height: 32px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-clear-date {
+    flex-basis: 32px;
+    height: 32px;
+    width: 32px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-labels-field {
+    padding-top: 9px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-label-list {
+    gap: 6px;
+  }
+
+  .todoist-task-sheet-modal .taskmodal-label-checkbox {
+    font-size: 0.78rem !important;
+    gap: 4px;
+    min-height: 26px;
+    padding: 0 9px !important;
   }
 
   .todoist-task-sheet-modal .taskmodal-button-row {
+    gap: 8px;
     justify-content: stretch;
+    padding-top: 10px;
   }
 
   .todoist-task-sheet-modal .taskmodal-button-save,
   .todoist-task-sheet-modal .taskmodal-button-cancel {
     flex: 1;
+    height: 34px;
+  }
+
+  .todoist-task-sheet-modal.is-keyboard-open .modal-title {
+    padding-bottom: 6px;
+    padding-top: 12px;
+  }
+
+  .todoist-task-sheet-modal.is-keyboard-open .taskmodal-wrapper {
+    gap: 7px;
+    max-height: calc(var(--todoist-task-sheet-viewport-height, 100dvh) - 54px);
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  .todoist-task-sheet-modal.is-keyboard-open .taskmodal-description-input {
+    min-height: 28px;
+  }
+
+  .todoist-task-sheet-modal.is-keyboard-open .taskmodal-row,
+  .todoist-task-sheet-modal.is-keyboard-open .taskmodal-labels-field,
+  .todoist-task-sheet-modal.is-keyboard-open .taskmodal-button-row {
+    padding-top: 7px;
   }
 }

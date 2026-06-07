@@ -50,6 +50,7 @@ export class TaskSheetModal extends Modal {
     this.opened = false;
     this.viewportCleanup?.();
     this.viewportCleanup = null;
+    this.containerEl.classList.remove("is-keyboard-open");
     this.containerEl.style.removeProperty("--todoist-task-sheet-keyboard-offset");
     this.containerEl.style.removeProperty("--todoist-task-sheet-viewport-height");
     clearEl(this.contentEl);
@@ -92,6 +93,9 @@ export class TaskSheetModal extends Modal {
       this.syncViewportSize();
       ownerWindow.requestAnimationFrame(() => this.scrollFocusedFieldIntoView());
     };
+    const delayedSync = () => {
+      ownerWindow.setTimeout(sync, 80);
+    };
 
     sync();
     viewport?.addEventListener("resize", sync);
@@ -99,6 +103,7 @@ export class TaskSheetModal extends Modal {
     ownerWindow.addEventListener("resize", sync);
     ownerWindow.addEventListener("orientationchange", sync);
     this.contentEl.addEventListener("focusin", sync);
+    this.contentEl.addEventListener("focusout", delayedSync);
 
     this.viewportCleanup = () => {
       viewport?.removeEventListener("resize", sync);
@@ -106,16 +111,24 @@ export class TaskSheetModal extends Modal {
       ownerWindow.removeEventListener("resize", sync);
       ownerWindow.removeEventListener("orientationchange", sync);
       this.contentEl.removeEventListener("focusin", sync);
+      this.contentEl.removeEventListener("focusout", delayedSync);
     };
   }
 
   private syncViewportSize() {
     const ownerWindow = this.containerEl.ownerDocument.defaultView ?? window;
     const viewport = ownerWindow.visualViewport;
-    const viewportHeight = viewport?.height ?? ownerWindow.innerHeight;
+    const viewportHeightRaw = viewport?.height ?? ownerWindow.innerHeight;
     const viewportTop = viewport?.offsetTop ?? 0;
-    const keyboardOffset = Math.max(0, ownerWindow.innerHeight - viewportHeight - viewportTop);
+    const visualKeyboardOffset = Math.max(0, ownerWindow.innerHeight - viewportHeightRaw - viewportTop);
+    const shouldUseKeyboardFallback = this.isMobileTextEntryFocused(ownerWindow) && visualKeyboardOffset < 80;
+    const fallbackKeyboardOffset = shouldUseKeyboardFallback
+      ? Math.round(ownerWindow.innerHeight * 0.42)
+      : 0;
+    const keyboardOffset = Math.max(visualKeyboardOffset, fallbackKeyboardOffset);
+    const viewportHeight = Math.max(240, ownerWindow.innerHeight - keyboardOffset);
 
+    this.containerEl.classList.toggle("is-keyboard-open", keyboardOffset > 0);
     this.containerEl.style.setProperty("--todoist-task-sheet-viewport-height", `${viewportHeight}px`);
     this.containerEl.style.setProperty("--todoist-task-sheet-keyboard-offset", `${keyboardOffset}px`);
   }
@@ -124,6 +137,31 @@ export class TaskSheetModal extends Modal {
     const focused = activeDocument.activeElement;
     if (!(focused instanceof HTMLElement) || !this.contentEl.contains(focused)) return;
     focused.scrollIntoView({ block: "center", inline: "nearest" });
+  }
+
+  private isMobileTextEntryFocused(ownerWindow: Window): boolean {
+    const focused = activeDocument.activeElement;
+    if (!(focused instanceof HTMLElement) || !this.contentEl.contains(focused)) return false;
+
+    const isEditable = focused.instanceOf(HTMLTextAreaElement)
+      || focused.isContentEditable
+      || (focused.instanceOf(HTMLInputElement) && ![
+        "button",
+        "checkbox",
+        "color",
+        "date",
+        "file",
+        "hidden",
+        "image",
+        "radio",
+        "range",
+        "reset",
+        "submit",
+        "time",
+      ].includes(focused.type));
+    if (!isEditable) return false;
+
+    return ownerWindow.matchMedia("(pointer: coarse), (max-width: 700px)").matches;
   }
 
   private createSkeleton(): HTMLElement {

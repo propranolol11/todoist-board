@@ -181,6 +181,7 @@ export default class TodoistBoardPlugin extends Plugin {
   private stopTaskPolling?: () => void;
   private readonly taskPageSize = 100;
   private filterNextCursor: Record<string, string | null> = {};
+  private collapsedSubtaskParents = new Set<string>();
 
   private ensureRefactoredRuntime(apiKey: string = this.settings?.apiKey || "") {
     if (!this.storage) this.storage = new TodoistBoardStorage(this.app);
@@ -778,10 +779,11 @@ export default class TodoistBoardPlugin extends Plugin {
                 { tasks: viewTasks, projects, labels }
               );
 
-              // Stamp ids on direct children in the same order as viewTasks
+              // Stamp ids on direct children without overwriting ids set by createTaskRow.
+              // Nested subtasks mean direct DOM children no longer map 1:1 to viewTasks.
               const directChildren = Array.from(listWrapper.children) as HTMLElement[];
               for (let i = 0; i < directChildren.length && i < viewTasks.length; i++) {
-                const id = String((viewTasks as any[])[i]?.id || "");
+                const id = String(directChildren[i].dataset.taskId || (viewTasks as any[])[i]?.id || "");
                 if (id) {
                   directChildren[i].classList.add("todoist-card");
                   directChildren[i].dataset.taskId = id;
@@ -832,22 +834,9 @@ export default class TodoistBoardPlugin extends Plugin {
                       node.querySelectorAll(hideSel).forEach((el) => (el as HTMLElement).classList.add("tb-hidden"));
                     }
 
-                    // Parent rows: add inline emoji marker once
+                    // Parent rows: keep structural classes for styling/selection.
                     if (childParentIds.has(id)) {
                       node.classList.add("has-children", "parent-task");
-
-                      const titleEl =
-                        node.querySelector<HTMLElement>(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
-                        node.querySelector<HTMLElement>(".task-content-wrapper") ||
-                        node;
-
-                      if (titleEl && !titleEl.querySelector(".parent-mark")) {
-                        const mark = activeDocument.createElement("span");
-                        mark.className = "parent-mark";
-                        mark.textContent = "🔢";
-                        mark.classList.add("tb-ml-6", "tb-opacity-80", "tb-inline");
-                        titleEl.appendChild(mark); // placed at the end of the title content
-                      }
                     }
                   });
                 } catch { }
@@ -1466,7 +1455,7 @@ export default class TodoistBoardPlugin extends Plugin {
             const children = Array.from(listWrapper.children) as HTMLElement[];
             // Stamp ids if missing
             children.forEach((n, i) => {
-              const id = String((viewTasks as any[])[i]?.id || n.dataset.taskId || "");
+              const id = String(n.dataset.taskId || (viewTasks as any[])[i]?.id || "");
               if (id) { n.classList.add("todoist-card"); n.dataset.taskId = id; }
             });
             children.sort((a, b) => {
@@ -1498,22 +1487,9 @@ export default class TodoistBoardPlugin extends Plugin {
                   node.querySelectorAll(hideSel).forEach((el) => (el as HTMLElement).classList.add("tb-hidden"));
                 }
 
-                // Mark parent rows
+                // Mark parent rows for styling/selection.
                 if (childParentIds.has(id)) {
                   node.classList.add("has-children", "parent-task");
-
-                  const titleEl =
-                    node.querySelector<HTMLElement>(".task-title, .task-title-text, .task-name, .task-content, .task-title-inner") ||
-                    node.querySelector<HTMLElement>(".task-content-wrapper") ||
-                    node;
-
-                  if (titleEl && !titleEl.querySelector(".parent-mark")) {
-                    const mark = activeDocument.createElement("span");
-                    mark.className = "parent-mark";
-                    mark.textContent = "🔢";
-                    mark.classList.add("tb-ml-6", "tb-opacity-80", "tb-inline");
-                    titleEl.appendChild(mark); // placed at the end of the title content
-                  }
                 }
               });
             } catch { }
@@ -2469,6 +2445,224 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // ======================= 📋 Task List Rendering =======================
+  private getTaskId(task: any): string {
+    return String(task?.id ?? "");
+  }
+
+  private getTaskParentId(task: any): string {
+    return String(task?.parentId ?? task?.parent_id ?? "");
+  }
+
+  private compareSubtasks(a: Task, b: Task): number {
+    const orderFor = (task: any) => {
+      const raw = task?.childOrder ?? task?.child_order ?? task?.order ?? task?.dayOrder ?? task?.day_order;
+      const numeric = Number(raw);
+      return Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER;
+    };
+
+    const orderDiff = orderFor(a) - orderFor(b);
+    if (orderDiff) return orderDiff;
+
+    const alpha = String(a?.content || "").localeCompare(String(b?.content || ""), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
+    if (alpha) return alpha;
+
+    return this.getTaskId(a).localeCompare(this.getTaskId(b));
+  }
+
+  private getKnownTasks(): Task[] {
+    const byId = new Map<string, Task>();
+
+    const add = (task: any) => {
+      const id = this.getTaskId(task);
+      if (id) byId.set(id, task as Task);
+    };
+
+    Object.values(this.taskStore || {}).forEach(add);
+
+    try {
+      Object.values(this.taskCache || {}).flat().forEach(add);
+    } catch { }
+
+    return Array.from(byId.values());
+  }
+
+  private getSubtasksForParent(parentId: string, visibleTasks: Task[]): Task[] {
+    const parentKey = String(parentId || "");
+    if (!parentKey) return [];
+
+    const byId = new Map<string, Task>();
+    const addIfChild = (task: any) => {
+      const id = this.getTaskId(task);
+      if (!id || id === parentKey) return;
+      if (this.getTaskParentId(task) === parentKey) byId.set(id, task as Task);
+    };
+
+    visibleTasks.forEach(addIfChild);
+    this.getKnownTasks().forEach(addIfChild);
+
+    return Array.from(byId.values()).sort((a, b) => this.compareSubtasks(a, b));
+  }
+
+  private setTaskProjectData(row: HTMLElement, task: Task) {
+    const project = this.projectMap.get(String(task.projectId || ""));
+    const projectName = project ? project.name : "Unknown Project";
+    let projectColor = "#808080";
+    if (project && typeof project.color !== "undefined") {
+      projectColor = TODOIST_COLORS[project.color as keyof typeof TODOIST_COLORS] || "#808080";
+    }
+    row.setAttribute("data-project-name", projectName);
+    row.setAttribute("data-project-color", projectColor);
+  }
+
+  private trimSubtaskRowChrome(row: HTMLElement) {
+    row.classList.add("subtask-row", "is-child-task", "todoist-card");
+
+    const meta = row.querySelector(".task-metadata");
+    if (meta) meta.remove();
+
+    const desc = row.querySelector(".task-description");
+    if (desc) desc.remove();
+
+    const chin = row.querySelector(".fixed-chin");
+    if (chin) chin.remove();
+  }
+
+  private setSubtaskToggleIcon(button: HTMLElement, collapsed: boolean) {
+    clearEl(button);
+    setIcon(button, collapsed ? "chevron-right" : "chevron-down");
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Show subtasks" : "Hide subtasks");
+    button.title = collapsed ? "Show subtasks" : "Hide subtasks";
+  }
+
+  private createSubtaskToggle(parentRow: HTMLElement, subtaskWrapper: HTMLElement, subtaskCount: number): HTMLButtonElement {
+    const parentId = String(parentRow.dataset.taskId || "");
+    const collapsed = parentId ? this.collapsedSubtaskParents.has(parentId) : false;
+
+    parentRow.classList.toggle("subtasks-collapsed", collapsed);
+    subtaskWrapper.classList.toggle("tb-hidden", collapsed);
+
+    const button = activeDocument.createElement("button");
+    button.type = "button";
+    button.className = "subtask-toggle";
+    button.setAttribute("data-subtask-count", String(subtaskCount));
+    this.setSubtaskToggleIcon(button, collapsed);
+
+    button.addEventListener("pointerdown", (event) => event.stopPropagation());
+    button.addEventListener("pointerup", (event) => event.stopPropagation());
+    button.addEventListener("mousedown", (event) => event.stopPropagation());
+    button.addEventListener("mouseup", (event) => event.stopPropagation());
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const nextCollapsed = !parentRow.classList.contains("subtasks-collapsed");
+      parentRow.classList.toggle("subtasks-collapsed", nextCollapsed);
+      subtaskWrapper.classList.toggle("tb-hidden", nextCollapsed);
+
+      if (parentId) {
+        if (nextCollapsed) this.collapsedSubtaskParents.add(parentId);
+        else this.collapsedSubtaskParents.delete(parentId);
+      }
+
+      this.setSubtaskToggleIcon(button, nextCollapsed);
+    });
+
+    return button;
+  }
+
+  private appendSubtaskRows(
+    parentRow: HTMLElement,
+    subtasks: Task[],
+    projectMap: Record<string, any>,
+    labelMap: Record<string, any>,
+    labelColorMap: Record<string, any>,
+    projects: any[],
+    apiKey: string,
+    listWrapper: HTMLElement,
+    filters: string[],
+  ) {
+    if (!Array.isArray(subtasks) || subtasks.length === 0) return;
+
+    parentRow.classList.add("has-children", "parent-task");
+    parentRow.setAttribute("data-subtask-count", String(subtasks.length));
+
+    const subtaskWrapper = activeDocument.createElement("div");
+    subtaskWrapper.className = "subtask-wrapper";
+
+    for (const sub of subtasks) {
+      const subRow = this.createTaskRow(sub, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
+      this.setTaskProjectData(subRow, sub);
+      this.trimSubtaskRowChrome(subRow);
+      subtaskWrapper.appendChild(subRow);
+    }
+
+    const contentWrapper = parentRow.querySelector(".task-content-wrapper");
+    if (contentWrapper) {
+      contentWrapper.appendChild(this.createSubtaskToggle(parentRow, subtaskWrapper, subtasks.length));
+      contentWrapper.appendChild(subtaskWrapper);
+    } else {
+      parentRow.appendChild(this.createSubtaskToggle(parentRow, subtaskWrapper, subtasks.length));
+      parentRow.appendChild(subtaskWrapper);
+    }
+  }
+
+  private renderTaskRowsWithSubtasks(
+    listWrapper: HTMLElement,
+    taskList: Task[],
+    projectMap: Record<string, any>,
+    labelMap: Record<string, any>,
+    labelColorMap: Record<string, any>,
+    projects: any[],
+    apiKey: string,
+    filters: string[],
+  ) {
+    const visibleIds = new Set(taskList.map((task) => this.getTaskId(task)).filter(Boolean));
+
+    taskList.forEach((task: Task) => {
+      const taskId = this.getTaskId(task);
+      const parentId = this.getTaskParentId(task);
+      const parentIsVisible = parentId && visibleIds.has(parentId);
+
+      if (parentIsVisible) return;
+
+      if (task.content?.trim().startsWith("* ")) {
+        const clonedTask = { ...task, content: task.content.trim().substring(2) };
+        const row = this.createTaskRow(clonedTask, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
+        row.classList.add("non-task-note");
+        this.setupTaskDragAndDrop(row, listWrapper, filters);
+        listWrapper.appendChild(row);
+        return;
+      }
+
+      const row = this.createTaskRow(task, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
+      this.setTaskProjectData(row, task);
+
+      if (parentId) {
+        row.classList.add("is-child-task", "standalone-subtask-row");
+      }
+
+      this.setupTaskDragAndDrop(row, listWrapper, filters);
+      listWrapper.appendChild(row);
+
+      const subtasks = this.getSubtasksForParent(taskId, taskList);
+      this.appendSubtaskRows(
+        row,
+        subtasks,
+        projectMap,
+        labelMap,
+        labelColorMap,
+        projects,
+        apiKey,
+        listWrapper,
+        filters,
+      );
+    });
+  }
+
   private async renderTaskList(listWrapper: HTMLElement, source: string, apiKey: string, preloadData?: { tasks: any[]; projects: any[]; labels: any[] }) {
     const match = source.match(/filter:\s*(.*)/);
     const filters = match
@@ -2501,96 +2695,17 @@ export default class TodoistBoardPlugin extends Plugin {
           (idxB === -1 ? Number.MAX_SAFE_INTEGER : idxB);
       });
 
-      // --- Group subtasks by parentId ---
       const taskList: Task[] = Array.isArray(tasks) ? tasks : [];
-      const subtasksByParentId: Record<string, Task[]> = {};
-      taskList.forEach((task: Task) => {
-        if (task.parentId) {
-          if (!subtasksByParentId[task.parentId]) subtasksByParentId[task.parentId] = [];
-          subtasksByParentId[task.parentId].push(task);
-        }
-      });
-
-      // --- Only render parent tasks and their subtasks ---
-      taskList.map((task: Task) => {
-        if (task.parentId) return; // skip subtasks in top-level loop
-        // --- Get project info using projectMap (by id) ---
-        const project = this.projectMap.get(String(task.projectId));
-        // Debug logs for mapping task to project
-        // // if (this.settings?.enableLogs) console.log(`🔍 Task ${task.id} → Project ID: ${task.projectId}`);
-        // // if (this.settings?.enableLogs) console.log("📘 Mapped project:", project);
-        const projectName = project ? project.name : "Unknown Project";
-        // Use string key for color mapping
-        let projectColor = "#808080";
-        if (project && typeof project.color !== "undefined") {
-          projectColor = TODOIST_COLORS[project.color as keyof typeof TODOIST_COLORS] || "#808080";
-        }
-        if (task.content?.trim().startsWith("* ")) {
-          const clonedTask = { ...task, content: task.content.trim().substring(2) };
-          const row = this.createTaskRow(
-            clonedTask, projectMap, labelMap, labelColorMap, projectList, apiKey, listWrapper, filters
-          );
-          // Set project name/color in rendering logic (if used in createTaskRow)
-          row.classList.add("non-task-note");
-          this.setupTaskDragAndDrop(row, listWrapper, filters);
-          listWrapper.appendChild(row);
-          return;
-        }
-        const row = this.createTaskRow(
-          task, projectMap, labelMap, labelColorMap, projectList, apiKey, listWrapper, filters
-        );
-        // Set project name and color as data attributes for use in createTaskRow or CSS ---
-        row.setAttribute("data-project-name", projectName);
-        row.setAttribute("data-project-color", projectColor);
-        // Only setup drag-and-drop for parent tasks
-        this.setupTaskDragAndDrop(row, listWrapper, filters);
-        listWrapper.appendChild(row);
-
-        // fallback to global subtask lookup if not found in subtasksByParentId ---
-        let allSubtasks: Task[] = [];
-        try {
-          allSubtasks = Object.values(this.taskCache).flat().filter((t: Task) => t.parentId === task.id);
-        } catch (err) {
-          console.error("Error flattening taskCache for subtasks", err);
-        }
-        const subtasks: Task[] = allSubtasks.length > 0 ? allSubtasks : (subtasksByParentId[task.id] || []);
-        // --- Render subtasks directly nested inside parent row, INSIDE task-content-wrapper ---
-        if (Array.isArray(subtasks) && subtasks.length > 0) {
-          const subtaskWrapper = activeDocument.createElement("div");
-          subtaskWrapper.className = "subtask-wrapper";
-          for (const sub of subtasks) {
-            const subProject = this.projectMap.get(String(sub.projectId || ""));
-            const subProjectName = subProject ? subProject.name : "Unknown Project";
-            let subProjectColor = "#808080";
-            if (subProject && typeof subProject.color !== "undefined") {
-              subProjectColor = TODOIST_COLORS[subProject.color as keyof typeof TODOIST_COLORS] || "#808080";
-            }
-            const subRow = this.createTaskRow(sub, projectMap, labelMap, labelColorMap, projectList, apiKey, listWrapper, filters);
-            subRow.classList.add("subtask-row");
-            subRow.setAttribute("data-project-name", subProjectName);
-            subRow.setAttribute("data-project-color", subProjectColor);
-
-            // Clean up subtask UI (remove metadata, chin, description)
-            const meta = subRow.querySelector(".task-metadata");
-            if (meta) meta.remove();
-
-            const desc = subRow.querySelector(".task-description");
-            if (desc) desc.remove();
-
-            const chin = subRow.querySelector(".fixed-chin");
-            if (chin) chin.remove();
-
-            subtaskWrapper.appendChild(subRow);
-          }
-          // Insert into task-content-wrapper if exists, else fallback to row
-          const contentWrapper = row.querySelector('.task-content-wrapper');
-          if (contentWrapper) {
-            contentWrapper.appendChild(subtaskWrapper);
-          } else {
-            row.appendChild(subtaskWrapper);
-          }
-        }
-      });
+      this.renderTaskRowsWithSubtasks(
+        listWrapper,
+        taskList,
+        projectMap,
+        labelMap,
+        labelColorMap,
+        projectList,
+        apiKey,
+        filters,
+      );
       // ——— Apply persisted dimming (preload path) ———
       try {
         const hidden = getHiddenSet();
@@ -2681,66 +2796,19 @@ export default class TodoistBoardPlugin extends Plugin {
         (idxB === -1 ? Number.MAX_SAFE_INTEGER : idxB);
     });
 
-    // --- Group subtasks by parentId for non-preloadData path ---
-    const subtasksByParentId: Record<string, Task[]> = {};
-    taskList.map((task: Task) => {
-      if (task.parentId) {
-        if (!subtasksByParentId[task.parentId]) subtasksByParentId[task.parentId] = [];
-        subtasksByParentId[task.parentId].push(task);
-      }
-    });
-
     // Removed local date comparison due to timezone mismatch issues (see GitHub issue #timezone-bug)
     // If any previous logic filtered tasks based on local date (e.g., new Date(task.due.date)), it is now removed.
 
-    // --- Only render parent tasks and their subtasks, do not filter by local date ---
-    taskList.map((task: Task) => {
-      // Do not skip tasks based on local date comparison
-      if (task.parentId) return; // skip subtasks in top-level loop
-      if (task.content?.trim().startsWith("* ")) {
-        const clonedTask = { ...task, content: task.content.trim().substring(2) };
-        const row = this.createTaskRow(clonedTask, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
-        row.classList.add("non-task-note");
-        this.setupTaskDragAndDrop(row, listWrapper, filters);
-        listWrapper.appendChild(row);
-        return;
-      }
-      const row = this.createTaskRow(task, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
-      // Only setup drag-and-drop for parent tasks
-      this.setupTaskDragAndDrop(row, listWrapper, filters);
-      listWrapper.appendChild(row);
-
-      // fallback to global subtask lookup if not found in subtasksByParentId ---
-      let allSubtasks: Task[] = [];
-      try {
-        allSubtasks = Object.values(this.taskCache).flat().filter((t: Task) => t.parentId === task.id);
-      } catch (err) {
-        console.error("Error flattening taskCache for subtasks", err);
-      }
-      const subtasks: Task[] = allSubtasks.length > 0 ? allSubtasks : (subtasksByParentId[task.id] || []);
-      // --- Render subtasks directly nested inside parent row ---
-      if (Array.isArray(subtasks) && subtasks.length > 0) {
-        const subtaskWrapper = activeDocument.createElement("div");
-        subtaskWrapper.className = "subtask-wrapper";
-        for (const sub of subtasks) {
-          const subRow = this.createTaskRow(sub, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
-          subRow.classList.add("subtask-row");
-
-          // Clean up subtask UI (remove metadata, chin, description)
-          const meta = subRow.querySelector(".task-metadata");
-          if (meta) meta.remove();
-
-          const desc = subRow.querySelector(".task-description");
-          if (desc) desc.remove();
-
-          const chin = subRow.querySelector(".fixed-chin");
-          if (chin) chin.remove();
-
-          subtaskWrapper.appendChild(subRow);
-        }
-        row.appendChild(subtaskWrapper);
-      }
-    });
+    this.renderTaskRowsWithSubtasks(
+      listWrapper,
+      taskList,
+      projectMap,
+      labelMap,
+      labelColorMap,
+      projects,
+      apiKey,
+      filters,
+    );
     // ——— Apply persisted dimming (non-preload path) ———
     try {
       const hidden = getHiddenSet();
