@@ -67,8 +67,8 @@ function compareBy(order: (keyof SortRow)[]) {
         const result = a.id.localeCompare(b.id);
         if (result) return result;
       } else {
-        const left = a[key] as number;
-        const right = b[key] as number;
+        const left = a[key];
+        const right = b[key];
         if (left !== right) return left - right;
       }
     }

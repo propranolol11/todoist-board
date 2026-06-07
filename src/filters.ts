@@ -1,6 +1,14 @@
 import { DateTime } from "luxon";
 import type { Filter, TodoistBoardSettings } from "./types";
 
+export type TodoistQueryParams = {
+  due_after?: string | null;
+  due_before?: string | null;
+  is_completed: boolean;
+  priority?: number;
+  project_id?: string;
+};
+
 export function parseBlockParams(raw: string): Record<string, string> {
   const params: Record<string, string> = {};
   for (const line of (raw || "").split("\n")) {
@@ -47,9 +55,9 @@ export function sourceOrDefault(source: string, filters: Filter[]): string {
     .join("\n");
 }
 
-export function parseTodoistQuery(query: string, timezone: string): Record<string, any> {
+export function parseTodoistQuery(query: string, timezone: string): TodoistQueryParams {
   const now = DateTime.now().setZone(timezone);
-  const result: any = { is_completed: false };
+  const result: TodoistQueryParams = { is_completed: false };
   const andParts = query.toLowerCase().split("&").map((part) => part.trim());
 
   for (const part of andParts) {
@@ -76,7 +84,7 @@ export function parseTodoistQuery(query: string, timezone: string): Record<strin
   return result;
 }
 
-export function getDefaultFilters(timezone: string): Record<string, { name: string; filter: any }> {
+export function getDefaultFilters(timezone: string): Record<string, { name: string; filter: TodoistQueryParams }> {
   const now = DateTime.now().setZone(timezone);
   return {
     Today: {

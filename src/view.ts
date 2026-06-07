@@ -8,7 +8,7 @@ export interface TodoistBoardViewPlugin {
   settings: TodoistBoardSettings;
   projectCache: Project[];
   labelCache: Label[];
-  projectMap: Map<string, any>;
+  projectMap: Map<string, Project>;
   preloadFilters(): Promise<void>;
   fetchFilteredTasksFromREST(apiKey: string, filter: string): Promise<{ results?: TodoistTask[] }>;
   getViewTasks(filter: string): TodoistTask[];
@@ -16,7 +16,7 @@ export interface TodoistBoardViewPlugin {
   renderTodoistBoard(
     container: HTMLElement,
     source: string,
-    ctx: any,
+    ctx: Record<string, unknown>,
     apiKey: string,
     initialData?: { tasks: TodoistTask[]; projects: Project[]; labels: Label[] },
   ): void | Promise<void>;

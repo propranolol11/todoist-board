@@ -14,12 +14,7 @@ export function writeJSON(key: string, value: unknown) {
 }
 
 const hiddenKey = (): string => {
-  try {
-    const vaultName = (window as any)?.app?.vault?.getName?.();
-    return `todoistHiddenTasks:${vaultName ?? "default"}`;
-  } catch {
-    return "todoistHiddenTasks:default";
-  }
+  return "todoistHiddenTasks:default";
 };
 
 const inlineCompactKey = (path: string, filterKey: string) => {
@@ -44,7 +39,7 @@ export const setInlineCompact = (path: string, filterKey: string, on: boolean) =
   } catch { }
 };
 
-export const getCountForFilter = (filterKey: string, memCache: Record<string, any[]>): number => {
+export const getCountForFilter = (filterKey: string, memCache: Record<string, TodoistTask[]>): number => {
   const key = String(filterKey);
   const ids = readJSON<string[]>(`todoistFilterIndex:${key}`, []);
   if (Array.isArray(ids) && ids.length) return ids.length;
@@ -52,7 +47,7 @@ export const getCountForFilter = (filterKey: string, memCache: Record<string, an
   const mem = memCache[key];
   if (Array.isArray(mem)) return mem.length;
 
-  const list = readJSON<any[]>(`todoistTasksCache:${key}`, []);
+  const list = readJSON<TodoistTask[]>(`todoistTasksCache:${key}`, []);
   return Array.isArray(list) ? list.length : 0;
 };
 
@@ -75,7 +70,7 @@ export class TodoistBoardStorage {
 
   private loadValue<T>(key: string, fallback: T): T {
     try {
-      const value = this.app?.loadLocalStorage(key);
+      const value: unknown = this.app?.loadLocalStorage(key);
       if (value !== null && value !== undefined) return value as T;
     } catch {
       // Fall back to the in-memory store for tests or blocked storage.
@@ -86,8 +81,8 @@ export class TodoistBoardStorage {
 
   private loadString(key: string, fallback = ""): string {
     try {
-      const value = this.app?.loadLocalStorage(key);
-      if (value !== null && value !== undefined) return String(value);
+      const value: unknown = this.app?.loadLocalStorage(key);
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
     } catch {
       // Fall back to the in-memory store for tests or blocked storage.
     }
@@ -291,7 +286,7 @@ export class TodoistBoardStorage {
     this.saveString("todoistBoardLastFilter", source);
   }
 
-  getCountForFilter(filterKey: string, memCache: Record<string, any[]> = {}): number {
+  getCountForFilter(filterKey: string, memCache: Record<string, TodoistTask[]> = {}): number {
     const key = String(filterKey);
     const snapshot = this.loadTaskSnapshot([key]);
     const ids = snapshot.filterIndex[key];

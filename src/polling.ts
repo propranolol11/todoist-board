@@ -1,32 +1,40 @@
-import type { TodoistTask } from "./types";
+import type { Label, Project, TodoistMetadata, TodoistTask } from "./types";
 
 export interface PollingPluginAdapter {
   settings: { apiKey: string };
   fetchFilteredTasksFromREST(apiKey: string, filter: string): Promise<{ results?: TodoistTask[] }>;
-  fetchMetadataFromSync(apiKey: string): Promise<any>;
+  fetchMetadataFromSync(apiKey: string): Promise<TodoistMetadata>;
   getViewTasks(filter: string): TodoistTask[];
   upsertTasks(filter: string, tasks: TodoistTask[]): void;
-  renderTodoistBoard(container: HTMLElement, source: string, ctx: any, apiKey: string, initialData?: any): void;
+  renderTodoistBoard(
+    container: HTMLElement,
+    source: string,
+    ctx: Record<string, unknown>,
+    apiKey: string,
+    initialData?: { tasks: TodoistTask[]; projects: Project[]; labels: Label[] },
+  ): void;
   refreshAllInlineBoards(): void;
-  projectCache: any[];
-  labelCache: any[];
+  projectCache: Project[];
+  labelCache: Label[];
   projectCacheTimestamp: number;
   labelCacheTimestamp: number;
 }
 
 export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000): () => void {
   let lastActivity = Date.now();
-  const handlers: { event: string; fn: () => void }[] = [];
+  const events: Array<keyof WindowEventMap> = ["mousemove", "keydown", "click", "scroll"];
+  const handlers: { event: keyof WindowEventMap; fn: EventListener }[] = [];
   const updateActivity = () => {
     lastActivity = Date.now();
   };
 
-  ["mousemove", "keydown", "click", "scroll"].forEach((event) => {
+  events.forEach((event) => {
     window.addEventListener(event, updateActivity, { passive: true });
     handlers.push({ event, fn: updateActivity });
   });
 
-  const timer = window.setInterval(async () => {
+  const timer = window.setInterval(() => {
+    void (async () => {
     if (activeDocument.visibilityState !== "visible") return;
     if (Date.now() - lastActivity >= interval * 2) return;
 
@@ -51,28 +59,30 @@ export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000)
 
       if (!changedAny) return;
 
-      activeDocument.querySelectorAll(".todoist-board.plugin-view").forEach(async (el) => {
+      const boards = Array.from(activeDocument.querySelectorAll<HTMLElement>(".todoist-board.plugin-view"));
+      for (const el of boards) {
         const filter = el.getAttribute("data-current-filter") || "today";
         const metadata = await plugin.fetchMetadataFromSync(plugin.settings.apiKey);
         plugin.projectCache = metadata.projects || [];
         plugin.labelCache = metadata.labels || [];
         plugin.projectCacheTimestamp = Date.now();
         plugin.labelCacheTimestamp = Date.now();
-        plugin.renderTodoistBoard(el as HTMLElement, `filter: ${filter}`, {}, plugin.settings.apiKey, {
+        plugin.renderTodoistBoard(el, `filter: ${filter}`, {}, plugin.settings.apiKey, {
           tasks: plugin.getViewTasks(filter),
           projects: plugin.projectCache,
           labels: plugin.labelCache,
         });
-      });
+      }
       plugin.refreshAllInlineBoards();
     } catch {
       // Polling should never break the plugin UI.
     }
+    })();
   }, interval);
 
   return () => {
     window.clearInterval(timer);
-    handlers.forEach(({ event, fn }) => window.removeEventListener(event, fn as any));
+    handlers.forEach(({ event, fn }) => window.removeEventListener(event, fn));
   };
 }
 
@@ -88,18 +98,18 @@ export function hasTaskChanges(previous: TodoistTask[], next: TodoistTask[]): bo
   return newTasks.some((task) => {
     const previousTask = oldTasks.find((candidate) => String(candidate.id) === String(task.id));
     if (!previousTask) return true;
-    const previousDue = (previousTask as any).due?.datetime ?? (previousTask as any).due?.date ?? null;
-    const nextDue = (task as any).due?.datetime ?? (task as any).due?.date ?? null;
-    const previousLabels = Array.isArray((previousTask as any).labels)
-      ? (previousTask as any).labels.join(",")
-      : (previousTask as any).labels;
-    const nextLabels = Array.isArray((task as any).labels)
-      ? (task as any).labels.join(",")
-      : (task as any).labels;
+    const previousDue = previousTask.due?.datetime ?? previousTask.due?.date ?? null;
+    const nextDue = task.due?.datetime ?? task.due?.date ?? null;
+    const previousLabels = Array.isArray(previousTask.labels)
+      ? previousTask.labels.join(",")
+      : previousTask.labels;
+    const nextLabels = Array.isArray(task.labels)
+      ? task.labels.join(",")
+      : task.labels;
 
     return previousDue !== nextDue
-      || (previousTask as any).content !== (task as any).content
+      || previousTask.content !== task.content
       || previousLabels !== nextLabels
-      || String((previousTask as any).projectId ?? "") !== String((task as any).projectId ?? "");
+      || String(previousTask.projectId ?? "") !== String(task.projectId ?? "");
   });
 }

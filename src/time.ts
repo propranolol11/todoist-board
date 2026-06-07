@@ -16,10 +16,8 @@ export function safeZone(zone?: string | null): string {
 export function useHour12(): boolean {
   if (hour12 !== null) return hour12;
   try {
-    const formatter = new Intl.DateTimeFormat(undefined, { timeStyle: "short" }) as any;
-    const resolved = typeof formatter.resolvedOptions === "function"
-      ? formatter.resolvedOptions()
-      : null;
+    const formatter = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
+    const resolved = formatter.resolvedOptions();
     if (resolved && typeof resolved.hour12 === "boolean") {
       hour12 = resolved.hour12;
       return hour12 ?? false;

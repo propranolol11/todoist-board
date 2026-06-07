@@ -137,8 +137,8 @@ function createTaskPills(options: TaskPillOptions): HTMLElement[] {
     sourceDateTime = DateTime.fromISO(task.due.datetime, { setZone: true });
   } else if (task.due?.date && task.due.date.includes("T")) {
     sourceDateTime = DateTime.fromISO(task.due.date, { setZone: true });
-  } else if ((task as any).due?.time) {
-    sourceDateTime = DateTime.fromISO(`${task.due!.date}T${(task as any).due.time}`, { setZone: true });
+  } else if (task.due?.time) {
+    sourceDateTime = DateTime.fromISO(`${task.due.date}T${task.due.time}`, { setZone: true });
   }
 
   if (sourceDateTime?.isValid) {
@@ -200,7 +200,7 @@ function createDueInline(task: TodoistTask, settings: TodoistBoardSettings): HTM
 }
 
 function createDeadlineInline(task: TodoistTask, settings: TodoistBoardSettings): HTMLElement | null {
-  const deadline = (task as any)?.deadline?.date;
+  const deadline = task.deadline?.date;
   if (!deadline) return null;
 
   const zone = getZone(settings);
@@ -294,7 +294,7 @@ function createProjectPill(
   const colorValue = project?.color;
   if (typeof colorValue === "string" && colorValue.trim()) {
     const color = colorValue.trim();
-    projectHex = (color.startsWith("#") || color.startsWith("rgb")) ? color : ((TODOIST_COLORS as any)[color] || "");
+    projectHex = (color.startsWith("#") || color.startsWith("rgb")) ? color : (TODOIST_COLORS[color] || "");
   }
 
   if (colorValue) projectPill.setAttribute("data-project-color-id", String(colorValue));
@@ -334,9 +334,9 @@ function createLabelPill(
 
   const resolveIdKey = (value: string): string | null => {
     const input = String(value);
-    if ((labelMap as any)[input] !== undefined) return input;
+    if (labelMap[input] !== undefined) return input;
     const numericInput = Number(input);
-    if (!Number.isNaN(numericInput) && (labelMap as any)[numericInput] !== undefined) return String(numericInput);
+    if (!Number.isNaN(numericInput) && labelMap[String(numericInput)] !== undefined) return String(numericInput);
     for (const [id, name] of Object.entries(labelMap)) {
       if (String(name) === input) return id;
     }
@@ -346,11 +346,11 @@ function createLabelPill(
   labels.forEach((raw, index) => {
     const input = String(raw);
     const idKey = resolveIdKey(input);
-    const name = idKey ? ((labelMap as any)[idKey] ?? input) : input;
+    const name = idKey ? (labelMap[idKey] ?? input) : input;
 
-    let rawColor: any = idKey ? (labelColorMap as any)[idKey] : undefined;
-    if (!rawColor && (labelColorMap as any)[input] !== undefined) {
-      rawColor = (labelColorMap as any)[input];
+    let rawColor: string | number | undefined = idKey ? labelColorMap[idKey] : undefined;
+    if (!rawColor && labelColorMap[input] !== undefined) {
+      rawColor = labelColorMap[input];
     }
     if (!rawColor && Array.isArray(labelCache)) {
       const hit = labelCache.find((label) => {
@@ -362,7 +362,7 @@ function createLabelPill(
     let color = "";
     if (typeof rawColor === "string" && rawColor.trim()) {
       const rawHex = rawColor.trim();
-      color = (rawHex.startsWith("#") || rawHex.startsWith("rgb")) ? rawHex : (((TODOIST_COLORS as any)[rawHex]) || rawHex);
+      color = (rawHex.startsWith("#") || rawHex.startsWith("rgb")) ? rawHex : (TODOIST_COLORS[rawHex] || rawHex);
     }
 
     const part = activeDocument.createElement("span");

@@ -1,5 +1,5 @@
 import { requestUrl } from "obsidian";
-import type { ActionResult, Label, Project, Task, TodoistMetadata, TodoistSection, TodoistTask } from "./types";
+import type { ActionResult, Label, Project, Task, TodoistDue, TodoistMetadata, TodoistSection, TodoistTask } from "./types";
 
 export interface TodoistServiceOptions {
   getCachedTasks?: (filterKey: string) => TodoistTask[];
@@ -52,7 +52,7 @@ export interface TodoistApiShim {
   getSections(args: { projectId: string }): Promise<TodoistSection[]>;
   getLabels(): Promise<Label[]>;
   addTask(args: AddTaskArgs): Promise<TodoistTask>;
-  updateTask(taskId: string, args: Record<string, any>): Promise<ActionResult<TodoistTask | null>>;
+  updateTask(taskId: string, args: Record<string, unknown>): Promise<ActionResult<TodoistTask | null>>;
   getTask(taskId: string): Promise<Task>;
   getProject(projectId: string): Promise<Project>;
   closeTask(taskId: string): Promise<ActionResult>;
@@ -62,7 +62,7 @@ export interface TodoistApiShim {
 type RequestOptions = {
   method?: "GET" | "POST" | "DELETE";
   query?: Record<string, string | number | boolean | null | undefined>;
-  body?: Record<string, any>;
+  body?: Record<string, unknown>;
 };
 
 const API_BASE = "https://api.todoist.com/api/v1";
@@ -71,6 +71,49 @@ interface PaginatedResponse<T> {
   results?: T[];
   next_cursor?: string | null;
   nextCursor?: string | null;
+}
+
+type TodoistPayload = Record<string, unknown>;
+
+function asRecord(value: unknown): TodoistPayload {
+  return value !== null && typeof value === "object" ? value as TodoistPayload : {};
+}
+
+function firstPresent(...values: unknown[]): unknown {
+  return values.find((value) => value !== undefined && value !== null);
+}
+
+function stringValue(...values: unknown[]): string | undefined {
+  const value = firstPresent(...values);
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+    ? String(value)
+    : undefined;
+}
+
+function nullableStringValue(...values: unknown[]): string | null {
+  const value = firstPresent(...values);
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+    ? String(value)
+    : null;
+}
+
+function numberValue(...values: unknown[]): number | undefined {
+  const value = firstPresent(...values);
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function booleanValue(...values: unknown[]): boolean | undefined {
+  const value = firstPresent(...values);
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function stringArrayValue(value: unknown): string[] | undefined {
+  return Array.isArray(value) ? value.map(String) : undefined;
 }
 
 function normalizeApiToken(apiKey: string): string {
@@ -98,99 +141,121 @@ function toTodoistUrl(path: string, query?: RequestOptions["query"]): string {
   return url.toString();
 }
 
-export function normalizeDue(due: any) {
-  if (!due || typeof due !== "object") return due ?? null;
+export function normalizeDue(due: unknown): TodoistDue | null {
+  if (!due || typeof due !== "object") return null;
+  const record = asRecord(due);
   return {
-    ...due,
-    isRecurring: due.isRecurring ?? due.is_recurring,
-    is_recurring: due.is_recurring ?? due.isRecurring,
+    ...record,
+    date: stringValue(record.date),
+    datetime: stringValue(record.datetime),
+    string: stringValue(record.string),
+    timezone: stringValue(record.timezone),
+    lang: stringValue(record.lang),
+    time: stringValue(record.time),
+    isRecurring: booleanValue(record.isRecurring, record.is_recurring),
+    is_recurring: booleanValue(record.is_recurring, record.isRecurring),
   };
 }
 
-export function normalizeTask(task: any): TodoistTask {
+export function normalizeTask(task: unknown): TodoistTask {
+  const record = asRecord(task);
+  const id = stringValue(record.id) ?? "";
   return {
-    ...task,
-    id: String(task?.id ?? ""),
-    content: String(task?.content ?? ""),
-    url: task?.url ?? (task?.id ? `https://app.todoist.com/app/task/${task.id}` : undefined),
-    projectId: task?.projectId ?? task?.project_id,
-    sectionId: task?.sectionId ?? task?.section_id ?? null,
-    parentId: task?.parentId ?? task?.parent_id ?? null,
-    commentCount: task?.commentCount ?? task?.comment_count,
-    creatorId: task?.creatorId ?? task?.creator_id,
-    addedByUid: task?.addedByUid ?? task?.added_by_uid,
-    assignedByUid: task?.assignedByUid ?? task?.assigned_by_uid,
-    responsibleUid: task?.responsibleUid ?? task?.responsible_uid,
-    assigneeId: task?.assigneeId ?? task?.assignee_id ?? null,
-    assignerId: task?.assignerId ?? task?.assigner_id ?? null,
-    createdAt: task?.createdAt ?? task?.created_at,
-    addedAt: task?.addedAt ?? task?.added_at,
-    updatedAt: task?.updatedAt ?? task?.updated_at,
-    completedAt: task?.completedAt ?? task?.completed_at,
-    completedByUid: task?.completedByUid ?? task?.completed_by_uid,
-    isCompleted: task?.isCompleted ?? task?.is_completed,
-    isDeleted: task?.isDeleted ?? task?.is_deleted,
-    isCollapsed: task?.isCollapsed ?? task?.is_collapsed,
-    childOrder: task?.childOrder ?? task?.child_order,
-    dayOrder: task?.dayOrder ?? task?.day_order,
-    noteCount: task?.noteCount ?? task?.note_count,
-    due: normalizeDue(task?.due),
+    ...record,
+    id,
+    content: stringValue(record.content) ?? "",
+    description: stringValue(record.description),
+    url: stringValue(record.url) ?? (id ? `https://app.todoist.com/app/task/${id}` : undefined),
+    projectId: stringValue(record.projectId, record.project_id),
+    sectionId: nullableStringValue(record.sectionId, record.section_id),
+    parentId: nullableStringValue(record.parentId, record.parent_id),
+    labels: stringArrayValue(record.labels),
+    priority: numberValue(record.priority),
+    commentCount: numberValue(record.commentCount, record.comment_count),
+    creatorId: stringValue(record.creatorId, record.creator_id),
+    addedByUid: stringValue(record.addedByUid, record.added_by_uid),
+    assignedByUid: stringValue(record.assignedByUid, record.assigned_by_uid),
+    responsibleUid: nullableStringValue(record.responsibleUid, record.responsible_uid),
+    assigneeId: nullableStringValue(record.assigneeId, record.assignee_id),
+    assignerId: nullableStringValue(record.assignerId, record.assigner_id),
+    createdAt: stringValue(record.createdAt, record.created_at),
+    addedAt: stringValue(record.addedAt, record.added_at),
+    updatedAt: stringValue(record.updatedAt, record.updated_at),
+    completedAt: nullableStringValue(record.completedAt, record.completed_at),
+    completedByUid: nullableStringValue(record.completedByUid, record.completed_by_uid),
+    isCompleted: booleanValue(record.isCompleted, record.is_completed),
+    isDeleted: booleanValue(record.isDeleted, record.is_deleted),
+    isCollapsed: booleanValue(record.isCollapsed, record.is_collapsed),
+    childOrder: numberValue(record.childOrder, record.child_order),
+    dayOrder: numberValue(record.dayOrder, record.day_order),
+    noteCount: numberValue(record.noteCount, record.note_count),
+    due: normalizeDue(record.due),
+    deadline: asRecord(record.deadline),
   };
 }
 
-export function normalizeProject(project: any): Project {
+export function normalizeProject(project: unknown): Project {
+  const record = asRecord(project);
   return {
-    ...project,
-    id: String(project?.id ?? ""),
-    name: String(project?.name ?? ""),
-    parentId: project?.parentId ?? project?.parent_id ?? null,
-    commentCount: project?.commentCount ?? project?.comment_count,
-    isShared: project?.isShared ?? project?.is_shared,
-    isFavorite: project?.isFavorite ?? project?.is_favorite,
-    isInboxProject: project?.isInboxProject ?? project?.is_inbox_project ?? project?.inbox_project,
-    isTeamInbox: project?.isTeamInbox ?? project?.is_team_inbox,
-    isArchived: project?.isArchived ?? project?.is_archived,
-    isDeleted: project?.isDeleted ?? project?.is_deleted,
-    isCollapsed: project?.isCollapsed ?? project?.is_collapsed,
-    canAssignTasks: project?.canAssignTasks ?? project?.can_assign_tasks,
-    canComment: project?.canComment ?? project?.can_comment,
-    childOrder: project?.childOrder ?? project?.child_order,
-    defaultOrder: project?.defaultOrder ?? project?.default_order,
-    createdAt: project?.createdAt ?? project?.created_at,
-    updatedAt: project?.updatedAt ?? project?.updated_at,
-    viewStyle: project?.viewStyle ?? project?.view_style,
+    ...record,
+    id: stringValue(record.id) ?? "",
+    name: stringValue(record.name) ?? "",
+    color: stringValue(record.color) ?? numberValue(record.color),
+    parentId: nullableStringValue(record.parentId, record.parent_id),
+    commentCount: numberValue(record.commentCount, record.comment_count),
+    isShared: booleanValue(record.isShared, record.is_shared),
+    isFavorite: booleanValue(record.isFavorite, record.is_favorite),
+    isInboxProject: booleanValue(record.isInboxProject, record.is_inbox_project, record.inbox_project),
+    isTeamInbox: booleanValue(record.isTeamInbox, record.is_team_inbox),
+    isArchived: booleanValue(record.isArchived, record.is_archived),
+    isDeleted: booleanValue(record.isDeleted, record.is_deleted),
+    isCollapsed: booleanValue(record.isCollapsed, record.is_collapsed),
+    canAssignTasks: booleanValue(record.canAssignTasks, record.can_assign_tasks),
+    canComment: booleanValue(record.canComment, record.can_comment),
+    childOrder: numberValue(record.childOrder, record.child_order),
+    defaultOrder: numberValue(record.defaultOrder, record.default_order),
+    createdAt: stringValue(record.createdAt, record.created_at),
+    updatedAt: stringValue(record.updatedAt, record.updated_at),
+    viewStyle: stringValue(record.viewStyle, record.view_style),
+    url: stringValue(record.url),
   };
 }
 
-export function normalizeLabel(label: any): Label {
+export function normalizeLabel(label: unknown): Label {
+  const record = asRecord(label);
   return {
-    ...label,
-    id: String(label?.id ?? ""),
-    name: String(label?.name ?? ""),
-    isFavorite: label?.isFavorite ?? label?.is_favorite,
+    ...record,
+    id: stringValue(record.id) ?? "",
+    name: stringValue(record.name) ?? "",
+    color: stringValue(record.color) ?? numberValue(record.color),
+    order: numberValue(record.order),
+    isFavorite: booleanValue(record.isFavorite, record.is_favorite),
   };
 }
 
-export function normalizeSection(section: any): TodoistSection {
+export function normalizeSection(section: unknown): TodoistSection {
+  const record = asRecord(section);
   return {
-    ...section,
-    id: String(section?.id ?? ""),
-    name: String(section?.name ?? ""),
-    projectId: section?.projectId ?? section?.project_id,
-    sectionOrder: section?.sectionOrder ?? section?.section_order,
-    isCollapsed: section?.isCollapsed ?? section?.is_collapsed,
-    isArchived: section?.isArchived ?? section?.is_archived,
-    isDeleted: section?.isDeleted ?? section?.is_deleted,
-    addedAt: section?.addedAt ?? section?.added_at,
-    updatedAt: section?.updatedAt ?? section?.updated_at,
-    archivedAt: section?.archivedAt ?? section?.archived_at,
+    ...record,
+    id: stringValue(record.id) ?? "",
+    name: stringValue(record.name) ?? "",
+    projectId: stringValue(record.projectId, record.project_id),
+    order: numberValue(record.order),
+    sectionOrder: numberValue(record.sectionOrder, record.section_order),
+    isCollapsed: booleanValue(record.isCollapsed, record.is_collapsed),
+    isArchived: booleanValue(record.isArchived, record.is_archived),
+    isDeleted: booleanValue(record.isDeleted, record.is_deleted),
+    addedAt: stringValue(record.addedAt, record.added_at),
+    updatedAt: stringValue(record.updatedAt, record.updated_at),
+    archivedAt: nullableStringValue(record.archivedAt, record.archived_at),
   };
 }
 
-export function toRestTaskPayload(args: Record<string, any>): Record<string, any> {
-  const payload: Record<string, any> = {};
+export function toRestTaskPayload(args: Partial<AddTaskArgs> | Record<string, unknown>): Record<string, unknown> {
+  const source = asRecord(args);
+  const payload: Record<string, unknown> = {};
   const copy = (from: string, to: string = from) => {
-    if (args[from] !== undefined) payload[to] = args[from];
+    if (source[from] !== undefined) payload[to] = source[from];
   };
 
   copy("content");
@@ -228,9 +293,9 @@ export function toRestTaskPayload(args: Record<string, any>): Record<string, any
   return payload;
 }
 
-export function toSyncTaskArgs(taskId: string, args: Record<string, any>): Record<string, any> {
+export function toSyncTaskArgs(taskId: string, args: Partial<AddTaskArgs> | Record<string, unknown>): Record<string, unknown> {
   const payload = toRestTaskPayload(args);
-  const syncArgs: Record<string, any> = { id: String(taskId) };
+  const syncArgs: Record<string, unknown> = { id: String(taskId) };
 
   const copy = (from: string, to: string = from) => {
     if (payload[from] !== undefined) syncArgs[to] = payload[from];
@@ -253,7 +318,9 @@ export function toSyncTaskArgs(taskId: string, args: Record<string, any>): Recor
   } else if (payload.due_datetime !== undefined) {
     syncArgs.due = payload.due_datetime === null ? null : { date: payload.due_datetime };
   }
-  if (payload.due_lang !== undefined && syncArgs.due) syncArgs.due.lang = payload.due_lang;
+  if (payload.due_lang !== undefined && syncArgs.due && typeof syncArgs.due === "object") {
+    (syncArgs.due as Record<string, unknown>).lang = payload.due_lang;
+  }
 
   if (payload.deadline_date !== undefined) {
     syncArgs.deadline = payload.deadline_date === null ? null : { date: payload.deadline_date };
@@ -300,7 +367,7 @@ export class TodoistService {
     }
 
     try {
-      const response = await this.requestPaginatedPage<any>("/tasks/filter", {
+      const response = await this.requestPaginatedPage<unknown>("/tasks/filter", {
         query: {
           query: key,
           limit: options.limit ?? 100,
@@ -364,28 +431,28 @@ export class TodoistService {
   }
 
   async getProjects(): Promise<Project[]> {
-    const projects = await this.requestPage<any>("/projects");
+    const projects = await this.requestPage<unknown>("/projects");
     return projects.map(normalizeProject);
   }
 
   async getSections(projectId: string): Promise<TodoistSection[]> {
-    const sections = await this.requestPage<any>("/sections", { query: { project_id: projectId } });
+    const sections = await this.requestPage<unknown>("/sections", { query: { project_id: projectId } });
     return sections.map(normalizeSection);
   }
 
   async getLabels(): Promise<Label[]> {
-    const labels = await this.requestPage<any>("/labels");
+    const labels = await this.requestPage<unknown>("/labels");
     return labels.map(normalizeLabel);
   }
 
   async addTask(args: AddTaskArgs): Promise<TodoistTask> {
-    const task = await this.request<any>("/tasks", { method: "POST", body: toRestTaskPayload(args) });
+    const task = await this.request<unknown>("/tasks", { method: "POST", body: toRestTaskPayload(args) });
     return normalizeTask(task);
   }
 
-  async updateTask(taskId: string, args: Record<string, any>): Promise<ActionResult<TodoistTask | null>> {
+  async updateTask(taskId: string, args: Record<string, unknown>): Promise<ActionResult<TodoistTask | null>> {
     try {
-      const response = await this.request<any>(`/tasks/${encodeURIComponent(String(taskId))}`, {
+      const response = await this.request<unknown>(`/tasks/${encodeURIComponent(String(taskId))}`, {
         method: "POST",
         body: toRestTaskPayload(args),
       });
@@ -397,11 +464,11 @@ export class TodoistService {
   }
 
   async getTask(taskId: string): Promise<Task> {
-    return normalizeTask(await this.request<any>(`/tasks/${encodeURIComponent(String(taskId))}`));
+    return normalizeTask(await this.request<unknown>(`/tasks/${encodeURIComponent(String(taskId))}`));
   }
 
   async getProject(projectId: string): Promise<Project> {
-    return normalizeProject(await this.request<any>(`/projects/${encodeURIComponent(String(projectId))}`));
+    return normalizeProject(await this.request<unknown>(`/projects/${encodeURIComponent(String(projectId))}`));
   }
 
   async completeTask(taskId: string): Promise<ActionResult> {
@@ -452,7 +519,7 @@ export class TodoistService {
     });
   }
 
-  async postRestTask(taskId: string, body: Record<string, any>) {
+  async postRestTask(taskId: string, body: Record<string, unknown>) {
     return requestUrl({
       url: `${API_BASE}/tasks/${encodeURIComponent(String(taskId))}`,
       method: "POST",
@@ -520,21 +587,22 @@ export class TodoistService {
     };
   }
 
-  private async syncUpdateTask(taskId: string, args: Record<string, any>) {
+  private async syncUpdateTask(taskId: string, args: Record<string, unknown>) {
     const uuid = createCommandUuid();
     const response = await this.syncCommand({
       type: "item_update",
       uuid,
       args: toSyncTaskArgs(taskId, args),
     });
-    const status = response?.sync_status?.[uuid];
+    const syncStatus = asRecord(response.sync_status);
+    const status = syncStatus[uuid];
     if (status && status !== "ok") {
       throw new Error(`[Todoist Board] Todoist sync item_update failed: ${JSON.stringify(status)}`);
     }
     return { status: 200, text: JSON.stringify(response), json: response };
   }
 
-  private async syncCommand(command: Record<string, any>) {
+  private async syncCommand(command: Record<string, unknown>): Promise<Record<string, unknown>> {
     const response = await requestUrl({
       url: `${API_BASE}/sync`,
       method: "POST",
@@ -548,7 +616,7 @@ export class TodoistService {
       }).toString(),
     });
     const raw = response.text || "";
-    return raw ? JSON.parse(raw) : {};
+    return raw ? asRecord(JSON.parse(raw)) : {};
   }
 
   private authHeader(apiKey = this.apiKey): string {

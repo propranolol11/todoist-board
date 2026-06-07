@@ -121,7 +121,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     nextList.createEl("li", { text: "Command palette: Open Todoist Board" });
     const codeItem = nextList.createEl("li");
     codeItem.appendText("Embed: ");
-    codeItem.createEl("code", { text: "filter: today" });
+    codeItem.createEl("code", { text: "Filter: today" });
     const repoItem = nextList.createEl("li");
     repoItem.appendText("Filters: ");
     this.createExternalLink(repoItem, "GitHub", "https://github.com/propranolol11/todoist-board", "github");
@@ -237,11 +237,13 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       };
 
       syncVisibilityButton();
-      visibilityButton.addEventListener("click", async () => {
+      visibilityButton.addEventListener("click", () => {
+        void (async () => {
         const contextMenuActions = ensureContextMenuActions();
         contextMenuActions[action.key] = !actionIsEnabled(action.key);
         syncVisibilityButton();
         await this.plugin.saveSettings();
+        })();
       });
     });
 
@@ -289,11 +291,13 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       };
 
       syncActionButton();
-      actionButton.addEventListener("click", async () => {
+      actionButton.addEventListener("click", () => {
+        void (async () => {
         const chinBarActions = ensureChinBarActions();
         chinBarActions[action.key] = !chinActionIsEnabled(action.key);
         syncActionButton();
         await this.plugin.saveSettings();
+        })();
       });
     });
   }

@@ -6,7 +6,7 @@ export function a11yButton(el: HTMLElement, label: string) {
     "keydown",
     (event: KeyboardEvent) => {
       if (event.key === "Enter" || event.key === " ") {
-        (el as any).click?.();
+        el.click();
         event.preventDefault();
       }
     },

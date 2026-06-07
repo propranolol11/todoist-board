@@ -25,7 +25,7 @@ import {
 } from "./src/storage";
 import { StorageRepository } from "./src/storage-repository";
 import { TaskStore } from "./src/task-store";
-import { TodoistService } from "./src/todoist-service";
+import { TodoistService, type TodoistTaskFetchResult } from "./src/todoist-service";
 import { TaskActions } from "./src/task-actions";
 import { TaskSheetModal } from "./src/modals/task-sheet-modal";
 import { openFilterSettingsModal } from "./src/modals/filter-settings-modal";
@@ -40,14 +40,33 @@ import { getZone } from "./src/time";
 import { createTaskContent, getProjectHexColor } from "./src/task-rendering";
 import { getTaskId, getTaskParentId, TaskHierarchy } from "./src/task-hierarchy";
 import type {
-  GetSectionsResponse,
-  Label,
-  Project,
-  Task,
-  TodoistBoardSettings as CoreTodoistBoardSettings,
+	  GetSectionsResponse,
+  Filter,
+	  Label,
+	  Project,
+	  Task,
+	  TodoistBoardSettings as CoreTodoistBoardSettings,
 } from "./src/types";
 
 type TodoistBoardSettings = CoreTodoistBoardSettings;
+type LogArg = unknown;
+type RenderContext = MarkdownPostProcessorContext | Record<string, unknown>;
+type RenderData = {
+  tasks?: Task[];
+  sections?: GetSectionsResponse[];
+  projects?: Project[];
+  labels?: Label[];
+};
+type DivOptions = { cls?: string };
+type MenuWithMouseEvent = Menu & { showAtMouseEvent?: (event: MouseEvent) => void };
+type BusyHTMLElement = HTMLElement & { _busy?: boolean };
+type RootWithContainer = { containerEl?: { hasClass?: (className: string) => boolean } };
+
+declare global {
+  interface Window {
+    todoistApi?: ReturnType<TodoistService["getApi"]>;
+  }
+}
 
 const TODOIST_BOARD_VIEW_TYPE = CORE_TODOIST_BOARD_VIEW_TYPE;
 
@@ -55,16 +74,16 @@ const DEFAULT_SETTINGS: TodoistBoardSettings = CORE_DEFAULT_SETTINGS;
 
 export default class TodoistBoardPlugin extends Plugin {
   // Debug logger helpers (gated by settings.enableLogs)
-  private log(...args: any[]) {
+  private log(...args: LogArg[]) {
     try { if (this.settings?.enableLogs) window.console?.log(...args); } catch { }
   }
-  private info(...args: any[]) {
+  private info(...args: LogArg[]) {
     try { if (this.settings?.enableLogs) window.console?.info(...args); } catch { }
   }
-  private warn(...args: any[]) {
+  private warn(...args: LogArg[]) {
     try { if (this.settings?.enableLogs) window.console?.warn(...args); } catch { }
   }
-  private error(...args: any[]) {
+  private error(...args: LogArg[]) {
     try { if (this.settings?.enableLogs) window.console?.error(...args); } catch { }
   }
 
@@ -80,10 +99,10 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // Back-compat
-  private dbg(...args: any[]) { this.log(...args); }
+  private dbg(...args: LogArg[]) { this.log(...args); }
 
   // Centralized helper for sorting and metadata selection used by all views
-  private buildRenderInput(base: any[], container: HTMLElement, filterKey: string) {
+  private buildRenderInput(base: Task[], container: HTMLElement, filterKey: string) {
     const stored = this.getSortMode(filterKey);
     if (!container.dataset.sortMode) container.dataset.sortMode = stored;
     const mode = container.dataset.sortMode || stored;
@@ -158,15 +177,15 @@ export default class TodoistBoardPlugin extends Plugin {
   static commonTimezones = COMMON_TIMEZONES;
   // ======================= 🔌 Plugin Class =======================
   settings!: TodoistBoardSettings;
-  public taskStore: Record<string, any> = {};              // id → task (single source of truth)
+  public taskStore: Record<string, Task> = {};              // id → task (single source of truth)
   public filterIndex: Record<string, string[]> = {};       // filterKey → [taskId]
-  public taskCache: Record<string, any[]> = {};            // legacy (kept for compatibility)
+  public taskCache: Record<string, Task[]> = {};            // legacy (kept for compatibility)
   public projectCache: Project[] = [];
   public labelCache: Label[] = [];
   private loadingOverlay?: HTMLDivElement;
   private taskCacheTimestamps: Record<string, number> = {};
-  private projectCacheTimestamp: number = 0;
-  private labelCacheTimestamp: number = 0;
+  public projectCacheTimestamp: number = 0;
+  public labelCacheTimestamp: number = 0;
   private storage!: TodoistBoardStorage;
   private storageRepository!: StorageRepository;
   private taskStoreController!: TaskStore;
@@ -193,11 +212,11 @@ export default class TodoistBoardPlugin extends Plugin {
       });
       this.taskActions = new TaskActions(this.todoistService);
       this.todoistApi = this.todoistService.getApi();
-      (window as any).todoistApi = this.todoistApi;
+      window.todoistApi = this.todoistApi;
     } else {
       this.todoistService.setApiKey(apiKey);
       this.todoistApi = this.todoistService.getApi();
-      (window as any).todoistApi = this.todoistApi;
+      window.todoistApi = this.todoistApi;
     }
   }
 
@@ -216,7 +235,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
 
   // ---- Single-source helpers ----
-  public upsertTasks(filterKey: string, tasks: any[], opts?: { silentSidebar?: boolean; preferExisting?: boolean }) {
+  public upsertTasks(filterKey: string, tasks: Task[], opts?: { silentSidebar?: boolean; preferExisting?: boolean }) {
     this.ensureRefactoredRuntime();
     const { changed } = this.taskStoreController.upsert(String(filterKey), Array.isArray(tasks) ? tasks : [], {
       preferExisting: opts?.preferExisting,
@@ -227,7 +246,7 @@ export default class TodoistBoardPlugin extends Plugin {
     // Avoid echo loops when upsert is called from within render paths
     if (changed && !opts?.silentSidebar) {
       try {
-        const boards = Array.from(activeDocument.querySelectorAll(".todoist-board.plugin-view")) as HTMLElement[];
+        const boards = Array.from(activeDocument.querySelectorAll<HTMLElement>(".todoist-board.plugin-view"));
         boards.forEach((board) => {
           const f = board.getAttribute("data-current-filter") || "today";
           const tasksForView = this.getViewTasks(f);
@@ -238,7 +257,7 @@ export default class TodoistBoardPlugin extends Plugin {
             this.settings.apiKey,
             { tasks: tasksForView, projects: this.projectCache, labels: this.labelCache }
           );
-          const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`) as HTMLElement | null;
+          const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`);
           if (badge) badge.textContent = this.formatFilterCount(tasksForView.length, Boolean(this.filterNextCursor[f]));
         });
       } catch { }
@@ -259,19 +278,19 @@ export default class TodoistBoardPlugin extends Plugin {
     this.syncTaskStoreRefs();
   }
 
-  public getViewTasks(filterKey: string): any[] {
+  public getViewTasks(filterKey: string): Task[] {
     this.ensureRefactoredRuntime();
     return this.taskStoreController.getViewTasks(String(filterKey));
   }
   // --- Project Map for id lookup ---
-  projectMap: Map<string, any> = new Map();
+  projectMap: Map<string, Project> = new Map();
 
   async fetchFilteredTasksFromREST(
     apiKey: string,
-    args: any,
+    args: string,
     options: { cursor?: string | null } = {},
-  ): Promise<any> {
-    const filterKey = typeof args === "string" ? args : "today";
+  ): Promise<TodoistTaskFetchResult> {
+    const filterKey = args || "today";
     this.ensureRefactoredRuntime(apiKey);
     const result = await this.todoistService.fetchFilteredTasks(filterKey, {
       cursor: options.cursor,
@@ -300,8 +319,10 @@ export default class TodoistBoardPlugin extends Plugin {
     return this.storage.loadMetadata();
   }
   async loadSettings() {
-    const saved = await this.loadData();
-    this.settings = normalizeSettings(saved);
+    const saved: unknown = await this.loadData();
+    this.settings = normalizeSettings(
+      saved && typeof saved === "object" ? saved : undefined
+    );
   }
   async saveSettings() {
     await this.saveData(this.settings);
@@ -322,8 +343,8 @@ export default class TodoistBoardPlugin extends Plugin {
     return String(count);
   }
 
-  private mergeTaskLists(existing: any[], incoming: any[]): any[] {
-    const byId = new Map<string, any>();
+  private mergeTaskLists(existing: Task[], incoming: Task[]): Task[] {
+    const byId = new Map<string, Task>();
     for (const task of Array.isArray(existing) ? existing : []) {
       const id = String(task?.id ?? "");
       if (id) byId.set(id, task);
@@ -418,9 +439,10 @@ export default class TodoistBoardPlugin extends Plugin {
         const incoming = Array.isArray(response.results) ? response.results : [];
         const combined = this.mergeTaskLists(this.getViewTasks(key), incoming);
         this.upsertTasks(key, combined, { silentSidebar: true });
-        this.updateFilterBadge(listWrapper.closest(".todoist-board") as HTMLElement || activeDocument.body, key, combined.length, Boolean(response.nextCursor));
+        const boardRoot = listWrapper.closest<HTMLElement>(".todoist-board") ?? activeDocument.body;
+        this.updateFilterBadge(boardRoot, key, combined.length, Boolean(response.nextCursor));
 
-        const board = listWrapper.closest(".todoist-board") as HTMLElement | null;
+        const board = listWrapper.closest<HTMLElement>(".todoist-board");
         if (board) {
           this.renderTodoistBoard(board, `filter: ${key}`, {}, apiKey, {
             tasks: combined,
@@ -470,11 +492,11 @@ export default class TodoistBoardPlugin extends Plugin {
           const tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
           let oldTasks = this.getViewTasks(key);
           if (!Array.isArray(oldTasks)) oldTasks = [];
-          const oldIds = new Set(oldTasks.map((t: any) => t.id));
-          const newIds = new Set(Array.isArray(tasks) ? tasks.map((t: any) => t.id) : []);
+          const oldIds = new Set(oldTasks.map((t) => t.id));
+          const newIds = new Set(Array.isArray(tasks) ? tasks.map((t) => t.id) : []);
           const hasChanges = oldTasks.length !== (Array.isArray(tasks) ? tasks.length : 0) ||
-            (Array.isArray(tasks) && tasks.some((t: any) => !oldIds.has(t.id))) ||
-            oldTasks.some((t: any) => !newIds.has(t.id));
+            (Array.isArray(tasks) && tasks.some((t) => !oldIds.has(t.id))) ||
+            oldTasks.some((t) => !newIds.has(t.id));
 
           if (hasChanges) {
             this.upsertTasks(key, Array.isArray(tasks) ? tasks : []);
@@ -504,7 +526,7 @@ export default class TodoistBoardPlugin extends Plugin {
     this.deleteTaskEverywhere(String(taskId));
 
     // Re-render all visible boards so every filter reflects the change
-    const boards = Array.from(activeDocument.querySelectorAll(".todoist-board.plugin-view")) as HTMLElement[];
+    const boards = Array.from(activeDocument.querySelectorAll<HTMLElement>(".todoist-board.plugin-view"));
     boards.forEach((board) => {
       const f = board.getAttribute("data-current-filter") || "today";
       const tasks = this.getViewTasks(f);
@@ -516,7 +538,7 @@ export default class TodoistBoardPlugin extends Plugin {
       const selected = board.querySelector(".todoist-card.selected");
       if (selected) selected.classList.remove("selected");
       // update badge in this toolbar
-      const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`) as HTMLElement | null;
+      const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`);
       if (badge) badge.textContent = this.formatFilterCount(tasks.length, Boolean(this.filterNextCursor[f]));
     });
     this.refreshAllInlineBoards();
@@ -525,7 +547,10 @@ export default class TodoistBoardPlugin extends Plugin {
   private async openTodoistBoardInRightSidebar() {
     const existingLeaf = this.app.workspace
       .getLeavesOfType(TODOIST_BOARD_VIEW_TYPE)
-      .find((leaf) => (leaf.getRoot() as any)?.containerEl?.hasClass("mod-right-split"));
+      .find((leaf) => {
+        const root = leaf.getRoot() as unknown as RootWithContainer;
+        return root.containerEl?.hasClass?.("mod-right-split") === true;
+      });
 
     const rightLeaf =
       existingLeaf ||
@@ -679,7 +704,7 @@ export default class TodoistBoardPlugin extends Plugin {
           }
           if (!Array.isArray(this.labelCache) || this.labelCache.length === 0) {
             const labs = cachedMetadata.labels;
-            if (Array.isArray(labs) && labs.length) this.labelCache = labs as any;
+            if (Array.isArray(labs) && labs.length) this.labelCache = labs;
           }
           // Helper for rendering with sort toolbar
           const renderWithSortToolbar = (tasks: Task[]) => {
@@ -694,7 +719,7 @@ export default class TodoistBoardPlugin extends Plugin {
             el.appendChild(filterRowWrapper);
             // Insert sort toolbar immediately after filterRowWrapper
             // --- Begin Inline Sort Toolbar ---
-            const createDiv = (opts: any = {}) => {
+            const createDiv = (opts: DivOptions = {}) => {
               const div = activeDocument.createElement("div");
               if (opts.cls) div.className = opts.cls;
               return div;
@@ -703,7 +728,7 @@ export default class TodoistBoardPlugin extends Plugin {
             const existing = el.querySelector(".inline-toolbar");
             if (existing) existing.remove();
 
-            const toolbar = createDiv("inline-toolbar");
+            const toolbar = createDiv({ cls: "inline-toolbar" });
             toolbar.classList.add("tb-flex", "tb-gap-8", "tb-mb-8");
 
             const sortButton = createDiv({ cls: "clickable-icon" });
@@ -733,7 +758,7 @@ export default class TodoistBoardPlugin extends Plugin {
               // Build fresh base from cache or fetched "tasks"
               const base: Task[] = this.getViewTasks(currentFilterKey);
 
-              const { mode, viewTasks, projects, labels } = this.buildRenderInput(base, el as HTMLElement, currentFilterKey);
+              const { mode, viewTasks, projects, labels } = this.buildRenderInput(base, el, currentFilterKey);
 
               // Render tasks
               const listWrapper = activeDocument.createElement("div");
@@ -747,7 +772,7 @@ export default class TodoistBoardPlugin extends Plugin {
               }
 
               this.projectMap.clear();
-              for (const p of (projects || [])) this.projectMap.set(String((p as any).id), p);
+              for (const p of (projects || [])) this.projectMap.set(String(p.id), p);
 
               void this.renderTaskList(
                 listWrapper,
@@ -842,8 +867,9 @@ export default class TodoistBoardPlugin extends Plugin {
                     render();
                   })
                 );
-                if (event.instanceOf(MouseEvent) && typeof (menu as any).showAtMouseEvent === "function") {
-                  (menu as any).showAtMouseEvent(event);
+                const menuWithMouse = menu as MenuWithMouseEvent;
+                if (event.instanceOf(MouseEvent) && typeof menuWithMouse.showAtMouseEvent === "function") {
+                  menuWithMouse.showAtMouseEvent(event);
                 } else {
                   const r = sortButton.getBoundingClientRect();
                   menu.showAtPosition({ x: r.left, y: r.bottom });
@@ -893,9 +919,9 @@ export default class TodoistBoardPlugin extends Plugin {
                 const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
                 // Build the current view using the same sorter as the renderer
                 const base = this.getViewTasks(currentFilterKey);
-                const { viewTasks } = this.buildRenderInput(base, el as HTMLElement, currentFilterKey);
+                const { viewTasks } = this.buildRenderInput(base, el, currentFilterKey);
 
-                const lines = (viewTasks as any[]).map((t: any) => {
+                const lines = viewTasks.map((t) => {
                   const title = String(t?.content || "").trim();
                   return `- [ ] ${title}`;
                 });
@@ -983,7 +1009,7 @@ export default class TodoistBoardPlugin extends Plugin {
           if (!storedTasks.length && !navigator.onLine) {
             const fallback = this.getViewTasks(filterKey);
             if (Array.isArray(fallback) && fallback.length) {
-              cachedTasks = fallback as Task[];
+              cachedTasks = fallback;
               this.upsertTasks(filterKey, cachedTasks, { silentSidebar: true, preferExisting: true });
               renderWithSortToolbar(cachedTasks);
             }
@@ -992,7 +1018,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
           if (storedTasks.length) {
             try {
-              cachedTasks = storedTasks as Task[];
+              cachedTasks = storedTasks;
               this.dbg("📦 Cached tasks for", filterKey, ":", cachedTasks);
               if (Array.isArray(cachedTasks)) {
                 this.upsertTasks(filterKey, cachedTasks, { silentSidebar: true, preferExisting: true });
@@ -1005,7 +1031,7 @@ export default class TodoistBoardPlugin extends Plugin {
                   this.renderTodoistBoard(
                     el,
                     `filter: ${filterKey}`,
-                    sourcePath,
+                    { sourcePath },
                     this.settings.apiKey,
                     {
                       tasks: cachedTasks,
@@ -1040,7 +1066,7 @@ export default class TodoistBoardPlugin extends Plugin {
                       this.renderTodoistBoard(
                         el,
                         `filter: ${filterKey}`,
-                        sourcePath,
+                        { sourcePath },
                         this.settings.apiKey,
                         {
                           tasks,
@@ -1064,15 +1090,17 @@ export default class TodoistBoardPlugin extends Plugin {
       // this.setupDoubleTapPrevention();
 
       // Ensure onLayoutReady is called with the correct `this` context (fixes TS/Rollup warning):
-      window.setTimeout(this.onLayoutReady.bind(this), 1);
+      window.setTimeout(() => {
+        void this.onLayoutReady();
+      }, 1);
 
       // (Removed polling-based initial render block; handled in TodoistBoardView.onOpen)
 
-      this.registerDomEvent(activeDocument, "click", this._globalClickListener as any);
+      this.registerDomEvent(activeDocument, "click", this._globalClickListener);
 
       // Start polling for task changes after initial rendering and setup
       this.stopTaskPolling?.();
-      this.stopTaskPolling = startTaskPolling(this as any);
+      this.stopTaskPolling = startTaskPolling(this);
     })();
   }
 
@@ -1158,13 +1186,20 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // ======================= 🧱 Board Renderer =======================
-  async render(...args: any[]) {
+  async render(
+    container?: HTMLElement,
+    source = "",
+    ctx: RenderContext = {},
+    apiKey = this.settings.apiKey,
+    initialData?: RenderData,
+  ) {
+    if (!container) return;
     // --- Ensure projectMap is rebuilt from projectCache at the beginning ---
     this.projectMap.clear();
     this.projectCache.forEach((p) => this.projectMap.set(p.id, p));
     // Ensure due time is included in fetched tasks by passing as_time: true
     // no-op fetch removed to avoid extra network calls per render
-    this.renderTodoistBoard(...(args ?? []));
+    this.renderTodoistBoard(container, source, ctx, apiKey, initialData);
   }
 
 
@@ -1173,7 +1208,7 @@ export default class TodoistBoardPlugin extends Plugin {
    * Forces re-sorting and re-rendering of the task list according to the current sort option.
    */
   rerenderTasks() {
-    const boards = Array.from(activeDocument.querySelectorAll(".todoist-board.plugin-view")) as HTMLElement[];
+    const boards = Array.from(activeDocument.querySelectorAll<HTMLElement>(".todoist-board.plugin-view"));
     boards.forEach((container) => {
       const currentFilter = container.getAttribute("data-current-filter") || "";
       const tasks = this.getViewTasks(currentFilter);
@@ -1192,15 +1227,13 @@ export default class TodoistBoardPlugin extends Plugin {
     });
   }
 
-  renderTodoistBoard(...args: any[]) {
-    // Extract parameters for backwards compatibility
-    let [
-      container,
-      source,
-      ctx,
-      apiKey,
-      initialData = { tasks: [], sections: [], projects: [], labels: [] }
-    ] = args;
+  renderTodoistBoard(
+    container: HTMLElement,
+    source = "",
+    ctx: RenderContext = {},
+    apiKey = this.settings.apiKey,
+    initialData: RenderData = { tasks: [], sections: [], projects: [], labels: [] },
+  ) {
     // If a render is in progress, queue one more pass and bail
     if (container.getAttribute("data-rendering") === "true") {
       container.setAttribute("data-render-pending", "1");
@@ -1212,8 +1245,8 @@ export default class TodoistBoardPlugin extends Plugin {
     try {
       // --- Always proceed with rendering, even if same filter and task count ---
       const currentFilter = container.getAttribute("data-current-filter") || "";
-      let tasks = [];
-      let projects: any[] = [];
+      let tasks: Task[] = [];
+      let projects: Project[] = [];
       // If initialData provided, prefer its projects; else use this.projectCache
       if (initialData && Array.isArray(initialData.projects)) {
         projects = initialData.projects;
@@ -1313,7 +1346,7 @@ export default class TodoistBoardPlugin extends Plugin {
           container.dataset.sortMode = this.getSortMode(filterKey);
         }
         const baseForView = Array.isArray(tasks) ? tasks.slice() : [];
-        const { mode, viewTasks, projects: projectsForRender, labels: labelsForRender } = this.buildRenderInput(baseForView, container as HTMLElement, filterKey);
+        const { mode, viewTasks, projects: projectsForRender, labels: labelsForRender } = this.buildRenderInput(baseForView, container, filterKey);
 
         void this.renderTaskList(listWrapper, source, apiKey, { tasks: viewTasks, projects: projectsForRender, labels: labelsForRender });
 
@@ -1410,7 +1443,7 @@ export default class TodoistBoardPlugin extends Plugin {
     return { toolbar: listToolbar, listWrapper };
   }
 
-  private getFilterOptions() {
+  private getFilterOptions(): Filter[] {
     // If you want to use the dynamically generated default filters, insert logic here.
     // However, this method is for returning the filter *list* for the toolbar, which is from settings.
     return (this.settings.filters && this.settings.filters.length > 0)
@@ -1418,22 +1451,22 @@ export default class TodoistBoardPlugin extends Plugin {
       : DEFAULT_SETTINGS.filters!;
   }
 
-  private getSourceOrDefault(source: string, filterOptions: any[]) {
+  private getSourceOrDefault(source: string, filterOptions: Filter[]) {
     return sourceOrDefault(source, filterOptions);
   }
 
   // ======================= 🛠️ Toolbar Rendering =======================
   private renderToolbar(
     toolbar: HTMLElement,
-    filterOptions: any[],
+    filterOptions: Filter[],
     source: string,
     container: HTMLElement,
-    ctx: any,
+    ctx: RenderContext,
     apiKey: string,
     listWrapper: HTMLElement
   ) {
     // Utility for div creation
-    const createDiv = (opts: any = {}) => {
+    const createDiv = (opts: DivOptions = {}) => {
       const el = activeDocument.createElement("div");
       if (opts.cls) el.className = opts.cls;
       return el;
@@ -1451,7 +1484,7 @@ export default class TodoistBoardPlugin extends Plugin {
     if (matchIdx !== -1) {
       initialIndex = matchIdx;
     } else {
-      const defaultIdx = filterOptions.findIndex((f: any) => f.isDefault);
+      const defaultIdx = filterOptions.findIndex((f) => f.isDefault);
       if (defaultIdx !== -1) initialIndex = defaultIdx;
     }
     selectedFilterIndex = initialIndex;
@@ -1464,9 +1497,9 @@ export default class TodoistBoardPlugin extends Plugin {
 
       const iconSpan = filterRow.createSpan({ cls: "filter-icon" });
       // If you have an icon name on the option, use it; else fall back.
-      try { setIcon(iconSpan, String((opt as any)?.icon ?? "filter")); } catch { }
+      try { setIcon(iconSpan, String(opt.icon ?? "filter")); } catch { }
 
-      filterRow.createSpan({ cls: "filter-title", text: String((opt as any)?.title ?? "") });
+      filterRow.createSpan({ cls: "filter-title", text: String(opt.title ?? "") });
       filterRow.setAttribute("data-filter", opt.filter);
       const iconEl = filterRow.querySelector(".filter-icon") as HTMLElement;
       setIcon(iconEl, opt.icon || "star");
@@ -1508,7 +1541,7 @@ export default class TodoistBoardPlugin extends Plugin {
         this.updateVisibleFilterBadges(container);
 
         // Update data-current-filter attribute and always force a re-render, even if the same filter is clicked again
-        const todoistBoardEl = container.closest(".todoist-board.plugin-view") as HTMLElement | null;
+        const todoistBoardEl = container.closest<HTMLElement>(".todoist-board.plugin-view");
         if (todoistBoardEl) {
           todoistBoardEl.setAttribute("data-current-filter", String(opt.filter));
           this.showFilterLoading(todoistBoardEl, String(opt.filter), this.taskStoreController.getCount(String(opt.filter)));
@@ -1616,7 +1649,8 @@ export default class TodoistBoardPlugin extends Plugin {
     modal.setLoading("Edit task");
 
     // Phase 2: hydrate without blocking first paint
-    queueMicrotask(async () => {
+    queueMicrotask(() => {
+      void (async () => {
       let task = this.taskStore[String(taskId)];
 
       // background refresh (don’t await)
@@ -1625,32 +1659,32 @@ export default class TodoistBoardPlugin extends Plugin {
           const live = await this.taskActions.getTask(taskId);
           if (live && live.id) {
             // Use live copy for modal fields, but do not overwrite store here to avoid clobbering edits
-            task = live as any;
+            task = live;
           }
         } catch { }
       })();
 
       const fields = {
         title: String(task?.content ?? ""),
-        description: String((task as any)?.description ?? ""),
+        description: String(task?.description ?? ""),
         due: (() => {
-          const d = (task as any)?.due;
+          const d = task?.due;
           if (!d) return "";
           // Prefer date; if only datetime exists, use YYYY-MM-DD for the <input type="date">
           if (d?.date) return String(d.date);
           if (d?.datetime) return String(d.datetime).slice(0, 10);
           return "";
         })(),
-        deadline: String((task as any)?.deadline?.date ?? ""),
-        priority: Number((task as any)?.priority ?? 1) || 1,
-        projectId: String((task as any)?.projectId ?? ""),
+        deadline: String(task?.deadline?.date ?? ""),
+        priority: Number(task?.priority ?? 1) || 1,
+        projectId: String(task?.projectId ?? ""),
         // Normalize labels to names; SDK expects array of label NAMES (not ids)
         labels: (() => {
-          const raw = (task as any)?.labels;
+          const raw = task?.labels;
           if (!Array.isArray(raw)) return [] as string[];
-          return raw.map((lab: any) => {
+          return raw.map((lab) => {
             if (typeof lab === "string") return lab; // already a name
-            const hit = (this.labelCache || []).find((l: any) => String(l.id) === String(lab) || String(l.name) === String(lab));
+            const hit = (this.labelCache || []).find((l) => String(l.id) === String(lab) || String(l.name) === String(lab));
             return String(hit?.name ?? lab);
           });
         })()
@@ -1668,33 +1702,33 @@ export default class TodoistBoardPlugin extends Plugin {
 
           try {
             // 1) Move first if project changed (server truth)
-            const prevProjectIdStr = String((prevProjectId ?? (task as any)?.projectId ?? "")).trim();
+            const prevProjectIdStr = String((prevProjectId ?? task?.projectId ?? "")).trim();
             const targetProjectIdStr = String((targetProjectId ?? "")).trim();
             if (targetProjectIdStr && targetProjectIdStr !== prevProjectIdStr) {
               if (this.settings?.enableLogs) {
                 this.info("[Todoist Board] moving task", String(id), "from", prevProjectIdStr, "to", targetProjectIdStr);
               }
 
-              let moved: any = null;
+              let moved: Task | null = null;
 
               moved = await this.taskActions.moveTask(String(id), targetProjectIdStr);
 
               // Keep local store consistent immediately (preserve camelCase shape expected by renderer)
               {
-                const local = (this.taskStore[String(id)] ?? (task as any)) || {};
+                const local: Task = (this.taskStore[String(id)] ?? task ?? { id: String(id), content: "" });
 
-                const movedProjectId = (moved && (moved.projectId ?? moved.project_id)) ?? targetProjectIdStr;
-                const movedParentId = moved ? (moved.parentId ?? moved.parent_id ?? undefined) : undefined;
-                const movedSectionId = moved ? (moved.sectionId ?? moved.section_id ?? undefined) : undefined;
+                const movedProjectId = moved?.projectId ?? targetProjectIdStr;
+                const movedParentId = moved ? moved.parentId : undefined;
+                const movedSectionId = moved ? moved.sectionId : undefined;
 
-                (local as any).projectId = String(movedProjectId || "");
-                if (movedParentId !== undefined) (local as any).parentId = movedParentId ? String(movedParentId) : null;
-                if (movedSectionId !== undefined) (local as any).sectionId = movedSectionId ? String(movedSectionId) : null;
+                local.projectId = String(movedProjectId || "");
+                if (movedParentId !== undefined) local.parentId = movedParentId ? String(movedParentId) : null;
+                if (movedSectionId !== undefined) local.sectionId = movedSectionId ? String(movedSectionId) : null;
 
                 this.taskStore[String(id)] = local;
               }
               if (this.settings?.enableLogs) {
-                this.info("[Todoist Board] moved task locally → projectId:", (this.taskStore[String(id)] as any)?.projectId);
+                this.info("[Todoist Board] moved task locally → projectId:", this.taskStore[String(id)]?.projectId);
               }
 
               // Make sure the destination project exists in caches (prevents blank project pill)
@@ -1703,10 +1737,10 @@ export default class TodoistBoardPlugin extends Plugin {
                   const dest = await this.taskActions.getProject(targetProjectIdStr);
                   if (dest) {
                     if (!Array.isArray(this.projectCache)) this.projectCache = [];
-                    const idx = this.projectCache.findIndex((p: any) => String(p.id) === String(dest.id));
-                    if (idx >= 0) this.projectCache[idx] = dest as any;
-                    else this.projectCache.push(dest as any);
-                    this.projectMap.set(String(dest.id), dest as any);
+                    const idx = this.projectCache.findIndex((p) => String(p.id) === String(dest.id));
+                    if (idx >= 0) this.projectCache[idx] = dest;
+                    else this.projectCache.push(dest);
+                    this.projectMap.set(String(dest.id), dest);
                   }
                 } catch {
                 }
@@ -1718,10 +1752,10 @@ export default class TodoistBoardPlugin extends Plugin {
                   const dest = await this.taskActions.getProject(targetProjectId);
                   if (dest) {
                     if (!Array.isArray(this.projectCache)) this.projectCache = [];
-                    const idx = this.projectCache.findIndex((p: any) => String(p.id) === String(dest.id));
-                    if (idx >= 0) this.projectCache[idx] = dest as any;
-                    else this.projectCache.push(dest as any);
-                    this.projectMap.set(String(dest.id), dest as any);
+                    const idx = this.projectCache.findIndex((p) => String(p.id) === String(dest.id));
+                    if (idx >= 0) this.projectCache[idx] = dest;
+                    else this.projectCache.push(dest);
+                    this.projectMap.set(String(dest.id), dest);
                   }
                 } catch {
                 }
@@ -1742,7 +1776,7 @@ export default class TodoistBoardPlugin extends Plugin {
             // 3) Re-fetch fresh server copy, then update UI
             const fresh = await this.taskActions.getTask(id);
             if (fresh) {
-              this.taskStore[id] = fresh as any;
+              this.taskStore[id] = fresh;
             }
 
             // Re-render boards
@@ -1764,13 +1798,14 @@ export default class TodoistBoardPlugin extends Plugin {
       window.requestAnimationFrame(() => modal.focusTitle(true));
 
       await refresh;
+      })();
     });
   }
 
   // --- Add Task Modal ---
   async openAddTaskModal() {
     this.ensureRefactoredRuntime(this.settings.apiKey);
-    const inboxId = this.projectCache?.find((p: any) => p.name === "Inbox")?.id;
+    const inboxId = this.projectCache?.find((p) => p.name === "Inbox")?.id;
 
     const modal = new TaskSheetModal(this.app, {
       title: "Add task",
@@ -1812,22 +1847,12 @@ export default class TodoistBoardPlugin extends Plugin {
     if (!Array.isArray(this.projectCache) || !this.projectCache.length || !Array.isArray(this.labelCache) || !this.labelCache.length) {
       window.setTimeout(() => {
         void this.fetchMetadataFromSync(this.settings.apiKey).then(metadata => {
-          const rawProjects: Project[] | { results: Project[] } = metadata.projects;
-          this.projectCache = Array.isArray(rawProjects)
-            ? rawProjects
-            : Array.isArray((rawProjects as any)?.results)
-              ? (rawProjects as any).results
-              : [];
+          const rawProjects = metadata.projects;
+          this.projectCache = Array.isArray(rawProjects) ? rawProjects : [];
           if (!Array.isArray(this.projectCache)) this.projectCache = [];
 
           const rawLabels = metadata.labels;
-          if (Array.isArray(rawLabels)) {
-            this.labelCache = rawLabels;
-          } else if (rawLabels && Array.isArray((rawLabels as any).results)) {
-            this.labelCache = (rawLabels as any).results;
-          } else {
-            this.labelCache = [];
-          }
+          this.labelCache = Array.isArray(rawLabels) ? rawLabels : [];
 
           this.projectCacheTimestamp = Date.now();
           this.labelCacheTimestamp = Date.now();
@@ -1841,7 +1866,7 @@ export default class TodoistBoardPlugin extends Plugin {
               due: "",
               deadline: "",
               priority: 1,
-              projectId: this.projectCache?.find((p: any) => p.name === "Inbox")?.id || inboxId || undefined,
+              projectId: this.projectCache?.find((p) => p.name === "Inbox")?.id || inboxId || undefined,
               labels: [],
             },
           });
@@ -1855,7 +1880,7 @@ export default class TodoistBoardPlugin extends Plugin {
   // The createFilterGroup function is now unused in the new filter bar implementation.
 
   // ======================= 🔄 Filter Click Handling =======================
-  private async handleFilterClick(opt: any, container: HTMLElement, ctx: any, apiKey: string) {
+  private async handleFilterClick(opt: Filter, container: HTMLElement, ctx: RenderContext, apiKey: string) {
     const now = Date.now();
     // --- Render token logic to ensure only latest filter click is processed ---
     const renderToken = Date.now().toString();
@@ -1931,7 +1956,7 @@ export default class TodoistBoardPlugin extends Plugin {
     return queueWrapper;
   }
 
-  private createSettingsRefreshButtons(container: HTMLElement, source: string, ctx: any, apiKey: string) {
+  private createSettingsRefreshButtons(container: HTMLElement, source: string, ctx: RenderContext, apiKey: string) {
     // Create a hamburger menu button
     const menuBtn = activeDocument.createElement("button");
     setIcon(menuBtn, "menu");
@@ -2010,7 +2035,7 @@ export default class TodoistBoardPlugin extends Plugin {
         this.projectCacheTimestamp = Date.now();
         this.labelCacheTimestamp = Date.now();
         const currentFilterStr = `filter: ${currentFilter}`;
-        this.renderTodoistBoard(container, currentFilterStr, currentFilterStr, this.settings.apiKey);
+        this.renderTodoistBoard(container, currentFilterStr, { source: currentFilterStr }, this.settings.apiKey);
       }
     };
     // Use append() instead of textContent to avoid overwriting icon
@@ -2151,7 +2176,7 @@ export default class TodoistBoardPlugin extends Plugin {
     return settingsRefreshWrapper;
   }
 
-  private createRefreshButton(container: HTMLElement, source: string, ctx: any, apiKey: string) {
+  private createRefreshButton(container: HTMLElement, source: string, ctx: RenderContext, apiKey: string) {
     const refreshBtn = activeDocument.createElement("button");
     refreshBtn.type = "button";
     setIcon(refreshBtn, "refresh-cw");
@@ -2164,13 +2189,15 @@ export default class TodoistBoardPlugin extends Plugin {
         const selectedRow = activeDocument.querySelector(".filter-row.selected") as HTMLElement;
         selectedRow?.classList.add("syncing");
 
-        window.requestAnimationFrame(async () => {
+        window.requestAnimationFrame(() => {
+          void (async () => {
           await this.preloadFilters();
           window.setTimeout(() => {
             refreshBtn.classList.remove("syncing");
             selectedRow?.classList.remove("syncing");
             this.renderTodoistBoard(container, source, ctx, apiKey);
           }, 4000); // Delay to allow animation to register
+          })();
         });
       });
     };
@@ -2315,10 +2342,10 @@ export default class TodoistBoardPlugin extends Plugin {
   private appendSubtaskRows(
     parentRow: HTMLElement,
     subtasks: Task[],
-    projectMap: Record<string, any>,
-    labelMap: Record<string, any>,
-    labelColorMap: Record<string, any>,
-    projects: any[],
+    projectMap: Record<string, string>,
+    labelMap: Record<string, string>,
+    labelColorMap: Record<string, string>,
+    projects: Project[],
     apiKey: string,
     listWrapper: HTMLElement,
     filters: string[],
@@ -2351,10 +2378,10 @@ export default class TodoistBoardPlugin extends Plugin {
   private renderTaskRowsWithSubtasks(
     listWrapper: HTMLElement,
     taskList: Task[],
-    projectMap: Record<string, any>,
-    labelMap: Record<string, any>,
-    labelColorMap: Record<string, any>,
-    projects: any[],
+    projectMap: Record<string, string>,
+    labelMap: Record<string, string>,
+    labelColorMap: Record<string, string>,
+    projects: Project[],
     apiKey: string,
     filters: string[],
   ) {
@@ -2401,7 +2428,12 @@ export default class TodoistBoardPlugin extends Plugin {
     });
   }
 
-  private async renderTaskList(listWrapper: HTMLElement, source: string, apiKey: string, preloadData?: { tasks: any[]; projects: any[]; labels: any[] }) {
+  private async renderTaskList(
+    listWrapper: HTMLElement,
+    source: string,
+    apiKey: string,
+    preloadData?: { tasks: Task[]; projects: Project[]; labels: Label[] },
+  ) {
     const match = source.match(/filter:\s*(.*)/);
     const filters = match
       ? match[1].split(",").map(f => f.trim())
@@ -2418,15 +2450,15 @@ export default class TodoistBoardPlugin extends Plugin {
       // Ensure projects and labels are arrays
       const projectList: Project[] = Array.isArray(projects) ? projects : [];
       const labelList: Label[] = Array.isArray(labels) ? labels : [];
-      const projectMap = Object.fromEntries(projectList.map((p: Project) => [p.id, p.name]));
-      const labelMap = Object.fromEntries((labelList ?? []).map((l: Label) => [l.id, l.name]));
-      const labelColorMap = Object.fromEntries((labelList ?? []).map((l: Label) => [l.id, l.color]));
+      const projectMap: Record<string, string> = Object.fromEntries(projectList.map((p) => [p.id, p.name]));
+      const labelMap: Record<string, string> = Object.fromEntries((labelList ?? []).map((l) => [l.id, l.name]));
+      const labelColorMap: Record<string, string> = Object.fromEntries((labelList ?? []).map((l) => [l.id, String(l.color ?? "")]));
 
       this.ensureRefactoredRuntime(this.settings.apiKey);
       const orderKey = filters.join(",");
       const savedOrder = this.storage.getManualOrder(orderKey);
 
-      tasks.sort((a: any, b: any) => {
+      tasks.sort((a, b) => {
         const idxA = savedOrder.indexOf(a.id);
         const idxB = savedOrder.indexOf(b.id);
         return (idxA === -1 ? Number.MAX_SAFE_INTEGER : idxA) -
@@ -2468,9 +2500,9 @@ export default class TodoistBoardPlugin extends Plugin {
     const now = Date.now();
     const cacheTTL = 24 * 60 * 60 * 1000;
 
-    let projects: any[] = [];
-    let labels: any[] = [];
-    let metadata: { projects: any[], sections: any[], labels: any[] };
+    let projects: Project[] = [];
+    let labels: Label[] = [];
+    let metadata: { projects: Project[]; sections: GetSectionsResponse[]; labels: Label[] };
 
     const metadataCacheTTL = 24 * 60 * 60 * 1000;
     const metadataTimestamp = this.projectCacheTimestamp;
@@ -2490,7 +2522,7 @@ export default class TodoistBoardPlugin extends Plugin {
       this.labelCacheTimestamp = now;
     }
 
-    let tasks: any[] = [];
+    let tasks: Task[] = [];
     const filter = filters[0];
     const taskTimestamp = this.taskCacheTimestamps[filter] || 0;
     const cachedForFilter = this.getViewTasks(filter);
@@ -2506,20 +2538,20 @@ export default class TodoistBoardPlugin extends Plugin {
         tasksResponse = await this.fetchFilteredTasksFromREST(apiKey, query);
       } else {
         // fallback to all tasks
-        tasksResponse = await this.fetchFilteredTasksFromREST(apiKey, {});
+        tasksResponse = await this.fetchFilteredTasksFromREST(apiKey, "today");
       }
-      tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
+      tasks = tasksResponse.results ?? [];
       this.upsertTasks(filter, Array.isArray(tasks) ? tasks : [], { silentSidebar: true });
     }
 
-    const projectMap = Array.isArray(projects)
-      ? Object.fromEntries((projects as Project[]).map((p: Project) => [p.id, p.name]))
+    const projectMap: Record<string, string> = Array.isArray(projects)
+      ? Object.fromEntries(projects.map((p) => [p.id, p.name]))
       : {};
-    const labelMap = Array.isArray(labels)
-      ? Object.fromEntries(((labels ?? []) as Label[]).map((l: Label) => [l.id, l.name]))
+    const labelMap: Record<string, string> = Array.isArray(labels)
+      ? Object.fromEntries((labels ?? []).map((l) => [l.id, l.name]))
       : {};
-    const labelColorMap = Array.isArray(labels)
-      ? Object.fromEntries(((labels ?? []) as Label[]).map((l: Label) => [l.id, l.color]))
+    const labelColorMap: Record<string, string> = Array.isArray(labels)
+      ? Object.fromEntries((labels ?? []).map((l) => [l.id, String(l.color ?? "")]))
       : {};
 
     this.ensureRefactoredRuntime(this.settings.apiKey);
@@ -2575,11 +2607,11 @@ export default class TodoistBoardPlugin extends Plugin {
 
   // ======================= 🧩 Task Row Creation =======================
   private createTaskRow(
-    task: any,
-    projectMap: Record<string, any>,
-    labelMap: Record<string, any>,
-    labelColorMap: Record<string, any>,
-    projects: any[],
+    task: Task,
+    projectMap: Record<string, string>,
+    labelMap: Record<string, string>,
+    labelColorMap: Record<string, string>,
+    projects: Project[],
     apiKey: string,
     listWrapper: HTMLElement,
     filters: string[]
@@ -2598,7 +2630,7 @@ export default class TodoistBoardPlugin extends Plugin {
     row.style.setProperty("--project-color", getProjectHexColor(task, projects));
 
     // Add "parent-task" class if task has children (by parentId) ---
-    const hasChildren = Object.values(this.taskStore).some((candidate: any) => candidate?.parentId === task.id);
+    const hasChildren = Object.values(this.taskStore).some((candidate) => candidate?.parentId === task.id);
     if (hasChildren) {
       row.classList.add("parent-task");
     }
@@ -2735,7 +2767,7 @@ export default class TodoistBoardPlugin extends Plugin {
     } else {
       this.setupTaskInteractions(row, task, taskInner, apiKey, listWrapper, filters);
 
-      const rowCheckbox = this.createPriorityCheckbox(task.priority, async () => {
+      const rowCheckbox = this.createPriorityCheckbox(task.priority ?? 1, async () => {
         if (rowCheckbox.checked) {
           await this.completeTask(task.id);
           const taskRow = activeDocument.getElementById(task.id);
@@ -2771,7 +2803,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
   private setupTaskInteractions(
     row: HTMLElement,
-    task: any,
+    task: Task,
     taskInner: HTMLElement,
     apiKey: string,
     listWrapper: HTMLElement,
@@ -2825,7 +2857,7 @@ export default class TodoistBoardPlugin extends Plugin {
     this.setupTaskDragAndDrop(row, listWrapper, filters);
   }
 
-  private handleTaskSelection(row: HTMLElement, task: any, apiKey: string, event?: Event) {
+  private handleTaskSelection(row: HTMLElement, task: Task, apiKey: string, event?: Event) {
     // If the event originated from within a subtask-row, skip parent selection/deselection
     if (event) {
       const target = event.target as HTMLElement;
@@ -2901,7 +2933,7 @@ export default class TodoistBoardPlugin extends Plugin {
   // ======================= ✴️ Task Selection Logic =======================
   private selectTask(
     row: HTMLElement,
-    task: any,
+    task: Task,
     titleSpan: HTMLElement,
     rowCheckbox: HTMLElement,
     metaSpan: HTMLElement,
@@ -2945,7 +2977,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // ======================= 🧰 Mini Toolbar =======================
-  private createMiniToolbar(row: HTMLElement, task: any, apiKey: string) {
+  private createMiniToolbar(row: HTMLElement, task: Task, apiKey: string) {
     const oldWrapper = activeDocument.getElementById("mini-toolbar-wrapper");
     const previousRow = oldWrapper?.closest(".task");
     if (previousRow instanceof HTMLElement) previousRow.classList.remove("has-fixed-chin");
@@ -3032,7 +3064,7 @@ export default class TodoistBoardPlugin extends Plugin {
         const hideBtn = appendChinButton("task-hide-btn", hidden.has(id) ? "eye-off" : "eye", "", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const node = (e.currentTarget as HTMLElement)?.closest('[data-task-id], [data-id]') as HTMLElement | null;
+          const node = (e.currentTarget as HTMLElement)?.closest<HTMLElement>('[data-task-id], [data-id]');
           const set = this.storageRepository.getHiddenSet();
           if (set.has(id)) {
             set.delete(id);
@@ -3073,15 +3105,16 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // ======================= Edit Task Modal =======================
-  openEditTaskModal(task: any, row: HTMLElement, filters: string[]) {
+  openEditTaskModal(task: Task, row: HTMLElement, filters: string[]) {
     void this.openEditTaskModalAsync(task, row, filters);
   }
 
   // ======================= 📆 Quick Actions (Today, Tmrw, Delete) =======================
   private async setTaskToToday(taskId: string, apiKey: string, toolbar: HTMLElement, btn: HTMLElement) {
-    if ((btn as any)?._busy) return;
+    const busyButton = btn as BusyHTMLElement;
+    if (busyButton._busy) return;
 
-    (btn as any)._busy = true;
+    busyButton._busy = true;
     const oldText = btn.innerText;
     btn.innerText = "⏳";
 
@@ -3108,7 +3141,7 @@ export default class TodoistBoardPlugin extends Plugin {
       new Notice("Could not update task");
     } finally {
       window.setTimeout(() => {
-        (btn as any)._busy = false;
+        busyButton._busy = false;
         btn.innerText = oldText;
       }, 900);
     }
@@ -3116,9 +3149,10 @@ export default class TodoistBoardPlugin extends Plugin {
 
   private async deferTask(taskId: string, apiKey: string, toolbar: HTMLElement) {
     const btn = toolbar.querySelector('.tomorrow-btn') as HTMLElement;
-    if ((btn as any)._busy) return;
+    const busyButton = btn as BusyHTMLElement;
+    if (busyButton._busy) return;
 
-    (btn as any)._busy = true;
+    busyButton._busy = true;
     const oldText = btn.innerText;
     btn.innerText = "⏳";
 
@@ -3148,7 +3182,7 @@ export default class TodoistBoardPlugin extends Plugin {
       new Notice("Could not update task");
     } finally {
       window.setTimeout(() => {
-        (btn as any)._busy = false;
+        busyButton._busy = false;
         btn.innerText = oldText;
       }, 900);
     }
@@ -3174,9 +3208,10 @@ export default class TodoistBoardPlugin extends Plugin {
     if (!(await this.confirmDeleteTask())) return;
 
     const btn = toolbar.querySelector('.delete-btn') as HTMLElement;
-    if ((btn as any)._busy) return;
+    const busyButton = btn as BusyHTMLElement;
+    if (busyButton._busy) return;
 
-    (btn as any)._busy = true;
+    busyButton._busy = true;
     btn.innerText = "⏳";
 
     try {
@@ -3201,7 +3236,7 @@ export default class TodoistBoardPlugin extends Plugin {
       new Notice("Could not delete task");
     } finally {
       window.setTimeout(() => {
-        (btn as any)._busy = false;
+        busyButton._busy = false;
         btn.innerText = "🗑";
       }, 900);
     }
@@ -3230,7 +3265,7 @@ export default class TodoistBoardPlugin extends Plugin {
     }
   }
 
-  private createTaskDeadline(task: any): HTMLElement {
+  private createTaskDeadline(task: Task): HTMLElement {
     const right = activeDocument.createElement("div");
     right.className = "task-deadline";
 
@@ -3542,15 +3577,16 @@ export default class TodoistBoardPlugin extends Plugin {
       checkbox.closest<HTMLElement>(".todoist-card") ||
       checkbox.closest<HTMLElement>(".task") ||
       checkbox.closest<HTMLElement>(".task-row") ||
-      (checkbox.parentElement as HTMLElement | null);
+      (checkbox.parentElement);
 
     if (rowEl) rowEl.style.setProperty("--prio-color", rowPrioColor);
 
     // Prevent task selection when clicking checkbox
-    checkbox.addEventListener("click", async (e) => {
+    checkbox.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevents selecting the task when checking
     });
-    checkbox.addEventListener("change", async () => {
+    checkbox.addEventListener("change", () => {
+      void (async () => {
       // Find the row (task container)
       const row = checkbox.closest('.task');
       await onChange();
@@ -3569,6 +3605,7 @@ export default class TodoistBoardPlugin extends Plugin {
         }, 300);
         window.setTimeout(() => rowEl.classList.remove("task-checked-anim"), 200);
       }
+      })();
     });
     return checkbox;
   }
@@ -3579,7 +3616,7 @@ export default class TodoistBoardPlugin extends Plugin {
     rows.forEach((r, i) => {
       const titleSpan = r.querySelector(
         ":scope > .task-scroll-wrapper > .task-inner > .task-content > .task-content-wrapper > .task-title",
-      ) as HTMLElement | null;
+      );
       if (!titleSpan) return;
 
       if (active) {

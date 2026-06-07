@@ -65,7 +65,7 @@ export function openFilterSettingsModal(options: FilterSettingsModalOptions) {
     const tbody = table.createEl("tbody");
 
     const renderFilterRow = (filter: ToolbarFilter, index: number) => {
-      const currentFilter = settings.filters![index] as ToolbarFilter;
+      const currentFilter = settings.filters![index];
       const row = tbody.createEl("tr");
       row.dataset.index = String(index);
 
@@ -77,7 +77,7 @@ export function openFilterSettingsModal(options: FilterSettingsModalOptions) {
       renderDeleteButton(row, index, settings, renderSettingsUI);
     };
 
-    settings.filters!.forEach((filter, index) => renderFilterRow(filter as ToolbarFilter, index));
+    settings.filters!.forEach((filter, index) => renderFilterRow(filter, index));
 
     const footer = container.createEl("div", { cls: "settings-filter-footer" });
     const addRow = footer.createEl("div", { cls: "settings-action-row" });
@@ -276,7 +276,7 @@ function renderDefaultToggle(
 ) {
   const defaultCell = row.createEl("td", { cls: "settings-default-cell" });
   const defaultLabel = defaultCell.createEl("label", { cls: "settings-default-toggle" });
-  const defaultInput = defaultLabel.createEl("input", { type: "radio" }) as HTMLInputElement;
+  const defaultInput = defaultLabel.createEl("input", { type: "radio" });
   defaultInput.name = "default-filter";
   defaultInput.checked = !!filter.isDefault;
   defaultLabel.classList.toggle("is-checked", defaultInput.checked);
@@ -315,10 +315,6 @@ function readFilterInputs(modal: Modal, settings: TodoistBoardSettings) {
     const filterInput = row.querySelector("td:nth-child(4) input");
     if (!filterInput) return;
     const value = (filterInput as HTMLInputElement).value.trim();
-    try {
-      settings.filters![index].filter = JSON.parse(value);
-    } catch {
-      settings.filters![index].filter = value;
-    }
+    settings.filters![index].filter = value;
   });
 }

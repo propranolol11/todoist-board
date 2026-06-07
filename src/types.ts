@@ -6,7 +6,14 @@ export interface TodoistDue {
   is_recurring?: boolean;
   timezone?: string;
   lang?: string;
-  [key: string]: any;
+  time?: string;
+  [key: string]: unknown;
+}
+
+export interface TodoistDeadline {
+  date?: string;
+  datetime?: string;
+  [key: string]: unknown;
 }
 
 export interface TodoistTask {
@@ -20,6 +27,7 @@ export interface TodoistTask {
   labels?: string[];
   priority?: number;
   due?: TodoistDue | null;
+  deadline?: TodoistDeadline | null;
   url?: string;
   commentCount?: number;
   creatorId?: string;
@@ -39,7 +47,7 @@ export interface TodoistTask {
   childOrder?: number;
   dayOrder?: number;
   noteCount?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type Task = TodoistTask;
@@ -66,7 +74,7 @@ export interface Project {
   updatedAt?: string;
   viewStyle?: string;
   url?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface Label {
@@ -75,7 +83,7 @@ export interface Label {
   color?: string | number;
   order?: number;
   isFavorite?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TodoistSection {
@@ -90,7 +98,7 @@ export interface TodoistSection {
   addedAt?: string;
   updatedAt?: string;
   archivedAt?: string | null;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type GetSectionsResponse = TodoistSection;

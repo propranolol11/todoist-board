@@ -229,14 +229,14 @@ export class TaskSheetModal extends Modal {
       cls: "taskmodal-title-input",
       type: "text",
       value: fields.title ?? "",
-    }) as HTMLInputElement;
+    });
     titleInput.placeholder = "Task name";
     this.titleInput = titleInput;
 
     const descriptionField = wrapper.createDiv({ cls: "taskmodal-description-field" });
     const descriptionInput = descriptionField.createEl("textarea", {
       cls: "taskmodal-description-input",
-    }) as HTMLTextAreaElement;
+    });
     descriptionInput.placeholder = "Description";
     descriptionInput.value = fields.description ?? "";
 
@@ -246,9 +246,9 @@ export class TaskSheetModal extends Modal {
       cls: "taskmodal-date-input taskmodal-date-chip-native",
       type: "date",
       value: fields.due ?? "",
-    }) as HTMLInputElement;
+    });
 
-    const dueChip = chipRow.createEl("button", { cls: "taskmodal-chip taskmodal-date-chip" }) as HTMLButtonElement;
+    const dueChip = chipRow.createEl("button", { cls: "taskmodal-chip taskmodal-date-chip" });
     dueChip.type = "button";
     const dueIcon = dueChip.createSpan({ cls: "taskmodal-chip-icon" });
     setIcon(dueIcon, "calendar");
@@ -284,9 +284,9 @@ export class TaskSheetModal extends Modal {
       cls: "taskmodal-date-input taskmodal-deadline-chip-native",
       type: "date",
       value: fields.deadline ?? "",
-    }) as HTMLInputElement;
+    });
 
-    const deadlineChip = chipRow.createEl("button", { cls: "taskmodal-chip taskmodal-deadline-chip" }) as HTMLButtonElement;
+    const deadlineChip = chipRow.createEl("button", { cls: "taskmodal-chip taskmodal-deadline-chip" });
     deadlineChip.type = "button";
     const deadlineIcon = deadlineChip.createSpan({ cls: "taskmodal-chip-icon" });
     setIcon(deadlineIcon, "target");
@@ -321,7 +321,7 @@ export class TaskSheetModal extends Modal {
     const priorityField = chipRow.createDiv({ cls: "taskmodal-priority-field" });
     const priorityIcon = priorityField.createSpan({ cls: "taskmodal-chip-icon taskmodal-priority-icon" });
     setIcon(priorityIcon, "flag");
-    const prioritySelect = priorityField.createEl("select", { cls: "taskmodal-priority-select" }) as HTMLSelectElement;
+    const prioritySelect = priorityField.createEl("select", { cls: "taskmodal-priority-select" });
     [
       { value: "1", label: "Priority" },
       { value: "4", label: "P1" },
@@ -342,7 +342,7 @@ export class TaskSheetModal extends Modal {
     prioritySelect.setAttribute("aria-label", priorityLabel(Number(prioritySelect.value)));
 
     const labelAnchor = chipRow.createDiv({ cls: "taskmodal-label-anchor" });
-    const labelButton = labelAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-label-chip" }) as HTMLButtonElement;
+    const labelButton = labelAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-label-chip" });
     labelButton.type = "button";
     const labelButtonIcon = labelButton.createSpan({ cls: "taskmodal-chip-icon" });
     setIcon(labelButtonIcon, "tag");
@@ -353,7 +353,7 @@ export class TaskSheetModal extends Modal {
       cls: "taskmodal-label-search",
       type: "text",
       placeholder: "Type a label",
-    }) as HTMLInputElement;
+    });
     const labelList = labelPopover.createDiv({ cls: "taskmodal-label-list" });
 
     const syncLabelChip = () => {
@@ -364,7 +364,7 @@ export class TaskSheetModal extends Modal {
 
     for (const label of Array.isArray(labels) ? labels : []) {
       const labelCheckbox = labelList.createEl("label", { cls: "taskmodal-label-option" });
-      const checkbox = labelCheckbox.createEl("input", { type: "checkbox" }) as HTMLInputElement;
+      const checkbox = labelCheckbox.createEl("input", { type: "checkbox" });
       checkbox.value = label.name;
       checkbox.checked = Array.isArray(fields.labels) && fields.labels.includes(label.name);
       labelCheckbox.classList.toggle("is-selected", checkbox.checked);
@@ -412,7 +412,7 @@ export class TaskSheetModal extends Modal {
     const projectName = projectVisible.createSpan({ cls: "taskmodal-project-name" });
     const projectChevron = projectVisible.createSpan({ cls: "taskmodal-project-chevron" });
     setIcon(projectChevron, "chevron-down");
-    const projectSelect = projectField.createEl("select", { cls: "taskmodal-project-select" }) as HTMLSelectElement;
+    const projectSelect = projectField.createEl("select", { cls: "taskmodal-project-select" });
     for (const project of Array.isArray(projects) ? projects : []) {
       const option = ownerDocument.createElement("option");
       option.value = String(project.id);

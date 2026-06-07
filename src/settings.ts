@@ -131,7 +131,7 @@ export const DEFAULT_SETTINGS: TodoistBoardSettings = {
 };
 
 export function normalizeSettings(saved: Partial<TodoistBoardSettings> | null | undefined): TodoistBoardSettings {
-  const merged = Object.assign({}, DEFAULT_SETTINGS, saved || {}) as TodoistBoardSettings;
+  const merged = Object.assign({}, DEFAULT_SETTINGS, saved || {});
   if (!Array.isArray(merged.filters) || merged.filters.length === 0) {
     merged.filters = DEFAULT_SETTINGS.filters?.slice();
   }
