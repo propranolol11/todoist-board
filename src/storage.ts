@@ -110,8 +110,10 @@ export class TodoistBoardStorage {
 
   private saveValue(key: string, value: unknown) {
     try {
-      this.app?.saveLocalStorage?.(key, value);
-      return;
+      if (this.app?.saveLocalStorage) {
+        this.app.saveLocalStorage(key, value);
+        return;
+      }
     } catch {
       // Fall back to legacy global localStorage below.
     }
@@ -121,8 +123,10 @@ export class TodoistBoardStorage {
 
   private saveString(key: string, value: string) {
     try {
-      this.app?.saveLocalStorage?.(key, value);
-      return;
+      if (this.app?.saveLocalStorage) {
+        this.app.saveLocalStorage(key, value);
+        return;
+      }
     } catch {
       // Fall back to legacy global localStorage below.
     }
@@ -351,8 +355,10 @@ export class TodoistBoardStorage {
 
   remove(key: string) {
     try {
-      this.app?.saveLocalStorage?.(key, null);
-      return;
+      if (this.app?.saveLocalStorage) {
+        this.app.saveLocalStorage(key, null);
+        return;
+      }
     } catch {
       // Fall back to legacy global localStorage below.
     }

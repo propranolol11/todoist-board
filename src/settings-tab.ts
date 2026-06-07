@@ -1,6 +1,8 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { COMMON_TIMEZONES } from "./settings";
-import type { ContextMenuSettings, TodoistBoardSettings } from "./types";
+import type { ChinBarSettings, ContextMenuSettings, TodoistBoardSettings } from "./types";
+
+type SettingsTabId = "getting-started" | "behavior" | "actions" | "support";
 
 export interface TodoistSettingsPlugin {
   settings: TodoistBoardSettings;
@@ -10,6 +12,8 @@ export interface TodoistSettingsPlugin {
 }
 
 export class TodoistBoardSettingTab extends PluginSettingTab {
+  private activeTab: SettingsTabId = "getting-started";
+
   constructor(app: App, readonly plugin: Plugin & TodoistSettingsPlugin) {
     super(app, plugin);
   }
@@ -17,34 +21,79 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    containerEl.addClass("todoist-board-settings-tab");
 
     const pluginSettings = this.plugin.settings;
+    const shell = containerEl.createDiv({ cls: "todoist-settings-shell" });
+    const tabList = shell.createDiv({ cls: "todoist-settings-tabs" });
+    const content = shell.createDiv({ cls: "todoist-settings-panel" });
 
-    new Setting(containerEl)
-      .setName("🔑 Todoist API key")
-      .setDesc("Enter your Todoist API key to enable the plugin.")
+    const tabs: Array<{ id: SettingsTabId; label: string; icon: string }> = [
+      { id: "getting-started", label: "Start", icon: "sparkles" },
+      { id: "behavior", label: "Behavior", icon: "sliders-horizontal" },
+      { id: "actions", label: "Actions", icon: "mouse-pointer-click" },
+      { id: "support", label: "Support", icon: "heart" },
+    ];
+
+    tabs.forEach((tab) => {
+      const button = tabList.createEl("button", { cls: "todoist-settings-tab", type: "button" });
+      const icon = button.createSpan({ cls: "todoist-settings-tab-icon" });
+      setIcon(icon, tab.icon);
+      button.createSpan({ text: tab.label });
+      const selected = this.activeTab === tab.id;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-selected", String(selected));
+      button.onclick = () => {
+        this.activeTab = tab.id;
+        this.display();
+      };
+    });
+
+    if (this.activeTab === "getting-started") {
+      this.renderGettingStarted(content, pluginSettings);
+    } else if (this.activeTab === "behavior") {
+      this.renderBehavior(content, pluginSettings);
+    } else if (this.activeTab === "actions") {
+      this.renderActions(content, pluginSettings);
+    } else {
+      this.renderSupport(content);
+    }
+  }
+
+  private renderGettingStarted(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
+    this.renderPanelHeader(
+      container,
+      "Start",
+      "Connect Todoist.",
+    );
+
+    const authCard = container.createDiv({ cls: "todoist-settings-card todoist-settings-auth-card" });
+    new Setting(authCard)
+      .setName("API token")
+      .setDesc("Stored locally in this vault.")
       .addText((text) => {
         text
-          .setPlaceholder("API key")
+          .setPlaceholder("Paste API token")
           .setValue(pluginSettings.apiKey);
+        text.inputEl.type = "password";
 
-        const submitBtn = activeDocument.createElement("button");
+        const submitBtn = authCard.ownerDocument.createElement("button");
         submitBtn.textContent = "Submit";
-        submitBtn.classList.add("tb-ml-8");
+        submitBtn.classList.add("todoist-settings-submit-token");
 
-        const indicator = activeDocument.createElement("span");
-        indicator.classList.add("tb-ml-8", "tb-bold");
+        const indicator = authCard.ownerDocument.createElement("span");
+        indicator.classList.add("todoist-settings-token-status");
 
         submitBtn.onclick = async () => {
-          indicator.textContent = "⏳";
+          indicator.textContent = "Checking...";
           try {
             const valid = await this.plugin.validateTodoistApiKey(text.inputEl.value);
             if (!valid) throw new Error("Invalid");
             pluginSettings.apiKey = text.inputEl.value;
-            indicator.textContent = "✅";
+            indicator.textContent = "Saved";
             await this.plugin.savePluginData();
           } catch {
-            indicator.textContent = "❌";
+            indicator.textContent = "Invalid token";
           }
         };
 
@@ -52,18 +101,41 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
         text.inputEl.parentElement?.appendChild(indicator);
       });
 
-    new Setting(containerEl)
-      .setName("👯‍♀️ support my work")
-      .setDesc("If you like how this plugin is shaping up, please consider supporting my work by buying me a coffee or ten!")
-      .addButton((button) => {
-        button.setButtonText("☕ Coffee season");
-        button.buttonEl.classList.add("tb-cta");
-        button.onClick(() => {
-          window.open("https://ko-fi.com/jamiedaghaim", "_blank");
-        });
-      });
+    const authLinks = authCard.createDiv({ cls: "todoist-settings-link-row" });
+    this.createExternalLink(
+      authLinks,
+      "Todoist integrations",
+      "https://todoist.com/app/settings/integrations",
+      "external-link",
+    );
+    this.createExternalLink(
+      authLinks,
+      "Token help",
+      "https://www.todoist.com/help/articles/8048880904476",
+      "help-circle",
+    );
 
-    new Setting(containerEl)
+    const nextSection = container.createDiv({ cls: "todoist-settings-card todoist-settings-next" });
+    nextSection.createEl("h3", { text: "Next", cls: "todoist-settings-card-title" });
+    const nextList = nextSection.createEl("ul", { cls: "todoist-settings-next-list" });
+    nextList.createEl("li", { text: "Command palette: Open Todoist Board" });
+    const codeItem = nextList.createEl("li");
+    codeItem.appendText("Embed: ");
+    codeItem.createEl("code", { text: "filter: today" });
+    const repoItem = nextList.createEl("li");
+    repoItem.appendText("Filters: ");
+    this.createExternalLink(repoItem, "GitHub", "https://github.com/propranolol11/todoist-board", "github");
+  }
+
+  private renderBehavior(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
+    this.renderPanelHeader(
+      container,
+      "Behavior",
+      "Tune logging and date handling for this vault.",
+    );
+
+    const behaviorCard = container.createDiv({ cls: "todoist-settings-card" });
+    new Setting(behaviorCard)
       .setName("Console logging")
       .setDesc("Print debug output of Todoist Board to the developer console.")
       .addToggle((toggle) => {
@@ -76,7 +148,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
           });
       });
 
-    new Setting(containerEl)
+    new Setting(behaviorCard)
       .setName("Timezone mode")
       .setDesc("Choose how timezone is determined for your tasks.")
       .addDropdown((dropdown) =>
@@ -92,7 +164,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       );
 
     if (pluginSettings.timezoneMode === "manual") {
-      new Setting(containerEl)
+      new Setting(behaviorCard)
         .setName("Manual timezone")
         .setDesc("Overrides system timezone if 'manual' mode is selected above")
         .addDropdown((dropdown) => {
@@ -105,35 +177,193 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
           });
         });
     }
+  }
 
-    new Setting(containerEl)
-      .setName("Context menu actions")
-      .setDesc("Select which actions appear in the right-click context menu for tasks.")
-      .setHeading();
+  private renderActions(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
+    this.renderPanelHeader(
+      container,
+      "Task Actions",
+      "Choose which actions appear when you right-click a task.",
+    );
 
-    const actions = [
-      { key: "scheduleToday", label: "Schedule today" },
-      { key: "scheduleTomorrow", label: "Schedule tomorrow" },
-      { key: "setPriority", label: "Set priority" },
-      { key: "editTask", label: "Edit task" },
-      { key: "deleteTask", label: "Delete task" },
-      { key: "openInTodoist", label: "Open in Todoist" },
+    const contextMenuSection = container.createDiv({ cls: "settings-context-preview-section" });
+    contextMenuSection.createEl("h3", {
+      cls: "settings-context-preview-title",
+      text: "Context menu actions",
+    });
+    contextMenuSection.createEl("p", {
+      cls: "settings-context-preview-desc",
+      text: "Choose which actions appear in the task right-click menu.",
+    });
+
+    const actions: Array<{ key: keyof ContextMenuSettings; label: string; icon: string }> = [
+      { key: "scheduleToday", label: "Schedule today", icon: "calendar" },
+      { key: "scheduleTomorrow", label: "Schedule tomorrow", icon: "calendar-clock" },
+      { key: "setPriority", label: "Set priority", icon: "flag" },
+      { key: "editTask", label: "Edit task", icon: "pencil" },
+      { key: "deleteTask", label: "Delete task", icon: "trash-2" },
+      { key: "openInTodoist", label: "Open in Todoist", icon: "external-link" },
     ];
 
+    const previewMenu = contextMenuSection.createDiv({ cls: "settings-context-menu-preview" });
+    const ensureContextMenuActions = (): ContextMenuSettings => {
+      if (!pluginSettings.contextMenuActions) {
+        pluginSettings.contextMenuActions = {} as ContextMenuSettings;
+      }
+      return pluginSettings.contextMenuActions;
+    };
+    const actionIsEnabled = (key: keyof ContextMenuSettings): boolean =>
+      pluginSettings.contextMenuActions?.[key] ?? true;
+
     actions.forEach((action) => {
-      new Setting(containerEl)
-        .setName(action.label)
-        .addToggle((toggle) =>
-          toggle
-            .setValue(pluginSettings.contextMenuActions?.[action.key as keyof ContextMenuSettings] ?? true)
-            .onChange(async (value) => {
-              if (!pluginSettings.contextMenuActions) {
-                pluginSettings.contextMenuActions = {} as ContextMenuSettings;
-              }
-              (pluginSettings.contextMenuActions as any)[action.key] = value;
-              await this.plugin.saveSettings();
-            }),
-        );
+      const menuItem = previewMenu.createDiv({ cls: "settings-context-menu-item" });
+      const menuItemMain = menuItem.createDiv({ cls: "settings-context-menu-item-main" });
+      const menuIcon = menuItemMain.createSpan({ cls: "settings-context-menu-icon" });
+      setIcon(menuIcon, action.icon);
+      menuItemMain.createSpan({ cls: "settings-context-menu-label", text: action.label });
+
+      const visibilityButton = menuItem.createEl("button", {
+        cls: "settings-context-menu-visibility",
+        type: "button",
+      });
+
+      const syncVisibilityButton = () => {
+        const enabled = actionIsEnabled(action.key);
+        menuItem.classList.toggle("is-disabled", !enabled);
+        while (visibilityButton.firstChild) {
+          visibilityButton.removeChild(visibilityButton.firstChild);
+        }
+        setIcon(visibilityButton, enabled ? "eye" : "eye-off");
+        visibilityButton.setAttribute("aria-pressed", String(enabled));
+        visibilityButton.setAttribute("aria-label", `${enabled ? "Hide" : "Show"} ${action.label}`);
+        visibilityButton.title = enabled ? "Shown in menu" : "Hidden from menu";
+      };
+
+      syncVisibilityButton();
+      visibilityButton.addEventListener("click", async () => {
+        const contextMenuActions = ensureContextMenuActions();
+        contextMenuActions[action.key] = !actionIsEnabled(action.key);
+        syncVisibilityButton();
+        await this.plugin.saveSettings();
+      });
     });
+
+    const chinBarSection = container.createDiv({ cls: "settings-chin-preview-section" });
+    chinBarSection.createEl("h3", {
+      cls: "settings-context-preview-title",
+      text: "Chin bar actions",
+    });
+    chinBarSection.createEl("p", {
+      cls: "settings-context-preview-desc",
+      text: "Tap actions to show or hide them in the selected-task toolbar.",
+    });
+
+    const chinActions: Array<{ key: keyof ChinBarSettings; label: string; icon: string }> = [
+      { key: "scheduleToday", label: "Today", icon: "calendar" },
+      { key: "scheduleTomorrow", label: "Tmrw", icon: "sunrise" },
+      { key: "editTask", label: "Edit", icon: "pencil" },
+      { key: "hideTask", label: "Hide", icon: "eye" },
+      { key: "setPriority", label: "Priority", icon: "flag" },
+      { key: "setDeadline", label: "Deadline", icon: "target" },
+      { key: "deleteTask", label: "Delete", icon: "trash-2" },
+      { key: "openInTodoist", label: "Open", icon: "external-link" },
+    ];
+    const previewChin = chinBarSection.createDiv({ cls: "settings-chin-preview" });
+    const ensureChinBarActions = (): ChinBarSettings => {
+      if (!pluginSettings.chinBarActions) {
+        pluginSettings.chinBarActions = {} as ChinBarSettings;
+      }
+      return pluginSettings.chinBarActions;
+    };
+    const chinActionIsEnabled = (key: keyof ChinBarSettings): boolean =>
+      pluginSettings.chinBarActions?.[key] ?? false;
+
+    chinActions.forEach((action) => {
+      const actionButton = previewChin.createEl("button", {
+        cls: "settings-chin-action",
+        type: "button",
+      });
+      const icon = actionButton.createSpan({ cls: "settings-chin-action-icon" });
+      setIcon(icon, action.icon);
+      actionButton.createSpan({ text: action.label });
+
+      const syncActionButton = () => {
+        const enabled = chinActionIsEnabled(action.key);
+        actionButton.classList.toggle("is-enabled", enabled);
+        actionButton.setAttribute("aria-pressed", String(enabled));
+        actionButton.setAttribute("aria-label", `${enabled ? "Hide" : "Show"} ${action.label}`);
+      };
+
+      syncActionButton();
+      actionButton.addEventListener("click", async () => {
+        const chinBarActions = ensureChinBarActions();
+        chinBarActions[action.key] = !chinActionIsEnabled(action.key);
+        syncActionButton();
+        await this.plugin.saveSettings();
+      });
+    });
+  }
+
+  private renderSupport(container: HTMLElement) {
+    this.renderPanelHeader(
+      container,
+      "Support",
+      "Useful links and ways to support the plugin.",
+    );
+
+    const supportCard = container.createDiv({ cls: "todoist-settings-card todoist-settings-support-card" });
+    supportCard.createEl("h3", { text: "Support my work", cls: "todoist-settings-card-title" });
+    supportCard.createEl("p", {
+      text: "If Todoist Board is helping your workflow, you can support ongoing development.",
+      cls: "todoist-settings-card-desc",
+    });
+    const coffeeButton = supportCard.createEl("button", {
+      cls: "todoist-settings-primary-link",
+      text: "Coffee season",
+      type: "button",
+    });
+    coffeeButton.onclick = () => window.open("https://ko-fi.com/jamiedaghaim", "_blank");
+
+    const repoCard = container.createDiv({ cls: "todoist-settings-card" });
+    repoCard.createEl("h3", { text: "Project links", cls: "todoist-settings-card-title" });
+    repoCard.createEl("p", {
+      text: "Report issues, browse examples, and follow release notes on GitHub.",
+      cls: "todoist-settings-card-desc",
+    });
+    this.createExternalLink(repoCard, "Open GitHub repo", "https://github.com/propranolol11/todoist-board", "external-link");
+  }
+
+  private renderPanelHeader(container: HTMLElement, title: string, description: string) {
+    const header = container.createDiv({ cls: "todoist-settings-panel-header" });
+    header.createEl("h2", { text: title, cls: "todoist-settings-panel-title" });
+    header.createEl("p", { text: description, cls: "todoist-settings-panel-desc" });
+  }
+
+  private renderTipCard(
+    container: HTMLElement,
+    title: string,
+    description: string,
+    iconName: string,
+    code?: string,
+  ) {
+    const card = container.createDiv({ cls: "todoist-settings-tip-card" });
+    const icon = card.createSpan({ cls: "todoist-settings-tip-icon" });
+    setIcon(icon, iconName);
+    card.createEl("h3", { text: title, cls: "todoist-settings-card-title" });
+    card.createEl("p", { text: description, cls: "todoist-settings-card-desc" });
+    if (code) {
+      const pre = card.createEl("pre", { cls: "todoist-settings-code-example" });
+      pre.createEl("code", { text: code });
+    }
+  }
+
+  private createExternalLink(container: HTMLElement, label: string, href: string, iconName: string) {
+    const link = container.createEl("a", { cls: "todoist-settings-link", href });
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer");
+    const icon = link.createSpan({ cls: "todoist-settings-link-icon" });
+    setIcon(icon, iconName);
+    link.createSpan({ text: label });
+    return link;
   }
 }

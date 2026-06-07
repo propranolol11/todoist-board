@@ -1,49 +1,99 @@
-An [Obsidian](https://obsidian.md) plugin that brings your [Todoist](https://todoist.com) tasks into beautiful, interactive boards; right inside your notes.
+# Todoist Board
+
+Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive boards in the sidebar or directly inside notes.
 
 ## Disclosures
 
-- Requires a Todoist account and a Todoist API token.
-- Connects to the Todoist REST and Sync APIs to fetch, create, update, and complete tasks.
-- Stores the Todoist API token and plugin preferences locally with Obsidian's plugin data storage. The token is not committed to this repository.
-- Caches task metadata and display preferences locally for responsiveness.
-- Does not collect analytics or send data to any service other than Todoist.
+- Requires a Todoist account and a Todoist personal API token.
+- Connects to the Todoist REST and Sync APIs to fetch, create, update, schedule, move, and complete tasks.
+- Stores the Todoist API token and plugin preferences locally with Obsidian's plugin data storage.
+- Caches task snapshots, project metadata, label metadata, hidden-task state, sort mode, compact mode, and manual order locally for responsiveness and offline display.
+- Does not collect analytics, use telemetry, or send data to any service other than Todoist.
 - Includes an optional funding link in the plugin settings and manifest.
 
-## **How to Use**:
-- ✌️ **Two board types**
-    1. **Sidebar board** for quick access and overview. 
-    2.  **Inline board** for embedding project or filtered task lists directly in a note.
+This plugin is not affiliated with, endorsed by, or sponsored by Todoist.
 
-- To open Todoist Board in the sidebar, do it via Command Palette
-	- Cmd + P on Mac; type Todoist Board, you'll see command there.
-	- Ctrl + P on Windows
-- To embed a Todoist Board in a note, simply write:
-````
+## Features
+
+- Sidebar board for quickly reviewing and managing Todoist tasks.
+- Inline `todoist-board` code blocks for embedding filtered task lists in notes.
+- Todoist filter support, including project, priority, date, and custom filter queries.
+- Task actions for adding, editing, completing, deleting, scheduling, deferring, moving, and changing priority.
+- Parent and subtask display with collapse controls.
+- Sorting, compact mode, hidden tasks, manual order, polling refresh, and cached offline display.
+- Mobile support is enabled with `isDesktopOnly: false`.
+
+## Setup
+
+1. Install the plugin in Obsidian.
+2. Open Obsidian settings and go to Todoist Board.
+3. Paste a Todoist personal API token.
+4. Choose the filters you want available in the sidebar board.
+5. Open the command palette and run `Open Todoist Board`.
+
+You can create a Todoist personal API token from Todoist account settings.
+
+## Inline Boards
+
+Add a code block to any note:
+
+````markdown
 ```todoist-board
-filter: any valid todoist filter (see examples below)
+filter: today
 ```
 ````
 
-Some most commonly used filter to try are:
-| Filter Query                                     | What it does                                                  |
-|--------------------------------------------------|---------------------------------------------------------------|
-| `filter: today`                                  | Shows tasks due today                                         |
-| `filter: #projectname`                           | Shows tasks in that project                                   |
-| `filter: p1`                                     | Shows P1 (high priority) tasks                                |
-| `filter: today & (p1 \| p2)`                     | Tasks due today AND either P1 or P2 priority                  |
-| `filter: created after: -7 days`                 | Tasks that were created in the last 7 days                   |
-| `filter: view all`                               | Shows **all** your tasks                                      |
-| `filter: due after: today & due before: in 8 days`| Upcoming tasks within the next week                          |
+Useful filter examples:
 
-Also check this article from Todoist [24 Todoist Filters to Keep You Super Organized](https://www.todoist.com/inspiration/todoist-filters)
+| Filter query | Result |
+| --- | --- |
+| `filter: today` | Tasks due today |
+| `filter: #ProjectName` | Tasks in a Todoist project |
+| `filter: p1` | Priority 1 tasks |
+| `filter: today & (p1 \| p2)` | Tasks due today with priority 1 or 2 |
+| `filter: created after: -7 days` | Tasks created in the last seven days |
+| `filter: view all` | All active tasks |
+| `filter: due after: today & due before: in 8 days` | Upcoming tasks for the next week |
 
-***
+Todoist's filter syntax is documented in the Todoist help center.
+
+## Mobile Notes
+
+Todoist Board avoids desktop-only Electron, Node, and filesystem APIs. Network requests use Obsidian's `requestUrl` API so the plugin can run on desktop and mobile. Mobile layouts are designed for touch use, including task sheets and long-press interactions.
+
+## Troubleshooting
+
+- If no tasks appear, confirm that the Todoist API token is present and valid.
+- If a filter looks empty, test the same query in Todoist and check project names, labels, dates, and priority syntax.
+- If Todoist is unavailable, the plugin may show cached tasks until the next successful sync.
+- If inline boards do not update, switch notes or run a manual sync from the sidebar board.
+- If mobile behavior feels off, update Obsidian and the plugin, then reload the vault.
+
+## Development
+
+```bash
+npm install
+npm run typecheck
+npm run lint:obsidian
+npm test
+npm run build
+npm audit
+```
+
+Run all release checks with:
+
+```bash
+npm run verify
+```
+
+Community release assets should match the version in `manifest.json` and include `main.js`, `manifest.json`, and `styles.css`.
+
 ## Screenshots
-<img width="1584" height="1110" alt="CleanShot 2025-08-14 at 7  28 44@2x" src="https://github.com/user-attachments/assets/6a9f23ae-98cb-4f6e-8624-5c03fa9579ef" />
 
-![CleanShot 2025-08-17 at 8  50 04](https://github.com/user-attachments/assets/8031cdab-ade9-4e8a-963f-cc946fe5561d)
+![Todoist Board sidebar view](https://github.com/user-attachments/assets/6a9f23ae-98cb-4f6e-8624-5c03fa9579ef)
 
-![CleanShot 2025-08-17 at 8  37 03](https://github.com/user-attachments/assets/6cc0ad33-8e6d-48e0-911f-863bde8d7fa5)
+![Todoist Board inline task list](https://github.com/user-attachments/assets/8031cdab-ade9-4e8a-963f-cc946fe5561d)
 
-![CleanShot 2025-08-17 at 8  41 39](https://github.com/user-attachments/assets/41e8ff5d-caf4-414d-816f-dbfcceafebb5)
+![Todoist Board task controls](https://github.com/user-attachments/assets/6cc0ad33-8e6d-48e0-911f-863bde8d7fa5)
 
+![Todoist Board mobile layout](https://github.com/user-attachments/assets/41e8ff5d-caf4-414d-816f-dbfcceafebb5)

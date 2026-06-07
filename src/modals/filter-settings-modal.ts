@@ -79,7 +79,8 @@ export function openFilterSettingsModal(options: FilterSettingsModalOptions) {
 
     settings.filters!.forEach((filter, index) => renderFilterRow(filter as ToolbarFilter, index));
 
-    const addRow = container.createEl("div", { cls: "settings-action-row" });
+    const footer = container.createEl("div", { cls: "settings-filter-footer" });
+    const addRow = footer.createEl("div", { cls: "settings-action-row" });
     const addButton = addRow.createEl("button", { cls: "settings-add-filter-btn" });
     const addIcon = addButton.createSpan();
     setIcon(addIcon, "plus");
@@ -90,7 +91,7 @@ export function openFilterSettingsModal(options: FilterSettingsModalOptions) {
       renderSettingsUI();
     };
 
-    const saveRow = container.createEl("div", { cls: "settings-save-row" });
+    const saveRow = footer.createEl("div", { cls: "settings-save-row" });
     const saveButton = saveRow.createEl("button", { cls: "settings-save-btn", text: "Save" });
     saveButton.onclick = async () => {
       readFilterInputs(modal, settings);
@@ -225,7 +226,30 @@ function renderIconPicker(row: HTMLTableRowElement, filter: ToolbarFilter, curre
       if (element !== iconPicker) element.classList.remove("visible");
     });
     iconPicker.classList.toggle("visible");
+    if (iconPicker.classList.contains("visible")) {
+      positionIconPicker(iconTrigger, iconPicker);
+    }
   };
+}
+
+function positionIconPicker(trigger: HTMLElement, picker: HTMLElement) {
+  const ownerWindow = trigger.ownerDocument.defaultView ?? window;
+  const viewportWidth = ownerWindow.innerWidth;
+  const viewportHeight = ownerWindow.innerHeight;
+  const margin = 12;
+  const triggerRect = trigger.getBoundingClientRect();
+
+  const pickerWidth = Math.min(270, viewportWidth - margin * 2);
+  const pickerHeight = Math.min(340, Math.round(viewportHeight * 0.58));
+  const preferredLeft = triggerRect.left;
+  const preferredTop = triggerRect.bottom + 8;
+  const left = Math.max(margin, Math.min(preferredLeft, viewportWidth - pickerWidth - margin));
+  const top = Math.max(margin, Math.min(preferredTop, viewportHeight - pickerHeight - margin));
+
+  picker.style.setProperty("--icon-picker-left", `${left}px`);
+  picker.style.setProperty("--icon-picker-top", `${top}px`);
+  picker.style.setProperty("--icon-picker-width", `${pickerWidth}px`);
+  picker.style.setProperty("--icon-picker-max-height", `${pickerHeight}px`);
 }
 
 function renderTitleInput(row: HTMLTableRowElement, filter: ToolbarFilter) {

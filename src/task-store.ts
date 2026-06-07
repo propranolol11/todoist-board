@@ -12,8 +12,11 @@ export class TaskStore {
     taskCache: {},
     timestamps: {},
   };
+  private readonly storage: TodoistBoardStorage;
 
-  constructor(private readonly storage: TodoistBoardStorage) {}
+  constructor(storage: TodoistBoardStorage) {
+    this.storage = storage;
+  }
 
   hydrate(filterKeys: string[] = []) {
     this.snapshot = this.storage.loadTaskSnapshot(filterKeys);
@@ -78,6 +81,15 @@ export class TaskStore {
       this.snapshot.timestamps[filterKey] = Date.now();
     }
     this.persist();
+  }
+
+  clearFilter(filterKey: string) {
+    const key = String(filterKey);
+    delete this.snapshot.filterIndex[key];
+    delete this.snapshot.taskCache[key];
+    delete this.snapshot.timestamps[key];
+    this.storage.removeTaskCache(key);
+    this.storage.saveTaskSnapshot(this.snapshot);
   }
 
   getViewTasks(filterKey: string): TodoistTask[] {

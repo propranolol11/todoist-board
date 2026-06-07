@@ -98,7 +98,7 @@ function toTodoistUrl(path: string, query?: RequestOptions["query"]): string {
   return url.toString();
 }
 
-function normalizeDue(due: any) {
+export function normalizeDue(due: any) {
   if (!due || typeof due !== "object") return due ?? null;
   return {
     ...due,
@@ -107,7 +107,7 @@ function normalizeDue(due: any) {
   };
 }
 
-function normalizeTask(task: any): TodoistTask {
+export function normalizeTask(task: any): TodoistTask {
   return {
     ...task,
     id: String(task?.id ?? ""),
@@ -138,7 +138,7 @@ function normalizeTask(task: any): TodoistTask {
   };
 }
 
-function normalizeProject(project: any): Project {
+export function normalizeProject(project: any): Project {
   return {
     ...project,
     id: String(project?.id ?? ""),
@@ -162,7 +162,7 @@ function normalizeProject(project: any): Project {
   };
 }
 
-function normalizeLabel(label: any): Label {
+export function normalizeLabel(label: any): Label {
   return {
     ...label,
     id: String(label?.id ?? ""),
@@ -171,7 +171,7 @@ function normalizeLabel(label: any): Label {
   };
 }
 
-function normalizeSection(section: any): TodoistSection {
+export function normalizeSection(section: any): TodoistSection {
   return {
     ...section,
     id: String(section?.id ?? ""),
@@ -187,7 +187,7 @@ function normalizeSection(section: any): TodoistSection {
   };
 }
 
-function toRestTaskPayload(args: Record<string, any>): Record<string, any> {
+export function toRestTaskPayload(args: Record<string, any>): Record<string, any> {
   const payload: Record<string, any> = {};
   const copy = (from: string, to: string = from) => {
     if (args[from] !== undefined) payload[to] = args[from];
@@ -228,7 +228,7 @@ function toRestTaskPayload(args: Record<string, any>): Record<string, any> {
   return payload;
 }
 
-function toSyncTaskArgs(taskId: string, args: Record<string, any>): Record<string, any> {
+export function toSyncTaskArgs(taskId: string, args: Record<string, any>): Record<string, any> {
   const payload = toRestTaskPayload(args);
   const syncArgs: Record<string, any> = { id: String(taskId) };
 
@@ -264,9 +264,11 @@ function toSyncTaskArgs(taskId: string, args: Record<string, any>): Record<strin
 
 export class TodoistService {
   private apiKey: string;
+  private readonly options: TodoistServiceOptions;
 
-  constructor(apiKey: string, private readonly options: TodoistServiceOptions = {}) {
+  constructor(apiKey: string, options: TodoistServiceOptions = {}) {
     this.apiKey = normalizeApiToken(apiKey);
+    this.options = options;
   }
 
   setApiKey(apiKey: string) {

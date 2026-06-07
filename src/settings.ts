@@ -118,6 +118,16 @@ export const DEFAULT_SETTINGS: TodoistBoardSettings = {
     deleteTask: true,
     openInTodoist: true,
   },
+  chinBarActions: {
+    scheduleToday: true,
+    scheduleTomorrow: true,
+    editTask: true,
+    hideTask: true,
+    deleteTask: true,
+    setPriority: false,
+    setDeadline: false,
+    openInTodoist: false,
+  },
 };
 
 export function normalizeSettings(saved: Partial<TodoistBoardSettings> | null | undefined): TodoistBoardSettings {
@@ -132,6 +142,11 @@ export function normalizeSettings(saved: Partial<TodoistBoardSettings> | null | 
     {},
     DEFAULT_SETTINGS.contextMenuActions,
     merged.contextMenuActions || {},
+  );
+  merged.chinBarActions = Object.assign(
+    {},
+    DEFAULT_SETTINGS.chinBarActions,
+    merged.chinBarActions || {},
   );
   return merged;
 }

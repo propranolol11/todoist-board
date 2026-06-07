@@ -21,23 +21,24 @@ import {
   normalizeSettings,
 } from "./src/settings";
 import {
-  getHiddenSet,
-  getInlineCompact,
-  saveHiddenSet,
-  setInlineCompact,
   TodoistBoardStorage,
 } from "./src/storage";
+import { StorageRepository } from "./src/storage-repository";
 import { TaskStore } from "./src/task-store";
 import { TodoistService } from "./src/todoist-service";
+import { TaskActions } from "./src/task-actions";
 import { TaskSheetModal } from "./src/modals/task-sheet-modal";
 import { openFilterSettingsModal } from "./src/modals/filter-settings-modal";
-import { buildRenderInput as buildRenderInputCore, sortTasksLikeTodoist as sortTasksLikeTodoistCore } from "./src/sort";
+import { buildRenderInput as buildRenderInputCore } from "./src/sort";
 import { startTaskPolling } from "./src/polling";
 import { TodoistBoardView } from "./src/view";
 import { TodoistBoardSettingTab } from "./src/settings-tab";
+import { markTaskHierarchyClasses, populateLabelPillText, syncDirectTaskDomOrder } from "./src/board-renderer";
 import { a11yButton, applyDimClass, clearEl } from "./src/dom";
+import { resolveFilterFromSource, sourceOrDefault } from "./src/filters";
 import { getZone } from "./src/time";
 import { createTaskContent, getProjectHexColor } from "./src/task-rendering";
+import { getTaskId, getTaskParentId, TaskHierarchy } from "./src/task-hierarchy";
 import type {
   GetSectionsResponse,
   Label,
@@ -107,17 +108,13 @@ export default class TodoistBoardPlugin extends Plugin {
   // Sort state helpers
   private getSortMode(filterKey: string) {
     this.ensureRefactoredRuntime();
-    return this.storage.getSortMode(String(filterKey));
+    return this.storageRepository.getSortMode(String(filterKey));
   }
   private setSortMode(filterKey: string, mode: string) {
     this.ensureRefactoredRuntime();
-    this.storage.setSortMode(String(filterKey), mode);
+    this.storageRepository.setSortMode(String(filterKey), mode);
   }
 
-  // --- unified sorter ---
-  private sortTasksLikeTodoist(arr: any[], mode: string): any[] {
-    return sortTasksLikeTodoistCore(Array.isArray(arr) ? arr : [], mode, getZone(this.settings));
-  }
   // =========== Plugin ready state and ensurePluginReady ==============
   private _ready: boolean = false;
 
@@ -143,9 +140,6 @@ export default class TodoistBoardPlugin extends Plugin {
   public setCurrentFilter(filter: string) {
     this.currentFilter = filter;
   }
-  private _pollInterval: number | undefined;
-  private _taskChangeInterval: number | undefined;
-  private _mutationObservers: MutationObserver[] = [];
   // --- Cancellation token for filter rendering ---
   private currentRenderToken: string = "";
   private compactMode: boolean = false;
@@ -164,27 +158,28 @@ export default class TodoistBoardPlugin extends Plugin {
   static commonTimezones = COMMON_TIMEZONES;
   // ======================= 🔌 Plugin Class =======================
   settings!: TodoistBoardSettings;
-  private htmlCache: Record<string, string> = {};
   public taskStore: Record<string, any> = {};              // id → task (single source of truth)
   public filterIndex: Record<string, string[]> = {};       // filterKey → [taskId]
   public taskCache: Record<string, any[]> = {};            // legacy (kept for compatibility)
   public projectCache: Project[] = [];
-  private sectionCache: GetSectionsResponse[] = [];
   public labelCache: Label[] = [];
   private loadingOverlay?: HTMLDivElement;
   private taskCacheTimestamps: Record<string, number> = {};
   private projectCacheTimestamp: number = 0;
   private labelCacheTimestamp: number = 0;
   private storage!: TodoistBoardStorage;
+  private storageRepository!: StorageRepository;
   private taskStoreController!: TaskStore;
   private todoistService!: TodoistService;
+  private taskActions!: TaskActions;
   private stopTaskPolling?: () => void;
   private readonly taskPageSize = 100;
   private filterNextCursor: Record<string, string | null> = {};
-  private collapsedSubtaskParents = new Set<string>();
+  private taskHierarchy = new TaskHierarchy();
 
   private ensureRefactoredRuntime(apiKey: string = this.settings?.apiKey || "") {
     if (!this.storage) this.storage = new TodoistBoardStorage(this.app);
+    if (!this.storageRepository) this.storageRepository = new StorageRepository(this.storage, this.app);
     if (!this.taskStoreController) {
       this.taskStoreController = new TaskStore(this.storage);
       const filters = (this.settings?.filters || DEFAULT_SETTINGS.filters || [])
@@ -196,6 +191,7 @@ export default class TodoistBoardPlugin extends Plugin {
       this.todoistService = new TodoistService(apiKey, {
         getCachedTasks: (filterKey) => this.getViewTasks(filterKey),
       });
+      this.taskActions = new TaskActions(this.todoistService);
       this.todoistApi = this.todoistService.getApi();
       (window as any).todoistApi = this.todoistApi;
     } else {
@@ -255,6 +251,12 @@ export default class TodoistBoardPlugin extends Plugin {
     this.taskStoreController.removeEverywhere(String(taskId));
     this.syncTaskStoreRefs();
     this.refreshAllInlineBoards();
+  }
+
+  private clearTasksForFilter(filterKey: string) {
+    this.ensureRefactoredRuntime();
+    this.taskStoreController.clearFilter(String(filterKey));
+    this.syncTaskStoreRefs();
   }
 
   public getViewTasks(filterKey: string): any[] {
@@ -416,8 +418,6 @@ export default class TodoistBoardPlugin extends Plugin {
         const incoming = Array.isArray(response.results) ? response.results : [];
         const combined = this.mergeTaskLists(this.getViewTasks(key), incoming);
         this.upsertTasks(key, combined, { silentSidebar: true });
-        this.taskCacheTimestamps[key] = Date.now();
-        this.storage.saveTaskCache(key, combined, Date.now());
         this.updateFilterBadge(listWrapper.closest(".todoist-board") as HTMLElement || activeDocument.body, key, combined.length, Boolean(response.nextCursor));
 
         const board = listWrapper.closest(".todoist-board") as HTMLElement | null;
@@ -454,21 +454,21 @@ export default class TodoistBoardPlugin extends Plugin {
     await Promise.all(filters.map(async (f) => {
       try {
         const key = f.filter;
-        const localTasks = this.storage.loadTaskCache(key);
-        const timestamp = this.storage.getTaskCacheTimestamp(key);
+        let localTasks = this.getViewTasks(key);
+        let timestamp = this.taskCacheTimestamps[key] || 0;
+        if (!localTasks.length) {
+          localTasks = this.storageRepository.loadTaskCache(key);
+          timestamp = this.storageRepository.getTaskCacheTimestamp(key);
+          if (localTasks.length) {
+            this.upsertTasks(key, localTasks, { silentSidebar: true, preferExisting: true });
+          }
+        }
 
         if (localTasks.length && now - timestamp < cacheTTL) {
-          this.taskCache[key] = localTasks;
-          // Insert safety check: ensure it's always an array
-          if (!Array.isArray(this.taskCache[key])) {
-            this.taskCache[key] = [];
-          }
-          this.taskCacheTimestamps[key] = timestamp;
-
           // Fully await fetchFilteredTasksFromREST and handle changes synchronously
           const tasksResponse = await this.fetchFilteredTasksFromREST(this.settings.apiKey, key);
           const tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
-          let oldTasks = this.taskCache[key];
+          let oldTasks = this.getViewTasks(key);
           if (!Array.isArray(oldTasks)) oldTasks = [];
           const oldIds = new Set(oldTasks.map((t: any) => t.id));
           const newIds = new Set(Array.isArray(tasks) ? tasks.map((t: any) => t.id) : []);
@@ -478,7 +478,6 @@ export default class TodoistBoardPlugin extends Plugin {
 
           if (hasChanges) {
             this.upsertTasks(key, Array.isArray(tasks) ? tasks : []);
-            this.taskCacheTimestamps[key] = Date.now();
           }
 
           const currentFilter = activeDocument.querySelector(".todoist-board.plugin-view")?.getAttribute("data-current-filter");
@@ -493,7 +492,6 @@ export default class TodoistBoardPlugin extends Plugin {
           const tasksResponse = await this.fetchFilteredTasksFromREST(this.settings.apiKey, key);
           const tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
           this.upsertTasks(key, Array.isArray(tasks) ? tasks : []);
-          this.taskCacheTimestamps[key] = now;
         }
       } catch {
       }
@@ -502,7 +500,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
   async completeTask(taskId: string): Promise<void> {
     this.ensureRefactoredRuntime(this.settings.apiKey);
-    await this.todoistService.completeTask(taskId);
+    await this.taskActions.completeTask(taskId);
     this.deleteTaskEverywhere(String(taskId));
 
     // Re-render all visible boards so every filter reflects the change
@@ -524,6 +522,38 @@ export default class TodoistBoardPlugin extends Plugin {
     this.refreshAllInlineBoards();
   }
 
+  private async openTodoistBoardInRightSidebar() {
+    const existingLeaf = this.app.workspace
+      .getLeavesOfType(TODOIST_BOARD_VIEW_TYPE)
+      .find((leaf) => (leaf.getRoot() as any)?.containerEl?.hasClass("mod-right-split"));
+
+    const rightLeaf =
+      existingLeaf ||
+      this.app.workspace.getRightLeaf(false) ||
+      this.app.workspace.getRightLeaf(true);
+
+    if (!rightLeaf) return;
+
+    if (rightLeaf.getViewState().type !== TODOIST_BOARD_VIEW_TYPE) {
+      await rightLeaf.setViewState({
+        type: TODOIST_BOARD_VIEW_TYPE,
+        active: true,
+      });
+    }
+
+    this.app.workspace.rightSplit.expand();
+    this.app.workspace.setActiveLeaf(rightLeaf, { focus: true });
+  }
+
+  private async openTodoistBoardInNewTab() {
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: TODOIST_BOARD_VIEW_TYPE,
+      active: true,
+    });
+    this.app.workspace.setActiveLeaf(leaf, { focus: true });
+  }
+
   // ======================= 🚀 Plugin Load Lifecycle =======================
   onload = async () => {
     await (async () => {
@@ -536,28 +566,12 @@ export default class TodoistBoardPlugin extends Plugin {
       this.addCommand({
         id: "open-sidebar",
         name: "Open in right sidebar",
-        callback: async () => {
-          // Only open the board if it's not already open in the right sidebar
-          const existingLeaf = this.app.workspace
-            .getLeavesOfType(TODOIST_BOARD_VIEW_TYPE)
-            .find((leaf) => (leaf.getRoot() as any)?.containerEl?.hasClass("mod-right-split"));
-
-          if (existingLeaf) {
-            // Already open in right sidebar; do nothing
-            return;
-          }
-
-          const rightLeaf =
-            this.app.workspace.getRightLeaf(false) ||
-            this.app.workspace.getRightLeaf(true);
-
-          if (rightLeaf) {
-            await rightLeaf.setViewState({
-              type: TODOIST_BOARD_VIEW_TYPE,
-              active: true,
-            });
-          }
-        },
+        callback: () => this.openTodoistBoardInRightSidebar(),
+      });
+      this.addCommand({
+        id: "open-new-tab",
+        name: "Open in new tab",
+        callback: () => this.openTodoistBoardInNewTab(),
       });
       await this.loadSettings();
 
@@ -628,7 +642,7 @@ export default class TodoistBoardPlugin extends Plugin {
         if (boardEl && currentFilter) {
           const resp = await this.fetchFilteredTasksFromREST(this.settings.apiKey, currentFilter);
           const tasks = resp?.results ?? [];
-          this.taskCache[currentFilter] = tasks;
+          this.upsertTasks(currentFilter, tasks, { silentSidebar: true });
           this.renderTodoistBoard(boardEl, `filter: ${currentFilter}`, {}, this.settings.apiKey, {
             tasks,
             projects: this.projectCache,
@@ -650,44 +664,7 @@ export default class TodoistBoardPlugin extends Plugin {
           // Add classes for code block container
           el.classList.add("block-language-todoist-board", "todoist-board", "todoist-inline-board");
           const sourcePath = ctx.sourcePath || "reading-mode-placeholder";
-          // Determine filter robustly: prefer explicit in source; else reuse prior; else default
-          const priorFilter = el.getAttribute("data-current-filter");
-          let filter = String(priorFilter || "");
-
-          // Parse block params for filter (supports both `Filter:` and `filter:` anywhere in block)
-          function parseBlockParams(raw: string): Record<string, any> {
-            const lines = (raw || "").split("\n");
-            const params: Record<string, any> = {};
-            for (let line of lines) {
-              const m = line.match(/^\s*([a-zA-Z0-9_]+):\s*(.*)$/);
-              if (m) params[m[1].trim()] = m[2].trim();
-            }
-            return params;
-          }
-
-          const parsed = parseBlockParams(source || "");
-          this.dbg("📦 Raw source:", source);
-          this.dbg("🧩 Parsed block params:", parsed);
-
-          // 1) Explicit Filter param wins
-          if (typeof parsed.Filter === "string" && parsed.Filter.trim()) {
-            filter = parsed.Filter.trim();
-          } else {
-            // 2) Loose regex for `filter:` (case-insensitive)
-            const m = (source || "").match(/\bfilter\s*:\s*(.+)/i);
-            if (m && m[1] && m[1].trim()) {
-              filter = m[1].trim();
-            }
-          }
-
-          // 3) If still empty, fall back to user's default ONLY if there was no prior filter
-          if (!filter) {
-            const df = this.settings.filters?.find(f => f.isDefault)?.filter
-              ?? this.settings.filters?.[0]?.filter
-              ?? "today";
-            filter = String(df);
-          }
-          const parsedFilter = String(filter);
+          const parsedFilter = resolveFilterFromSource(source || "", el.getAttribute("data-current-filter"), this.settings);
           const filterKey = parsedFilter;
           this.dbg("🎯 Final filter used:", filterKey);
           // Only update the attribute if it changed or was empty
@@ -746,7 +723,7 @@ export default class TodoistBoardPlugin extends Plugin {
             const render = () => {
               // Apply per-inline persisted compact mode (isolated from sidebar setting)
               const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
-              const compactOn = getInlineCompact(persistedCompactKeyPath, currentFilterKey);
+              const compactOn = this.storageRepository.getInlineCompact(persistedCompactKeyPath, currentFilterKey);
               el.classList.toggle("compact-mode", compactOn);
 
               // Remove previous list if any
@@ -779,108 +756,14 @@ export default class TodoistBoardPlugin extends Plugin {
                 { tasks: viewTasks, projects, labels }
               );
 
-              // Stamp ids on direct children without overwriting ids set by createTaskRow.
-              // Nested subtasks mean direct DOM children no longer map 1:1 to viewTasks.
-              const directChildren = Array.from(listWrapper.children) as HTMLElement[];
-              for (let i = 0; i < directChildren.length && i < viewTasks.length; i++) {
-                const id = String(directChildren[i].dataset.taskId || (viewTasks as any[])[i]?.id || "");
-                if (id) {
-                  directChildren[i].classList.add("todoist-card");
-                  directChildren[i].dataset.taskId = id;
-                }
-              }
-
-              // DOM reorder to match sorted order (no-op for Manual)
               if (mode !== "Manual") {
-                const targetOrder = new Map((viewTasks as any[]).map((t: any, i: number) => [String(t.id), i]));
-                const nodes = Array.from(listWrapper.children) as HTMLElement[];
-                // Stamp any missing ids before sorting
-                nodes.forEach((n, i) => {
-                  if (!n.dataset.taskId && (viewTasks as any[])[i]?.id) {
-                    n.classList.add("todoist-card");
-                    n.dataset.taskId = String((viewTasks as any[])[i].id);
-                  }
-                });
-                nodes.sort((a, b) => {
-                  const ai = targetOrder.get(String(a.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
-                  const bi = targetOrder.get(String(b.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
-                  return ai - bi;
-                });
-                nodes.forEach((n) => listWrapper.appendChild(n));
-
-                // Hide metadata for child (sub) tasks AND mark parents (inline boards)
-                try {
-                  const vt = (viewTasks as any[]) || [];
-                  const byId = new Map(vt.map((t: any) => [String(t.id), t]));
-
-                  // Build the parent-id set from the entire store so parents still mark even if children are filtered out
-                  const childParentIds = new Set(
-                    Object.values(this.taskStore || {})
-                      .filter((t: any) => t && t.parentId)
-                      .map((t: any) => String(t.parentId))
-                  );
-
-                  const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
-
-                  nodes.forEach((node) => {
-                    const id = String(node.dataset.taskId || "");
-                    const t = byId.get(id);
-
-                    // Child rows: hide meta
-                    if (t && t.parentId) {
-                      node.classList.add("is-child-task");
-                      const hideSel =
-                        ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
-                      node.querySelectorAll(hideSel).forEach((el) => (el as HTMLElement).classList.add("tb-hidden"));
-                    }
-
-                    // Parent rows: keep structural classes for styling/selection.
-                    if (childParentIds.has(id)) {
-                      node.classList.add("has-children", "parent-task");
-                    }
-                  });
-                } catch { }
-
-
+                syncDirectTaskDomOrder(listWrapper, viewTasks);
+                markTaskHierarchyClasses(listWrapper, viewTasks, this.taskStore);
               }
-              // --- Populate label pill text (inline board) ---
-              try {
-                const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
-                const byId = new Map((viewTasks as any[]).map((t: any) => [String(t.id), t]));
-
-                nodes.forEach((node) => {
-                  const id = String(node.dataset.taskId || "");
-                  const task = byId.get(id);
-
-                  // find the existing chip on this card
-                  const pill =
-                    node.querySelector<HTMLElement>("span.pill.label-pill, .pill.label-pill, .label-pill");
-                  if (!pill) return;
-
-                  const labs = Array.isArray(task?.labels) ? (task!.labels as (number | string)[]) : [];
-                  const names = labs
-                    .map((lab) => {
-                      const hit = (this.labelCache || []).find(
-                        (l: any) =>
-                          String((l as any).id) === String(lab) ||
-                          String((l as any).name) === String(lab)
-                      );
-                      return String(hit?.name ?? lab);
-                    })
-                    .filter((s) => s && s.trim().length > 0);
-
-                  if (pill.querySelector(".label-part")) {
-                    // already built by createLabelPill → keep structure, just toggle visibility
-                    pill.classList.toggle("tb-hidden", !names.length);
-                  } else {
-                    pill.textContent = names.join(", ");
-                    pill.classList.toggle("tb-hidden", !names.length);
-                  }
-                });
-              } catch { }
+              populateLabelPillText(listWrapper, viewTasks, this.labelCache);
               // ——— Apply persisted dimming (inline board) ———
               try {
-                const hidden = getHiddenSet();
+                const hidden = this.storageRepository.getHiddenSet();
                 const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
                 nodes.forEach((node) => {
                   const id = String(node.dataset.taskId || "");
@@ -1050,7 +933,7 @@ export default class TodoistBoardPlugin extends Plugin {
               }
 
               // Online: refresh from server
-              this.storage.removeTaskCache(currentFilter);
+              this.clearTasksForFilter(currentFilter);
               const resp = await this.fetchFilteredTasksFromREST(this.settings.apiKey, currentFilter);
               const tasks = resp?.results ?? [];
               this.upsertTasks(currentFilter, tasks);
@@ -1082,7 +965,7 @@ export default class TodoistBoardPlugin extends Plugin {
               el.classList.toggle("compact-mode", next);
               const lw = el.querySelector(".list-wrapper");
               if (lw) (lw as HTMLElement).classList.toggle("compact-mode", next);
-              setInlineCompact(persistedCompactKeyPath, currentFilterKey, next);
+              this.storageRepository.setInlineCompact(persistedCompactKeyPath, currentFilterKey, next);
             };
             a11yButton(compactButton, "Toggle compact mode");
             toolbar.appendChild(compactButton);
@@ -1092,7 +975,10 @@ export default class TodoistBoardPlugin extends Plugin {
             // --- End Inline Sort Toolbar ---
           };
           // Use improved cache logic for loading and rendering tasks ---
-          const storedTasks = this.storage.loadTaskCache(filterKey);
+          let storedTasks = this.getViewTasks(filterKey);
+          if (!storedTasks.length) {
+            storedTasks = this.storageRepository.loadTaskCache(filterKey);
+          }
           let cachedTasks: Task[] = [];
           if (!storedTasks.length && !navigator.onLine) {
             const fallback = this.getViewTasks(filterKey);
@@ -1109,7 +995,6 @@ export default class TodoistBoardPlugin extends Plugin {
               cachedTasks = storedTasks as Task[];
               this.dbg("📦 Cached tasks for", filterKey, ":", cachedTasks);
               if (Array.isArray(cachedTasks)) {
-                this.taskCache[typeof filterKey === "string" ? filterKey : JSON.stringify(filterKey)] = cachedTasks;
                 this.upsertTasks(filterKey, cachedTasks, { silentSidebar: true, preferExisting: true });
                 if (
                   el.classList.contains("block-language-todoist-board") ||
@@ -1251,16 +1136,6 @@ export default class TodoistBoardPlugin extends Plugin {
     const allDropdowns = activeDocument.querySelectorAll(".menu-dropdown-wrapper");
     allDropdowns.forEach(dropdown => dropdown.remove());
 
-    // Clear polling intervals
-    if (this._pollInterval !== undefined) {
-      window.clearInterval(this._pollInterval);
-      this._pollInterval = undefined;
-    }
-    if (this._taskChangeInterval !== undefined) {
-      window.clearInterval(this._taskChangeInterval);
-      this._taskChangeInterval = undefined;
-    }
-
     // Remove any floating toolbars
     const toolbars = activeDocument.querySelectorAll("#mini-toolbar-wrapper");
     toolbars.forEach(toolbar => toolbar.remove());
@@ -1275,12 +1150,6 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Remove menu dropdowns that might have been appended to body
     activeDocument.querySelectorAll('.menu-dropdown-wrapper').forEach(el => el.remove());
-
-    // Disconnect mutation observers if any
-    if (this._mutationObservers && this._mutationObservers.length > 0) {
-      this._mutationObservers.forEach(obs => obs.disconnect());
-      this._mutationObservers = [];
-    }
 
     // Remove all .todoist-board elements from DOM
     activeDocument.querySelectorAll('.todoist-board').forEach(el => el.remove());
@@ -1372,7 +1241,10 @@ export default class TodoistBoardPlugin extends Plugin {
       const taskList = initialData.tasks || [];
       // Fallback to persisted task cache if needed ---
       if ((!Array.isArray(taskList) || taskList.length === 0) && currentFilter) {
-        const fallback = this.storage.loadTaskCache(currentFilter);
+        let fallback = this.getViewTasks(currentFilter);
+        if (!fallback.length) {
+          fallback = this.storageRepository.loadTaskCache(currentFilter);
+        }
         // merge cache non-destructively into the store
         this.upsertTasks(currentFilter, Array.isArray(fallback) ? fallback : [], { silentSidebar: true, preferExisting: true });
         // always render from the authoritative store
@@ -1394,9 +1266,6 @@ export default class TodoistBoardPlugin extends Plugin {
       if (this.loadingOverlay) {
         this.loadingOverlay.classList.add("is-visible");
       }
-
-      let cachedTasks = tasks;
-      let defaultFilter = currentFilter;
 
       try {
         if (!container.dataset.sortMode) container.dataset.sortMode = this.getSortMode(currentFilter);
@@ -1448,87 +1317,20 @@ export default class TodoistBoardPlugin extends Plugin {
 
         void this.renderTaskList(listWrapper, source, apiKey, { tasks: viewTasks, projects: projectsForRender, labels: labelsForRender });
 
-        // Keep DOM order in sync with viewTasks (plugin view)
+        // Keep DOM order and task decorations in sync with the render input.
         try {
           if (mode !== "Manual") {
-            const targetOrder = new Map(viewTasks.map((t: any, i: number) => [String(t.id), i]));
-            const children = Array.from(listWrapper.children) as HTMLElement[];
-            // Stamp ids if missing
-            children.forEach((n, i) => {
-              const id = String(n.dataset.taskId || (viewTasks as any[])[i]?.id || "");
-              if (id) { n.classList.add("todoist-card"); n.dataset.taskId = id; }
-            });
-            children.sort((a, b) => {
-              const ai = targetOrder.get(String(a.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
-              const bi = targetOrder.get(String(b.dataset.taskId || "")) ?? Number.MAX_SAFE_INTEGER;
-              return ai - bi;
-            });
-            children.forEach((n) => listWrapper.appendChild(n));
-
-            // Hide child metadata AND mark parents (sidebar/plugin board)
-            try {
-              const byId = new Map(viewTasks.map((t: any) => [String(t.id), t]));
-              const childParentIds = new Set(
-                Object.values(this.taskStore || {})
-                  .filter((t: any) => t && t.parentId)
-                  .map((t: any) => String(t.parentId))
-              );
-              const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
-
-              nodes.forEach((node) => {
-                const id = String(node.dataset.taskId || "");
-                const t = byId.get(id);
-
-                // Hide meta for child rows
-                if (t && t.parentId) {
-                  node.classList.add("is-child-task");
-                  const hideSel =
-                    ".due-inline, .project-pill, .project-badge, .label-pill, .labels, .task-meta, .meta, .meta-span, .metadata, .task-when, .task-meta-compact";
-                  node.querySelectorAll(hideSel).forEach((el) => (el as HTMLElement).classList.add("tb-hidden"));
-                }
-
-                // Mark parent rows for styling/selection.
-                if (childParentIds.has(id)) {
-                  node.classList.add("has-children", "parent-task");
-                }
-              });
-            } catch { }
-
+            syncDirectTaskDomOrder(listWrapper, viewTasks);
+            markTaskHierarchyClasses(listWrapper, viewTasks, this.taskStore);
           }
-          // --- Populate label pill text (sidebar/plugin board) ---
-          try {
-            const nodes2 = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
-            const byId2 = new Map(viewTasks.map((t: any) => [String(t.id), t]));
-            nodes2.forEach((node) => {
-              const id = String(node.dataset.taskId || "");
-              const task = byId2.get(id);
-              const pill = node.querySelector("span.pill.label-pill") as HTMLElement | null;
-              if (!pill) return;
-
-              const labs = Array.isArray(task?.labels) ? (task!.labels as (number | string)[]) : [];
-              const names = labs.map((lab) => {
-                const hit = (this.labelCache || []).find((l: any) => String((l as any).id) === String(lab) || String((l as any).name) === String(lab));
-                return String(hit?.name ?? lab);
-              }).filter((s) => s && s.trim().length > 0);
-
-              if (pill.querySelector(".label-part")) {
-                pill.classList.toggle("tb-hidden", !names.length);
-              } else {
-                pill.textContent = names.join(", ");
-                pill.classList.toggle("tb-hidden", !names.length);
-              }
-            });
-          } catch { }
-          // ——— Apply persisted dimming (sidebar/plugin board) ———
-          try {
-            const hidden = getHiddenSet();
-            const nodes2 = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
-            nodes2.forEach((node) => {
-              const id = String(node.dataset.taskId || "");
-              if (!id) return;
-              applyDimClass(node, hidden.has(id));
-            });
-          } catch { }
+          populateLabelPillText(listWrapper, viewTasks, this.labelCache);
+          const hidden = this.storageRepository.getHiddenSet();
+          const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
+          nodes.forEach((node) => {
+            const id = String(node.dataset.taskId || "");
+            if (!id) return;
+            applyDimClass(node, hidden.has(id));
+          });
         } catch { }
 
         // Fetch metadata in background if stale, then re-render
@@ -1553,15 +1355,6 @@ export default class TodoistBoardPlugin extends Plugin {
         }
 
         this.setupGlobalEventListeners();
-        this.setupMutationObserver(container);
-
-        // Save the rendered tasks to the persisted task cache after successful render ---
-        if (Array.isArray(cachedTasks)) {
-          try {
-            this.storage.saveTaskCache(defaultFilter, cachedTasks);
-          } catch {
-          }
-        }
 
       } finally {
         if (this.loadingOverlay) {
@@ -1626,15 +1419,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private getSourceOrDefault(source: string, filterOptions: any[]) {
-    if (!source || !source.trim()) {
-      const defaultFilterObj = filterOptions.find(f => f.isDefault) || filterOptions[0];
-      return `filter: ${defaultFilterObj?.filter}`;
-    }
-    // Remove any 'toolbar:' line from the source
-    return source
-      .split("\n")
-      .filter(line => !line.trim().toLowerCase().startsWith("toolbar:"))
-      .join("\n");
+    return sourceOrDefault(source, filterOptions);
   }
 
   // ======================= 🛠️ Toolbar Rendering =======================
@@ -1694,8 +1479,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
 	      const badgeCount = activeDocument.createElement("span");
 	      badgeCount.className = "filter-badge-count";
-		      // Use persisted cache to get the latest count for this filter
-		      const filterCount = this.storage.getCountForFilter(String(opt.filter), this.taskCache);
+		      const filterCount = this.taskStoreController.getCount(String(opt.filter));
 	      badgeCount.textContent = this.formatFilterCount(filterCount, Boolean(this.filterNextCursor[String(opt.filter)]));
 
       badge.appendChild(badgeBg);
@@ -1727,7 +1511,7 @@ export default class TodoistBoardPlugin extends Plugin {
         const todoistBoardEl = container.closest(".todoist-board.plugin-view") as HTMLElement | null;
         if (todoistBoardEl) {
           todoistBoardEl.setAttribute("data-current-filter", String(opt.filter));
-          this.showFilterLoading(todoistBoardEl, String(opt.filter), this.storage.getCountForFilter(String(opt.filter), this.taskCache));
+          this.showFilterLoading(todoistBoardEl, String(opt.filter), this.taskStoreController.getCount(String(opt.filter)));
           void this.handleFilterClick(opt, todoistBoardEl, ctx, this.settings.apiKey);
         }
       });
@@ -1773,7 +1557,7 @@ export default class TodoistBoardPlugin extends Plugin {
    */
   private async moveTaskREST(taskId: string, payload: { project_id?: string | null; section_id?: string | null; parent_id?: string | null; }) {
     this.ensureRefactoredRuntime(this.settings.apiKey);
-    return this.todoistService.moveTaskREST(taskId, payload);
+    return this.taskActions.moveTaskREST(taskId, payload);
   }
   private activeTaskModal: TaskSheetModal | null = null;
 
@@ -1838,7 +1622,7 @@ export default class TodoistBoardPlugin extends Plugin {
       // background refresh (don’t await)
       const refresh = (async () => {
         try {
-          const live = await this.todoistService.getTask(taskId);
+          const live = await this.taskActions.getTask(taskId);
           if (live && live.id) {
             // Use live copy for modal fields, but do not overwrite store here to avoid clobbering edits
             task = live as any;
@@ -1857,6 +1641,8 @@ export default class TodoistBoardPlugin extends Plugin {
           if (d?.datetime) return String(d.datetime).slice(0, 10);
           return "";
         })(),
+        deadline: String((task as any)?.deadline?.date ?? ""),
+        priority: Number((task as any)?.priority ?? 1) || 1,
         projectId: String((task as any)?.projectId ?? ""),
         // Normalize labels to names; SDK expects array of label NAMES (not ids)
         labels: (() => {
@@ -1891,7 +1677,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
               let moved: any = null;
 
-              moved = await this.todoistService.moveTask(String(id), targetProjectIdStr);
+              moved = await this.taskActions.moveTask(String(id), targetProjectIdStr);
 
               // Keep local store consistent immediately (preserve camelCase shape expected by renderer)
               {
@@ -1914,7 +1700,7 @@ export default class TodoistBoardPlugin extends Plugin {
               // Make sure the destination project exists in caches (prevents blank project pill)
               if (!this.projectMap.has(targetProjectIdStr)) {
                 try {
-                  const dest = await this.todoistService.getProject(targetProjectIdStr);
+                  const dest = await this.taskActions.getProject(targetProjectIdStr);
                   if (dest) {
                     if (!Array.isArray(this.projectCache)) this.projectCache = [];
                     const idx = this.projectCache.findIndex((p: any) => String(p.id) === String(dest.id));
@@ -1929,7 +1715,7 @@ export default class TodoistBoardPlugin extends Plugin {
               // Make sure the destination project exists in caches (prevents blank project pill)
               if (!this.projectMap.has(targetProjectId)) {
                 try {
-                  const dest = await this.todoistService.getProject(targetProjectId);
+                  const dest = await this.taskActions.getProject(targetProjectId);
                   if (dest) {
                     if (!Array.isArray(this.projectCache)) this.projectCache = [];
                     const idx = this.projectCache.findIndex((p: any) => String(p.id) === String(dest.id));
@@ -1943,16 +1729,18 @@ export default class TodoistBoardPlugin extends Plugin {
             }
 
             // 2) Update other editable fields
-            await this.todoistService.updateTask(id, {
+            await this.taskActions.updateTask(id, {
               content: data.title,
               description: data.description,
               ...(data.due ? { dueDate: data.due } : { dueString: "no date" }),
+              deadlineDate: data.deadline || null,
+              priority: Number(data.priority) || 1,
               // SDK expects label NAMES
               labels: Array.isArray(data.labels) ? data.labels : []
             });
 
             // 3) Re-fetch fresh server copy, then update UI
-            const fresh = await this.todoistService.getTask(id);
+            const fresh = await this.taskActions.getTask(id);
             if (fresh) {
               this.taskStore[id] = fresh as any;
             }
@@ -1990,19 +1778,23 @@ export default class TodoistBoardPlugin extends Plugin {
         title: "",
         description: "",
         due: "",
+        deadline: "",
+        priority: 1,
         projectId: inboxId || undefined,
         labels: [],
       },
       submitLabel: "Add task",
       projects: this.projectCache,
       labels: this.labelCache,
-      onSubmit: async ({ title, description, due, projectId, labels }) => {
+      onSubmit: async ({ title, description, due, deadline, priority, projectId, labels }) => {
         try {
-          await this.todoistService.addTask({
+          await this.taskActions.addTask({
             content: title,
             description,
             projectId: projectId || inboxId,
             ...(due ? { dueString: due } : {}),
+            ...(deadline ? { deadlineDate: deadline } : {}),
+            priority: Number(priority) || 1,
             ...(labels && labels.length > 0 ? { labels } : {})
           });
           await this.preloadFilters();
@@ -2047,6 +1839,8 @@ export default class TodoistBoardPlugin extends Plugin {
               title: "",
               description: "",
               due: "",
+              deadline: "",
+              priority: 1,
               projectId: this.projectCache?.find((p: any) => p.name === "Inbox")?.id || inboxId || undefined,
               labels: [],
             },
@@ -2060,17 +1854,6 @@ export default class TodoistBoardPlugin extends Plugin {
 
   // The createFilterGroup function is now unused in the new filter bar implementation.
 
-  // ======================= 👀 Mutation Observer Setup =======================
-  private setupMutationObserver(container: HTMLElement) {
-    const observer = new MutationObserver((mutations) => {
-      // You can handle DOM changes if needed
-    });
-
-    observer.observe(container, { childList: true, subtree: true });
-    // Track observer so it is disconnected on unload
-    this._mutationObservers.push(observer);
-  }
-
   // ======================= 🔄 Filter Click Handling =======================
   private async handleFilterClick(opt: any, container: HTMLElement, ctx: any, apiKey: string) {
     const now = Date.now();
@@ -2080,12 +1863,12 @@ export default class TodoistBoardPlugin extends Plugin {
     const confirmedFilter = String(opt.filter);
     container.setAttribute("data-current-filter", confirmedFilter);
     // --- Always trigger a full re-render, even if filter unchanged and task count same ---
-    let localTasks = this.storage.loadTaskCache(confirmedFilter);
-    // Render from persisted storage first (if available) for instant feedback
-    this.taskCache[confirmedFilter] = localTasks;
-    // Fallback: if no localTasks, keep previous cache
-    if (!localTasks || localTasks.length === 0) {
-      localTasks = this.taskCache[confirmedFilter] || [];
+    let localTasks = this.getViewTasks(confirmedFilter);
+    if (!localTasks.length) {
+      localTasks = this.storageRepository.loadTaskCache(confirmedFilter);
+      if (localTasks.length) {
+        this.upsertTasks(confirmedFilter, localTasks, { silentSidebar: true, preferExisting: true });
+      }
     }
     if (Array.isArray(localTasks) && localTasks.length > 0) {
       this.renderTodoistBoard(container, `filter: ${confirmedFilter}`, ctx, apiKey, {
@@ -2111,14 +1894,12 @@ export default class TodoistBoardPlugin extends Plugin {
       return;
     }
 
-    this.taskCache[confirmedFilter] = Array.isArray(tasks) ? tasks : [];
+    const freshTasks = Array.isArray(tasks) ? tasks : [];
+    this.upsertTasks(confirmedFilter, freshTasks, { silentSidebar: true });
     this.updateFilterBadge(container, confirmedFilter, Array.isArray(tasks) ? tasks.length : 0, Boolean(tasksResponse?.nextCursor));
-    this.taskCacheTimestamps[confirmedFilter] = now;
-
-    this.storage.saveTaskCache(confirmedFilter, Array.isArray(tasks) ? tasks : [], now);
 
     this.renderTodoistBoard(container, `filter: ${confirmedFilter}`, ctx, apiKey, {
-      tasks: Array.isArray(tasks) && tasks.length > 0 ? tasks : (this.taskCache[confirmedFilter] || []),
+      tasks: freshTasks.length > 0 ? freshTasks : this.getViewTasks(confirmedFilter),
       sections: [],
       projects: this.projectCache || [],
       labels: this.labelCache || []
@@ -2159,7 +1940,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Create dropdown
     const menuDropdown = activeDocument.createElement("div");
-    menuDropdown.className = "menu-dropdown hidden";
+    menuDropdown.className = "todoist-board-menu menu-dropdown hidden";
 
     // Settings option
     const settingsOption = activeDocument.createElement("div");
@@ -2189,7 +1970,7 @@ export default class TodoistBoardPlugin extends Plugin {
       // Manual Sync: Clear cache for the current filter, clear list view, trigger fresh render from API
       const currentFilter = container.getAttribute("data-current-filter") || "";
       // Remove cached tasks and timestamp for current filter
-      this.storage.removeTaskCache(currentFilter);
+      this.clearTasksForFilter(currentFilter);
       // Find the list wrapper inside the container
       const listWrapper = container.querySelector(".list-wrapper") as HTMLElement;
       if (listWrapper) {
@@ -2203,23 +1984,21 @@ export default class TodoistBoardPlugin extends Plugin {
         this.projectCacheTimestamp = Date.now();
         this.labelCacheTimestamp = Date.now();
         // ---
-        this.taskCache[currentFilter] = Array.isArray(tasks) ? tasks : [];
+        const freshTasks = Array.isArray(tasks) ? tasks : [];
+        this.upsertTasks(currentFilter, freshTasks, { silentSidebar: true });
         const badge = activeDocument.querySelector(`.filter-row[data-filter="${currentFilter}"] .filter-badge-count`);
         if (badge) {
           badge.textContent = this.formatFilterCount(
-            Array.isArray(tasks) ? tasks.length : 0,
+            freshTasks.length,
             Boolean(tasksResponse?.nextCursor),
           );
         }
-        const cacheTimestamp = Date.now();
-        this.taskCacheTimestamps[currentFilter] = cacheTimestamp;
-        this.storage.saveTaskCache(currentFilter, Array.isArray(tasks) ? tasks : [], cacheTimestamp);
 
         const projects = this.projectCache || [];
         const labels = this.labelCache || [];
 
         void this.renderTaskList(listWrapper, `filter: ${currentFilter}`, this.settings.apiKey, {
-          tasks: Array.isArray(tasks) ? tasks : [],
+          tasks: freshTasks,
           projects,
           labels
         });
@@ -2282,12 +2061,14 @@ export default class TodoistBoardPlugin extends Plugin {
           ? activeDocument.getElementById("todoist-main-board")
           : container;
         const currentFilter = boardContainer?.getAttribute("data-current-filter") || "";
-        const cachedTasks = this.storage.loadTaskCache(currentFilter);
+        let cachedTasks = this.getViewTasks(currentFilter);
+        if (!cachedTasks.length) {
+          cachedTasks = this.storageRepository.loadTaskCache(currentFilter);
+        }
         const board = boardContainer as HTMLElement;
         if (board) {
           clearEl(board);
           const currentFilterStr = `filter: ${currentFilter}`;
-          this.storage.saveTaskCache(currentFilter, cachedTasks);
           this.renderTodoistBoard(board, currentFilterStr, {}, this.settings.apiKey, {
             tasks: cachedTasks,
             projects: this.projectCache,
@@ -2314,7 +2095,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Wrap menuDropdown in a menu-dropdown-wrapper to prevent clipping ---
     const menuDropdownWrapper = activeDocument.createElement("div");
-    menuDropdownWrapper.className = "menu-dropdown-wrapper";
+    menuDropdownWrapper.className = "todoist-board-menu-wrapper menu-dropdown-wrapper";
     menuDropdownWrapper.appendChild(menuDropdown);
 
     // --- Move menuDropdownWrapper outside settingsRefreshWrapper and append to body ---
@@ -2445,67 +2226,6 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // ======================= 📋 Task List Rendering =======================
-  private getTaskId(task: any): string {
-    return String(task?.id ?? "");
-  }
-
-  private getTaskParentId(task: any): string {
-    return String(task?.parentId ?? task?.parent_id ?? "");
-  }
-
-  private compareSubtasks(a: Task, b: Task): number {
-    const orderFor = (task: any) => {
-      const raw = task?.childOrder ?? task?.child_order ?? task?.order ?? task?.dayOrder ?? task?.day_order;
-      const numeric = Number(raw);
-      return Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER;
-    };
-
-    const orderDiff = orderFor(a) - orderFor(b);
-    if (orderDiff) return orderDiff;
-
-    const alpha = String(a?.content || "").localeCompare(String(b?.content || ""), undefined, {
-      numeric: true,
-      sensitivity: "base",
-    });
-    if (alpha) return alpha;
-
-    return this.getTaskId(a).localeCompare(this.getTaskId(b));
-  }
-
-  private getKnownTasks(): Task[] {
-    const byId = new Map<string, Task>();
-
-    const add = (task: any) => {
-      const id = this.getTaskId(task);
-      if (id) byId.set(id, task as Task);
-    };
-
-    Object.values(this.taskStore || {}).forEach(add);
-
-    try {
-      Object.values(this.taskCache || {}).flat().forEach(add);
-    } catch { }
-
-    return Array.from(byId.values());
-  }
-
-  private getSubtasksForParent(parentId: string, visibleTasks: Task[]): Task[] {
-    const parentKey = String(parentId || "");
-    if (!parentKey) return [];
-
-    const byId = new Map<string, Task>();
-    const addIfChild = (task: any) => {
-      const id = this.getTaskId(task);
-      if (!id || id === parentKey) return;
-      if (this.getTaskParentId(task) === parentKey) byId.set(id, task as Task);
-    };
-
-    visibleTasks.forEach(addIfChild);
-    this.getKnownTasks().forEach(addIfChild);
-
-    return Array.from(byId.values()).sort((a, b) => this.compareSubtasks(a, b));
-  }
-
   private setTaskProjectData(row: HTMLElement, task: Task) {
     const project = this.projectMap.get(String(task.projectId || ""));
     const projectName = project ? project.name : "Unknown Project";
@@ -2517,7 +2237,7 @@ export default class TodoistBoardPlugin extends Plugin {
     row.setAttribute("data-project-color", projectColor);
   }
 
-  private trimSubtaskRowChrome(row: HTMLElement) {
+  private trimSubtaskRowChrome(row: HTMLElement, task?: Task, filters: string[] = []) {
     row.classList.add("subtask-row", "is-child-task", "todoist-card");
 
     const meta = row.querySelector(".task-metadata");
@@ -2528,6 +2248,27 @@ export default class TodoistBoardPlugin extends Plugin {
 
     const chin = row.querySelector(".fixed-chin");
     if (chin) chin.remove();
+
+    if (task && !row.querySelector(".subtask-inline-edit-btn")) {
+      const editButton = activeDocument.createElement("button");
+      editButton.type = "button";
+      editButton.className = "subtask-inline-edit-btn";
+      editButton.setAttribute("aria-label", "Edit subtask");
+      editButton.title = "Edit subtask";
+      setIcon(editButton, "pencil");
+
+      editButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+      editButton.addEventListener("pointerup", (event) => event.stopPropagation());
+      editButton.addEventListener("mousedown", (event) => event.stopPropagation());
+      editButton.addEventListener("mouseup", (event) => event.stopPropagation());
+      editButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void this.openEditTaskModalAsync(task, row, filters);
+      });
+
+      row.appendChild(editButton);
+    }
   }
 
   private setSubtaskToggleIcon(button: HTMLElement, collapsed: boolean) {
@@ -2540,7 +2281,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
   private createSubtaskToggle(parentRow: HTMLElement, subtaskWrapper: HTMLElement, subtaskCount: number): HTMLButtonElement {
     const parentId = String(parentRow.dataset.taskId || "");
-    const collapsed = parentId ? this.collapsedSubtaskParents.has(parentId) : false;
+    const collapsed = parentId ? this.taskHierarchy.isCollapsed(parentId) : false;
 
     parentRow.classList.toggle("subtasks-collapsed", collapsed);
     subtaskWrapper.classList.toggle("tb-hidden", collapsed);
@@ -2563,10 +2304,7 @@ export default class TodoistBoardPlugin extends Plugin {
       parentRow.classList.toggle("subtasks-collapsed", nextCollapsed);
       subtaskWrapper.classList.toggle("tb-hidden", nextCollapsed);
 
-      if (parentId) {
-        if (nextCollapsed) this.collapsedSubtaskParents.add(parentId);
-        else this.collapsedSubtaskParents.delete(parentId);
-      }
+      this.taskHierarchy.setCollapsed(parentId, nextCollapsed);
 
       this.setSubtaskToggleIcon(button, nextCollapsed);
     });
@@ -2596,7 +2334,7 @@ export default class TodoistBoardPlugin extends Plugin {
     for (const sub of subtasks) {
       const subRow = this.createTaskRow(sub, projectMap, labelMap, labelColorMap, projects, apiKey, listWrapper, filters);
       this.setTaskProjectData(subRow, sub);
-      this.trimSubtaskRowChrome(subRow);
+      this.trimSubtaskRowChrome(subRow, sub, filters);
       subtaskWrapper.appendChild(subRow);
     }
 
@@ -2620,11 +2358,11 @@ export default class TodoistBoardPlugin extends Plugin {
     apiKey: string,
     filters: string[],
   ) {
-    const visibleIds = new Set(taskList.map((task) => this.getTaskId(task)).filter(Boolean));
+    const visibleIds = new Set(taskList.map((task) => getTaskId(task)).filter(Boolean));
 
     taskList.forEach((task: Task) => {
-      const taskId = this.getTaskId(task);
-      const parentId = this.getTaskParentId(task);
+      const taskId = getTaskId(task);
+      const parentId = getTaskParentId(task);
       const parentIsVisible = parentId && visibleIds.has(parentId);
 
       if (parentIsVisible) return;
@@ -2648,7 +2386,7 @@ export default class TodoistBoardPlugin extends Plugin {
       this.setupTaskDragAndDrop(row, listWrapper, filters);
       listWrapper.appendChild(row);
 
-      const subtasks = this.getSubtasksForParent(taskId, taskList);
+      const subtasks = this.taskHierarchy.getSubtasksForParent(taskId, taskList, this.taskStore, this.taskCache);
       this.appendSubtaskRows(
         row,
         subtasks,
@@ -2708,7 +2446,7 @@ export default class TodoistBoardPlugin extends Plugin {
       );
       // ——— Apply persisted dimming (preload path) ———
       try {
-        const hidden = getHiddenSet();
+        const hidden = this.storageRepository.getHiddenSet();
         const nodes = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
         nodes.forEach((node) => {
           const id = String(node.dataset.taskId || "");
@@ -2755,10 +2493,11 @@ export default class TodoistBoardPlugin extends Plugin {
     let tasks: any[] = [];
     const filter = filters[0];
     const taskTimestamp = this.taskCacheTimestamps[filter] || 0;
-    const useCache = this.taskCache[filter] && (now - taskTimestamp < cacheTTL);
+    const cachedForFilter = this.getViewTasks(filter);
+    const useCache = cachedForFilter.length > 0 && (now - taskTimestamp < cacheTTL);
 
     if (useCache) {
-      tasks = this.taskCache[filter];
+      tasks = cachedForFilter;
     } else {
       // check if filter is empty or invalid, fallback to all tasks if so
       const query = filter?.trim();
@@ -2770,8 +2509,7 @@ export default class TodoistBoardPlugin extends Plugin {
         tasksResponse = await this.fetchFilteredTasksFromREST(apiKey, {});
       }
       tasks = tasksResponse && tasksResponse.results ? tasksResponse.results : tasksResponse;
-      this.taskCache[filter] = Array.isArray(tasks) ? tasks : [];
-      this.taskCacheTimestamps[filter] = now;
+      this.upsertTasks(filter, Array.isArray(tasks) ? tasks : [], { silentSidebar: true });
     }
 
     const projectMap = Array.isArray(projects)
@@ -2786,7 +2524,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
     this.ensureRefactoredRuntime(this.settings.apiKey);
     const orderKey = filters.join(",");
-    const savedOrder = this.storage.getManualOrder(orderKey);
+    const savedOrder = this.storageRepository.getManualOrder(orderKey);
 
     const taskList: Task[] = Array.isArray(tasks) ? tasks : [];
     taskList.sort((a: Task, b: Task) => {
@@ -2811,7 +2549,7 @@ export default class TodoistBoardPlugin extends Plugin {
     );
     // ——— Apply persisted dimming (non-preload path) ———
     try {
-      const hidden = getHiddenSet();
+      const hidden = this.storageRepository.getHiddenSet();
       const nodes2 = Array.from(listWrapper.querySelectorAll<HTMLElement>("[data-task-id]"));
       nodes2.forEach((node) => {
         const id = String(node.dataset.taskId || "");
@@ -2860,7 +2598,7 @@ export default class TodoistBoardPlugin extends Plugin {
     row.style.setProperty("--project-color", getProjectHexColor(task, projects));
 
     // Add "parent-task" class if task has children (by parentId) ---
-    const hasChildren = Object.values(this.taskCache).flat().some((t: any) => t.parentId === task.id);
+    const hasChildren = Object.values(this.taskStore).some((candidate: any) => candidate?.parentId === task.id);
     if (hasChildren) {
       row.classList.add("parent-task");
     }
@@ -2888,7 +2626,7 @@ export default class TodoistBoardPlugin extends Plugin {
             .setIcon("calendar")
             .onClick(async () => {
               this.ensureRefactoredRuntime(apiKey);
-              await this.todoistService.scheduleTask(task.id, { due_string: "today" });
+              await this.taskActions.scheduleTaskToday(task.id);
               // Optimistic update
               const dueSpan = row.querySelector(".due-inline");
               if (dueSpan) dueSpan.textContent = "Today";
@@ -2903,7 +2641,7 @@ export default class TodoistBoardPlugin extends Plugin {
             .setIcon("calendar-clock")
             .onClick(async () => {
               this.ensureRefactoredRuntime(apiKey);
-              await this.todoistService.scheduleTask(task.id, { due_string: "tomorrow" });
+              await this.taskActions.deferTaskToTomorrow(task.id);
               // Optimistic update
               const dueSpan = row.querySelector(".due-inline");
               if (dueSpan) dueSpan.textContent = "Tomorrow";
@@ -3214,91 +2952,114 @@ export default class TodoistBoardPlugin extends Plugin {
 
     const chinContainer = activeDocument.createElement("div");
     chinContainer.className = "chin-inner";
-
-    // Today button
-    const todayBtn = activeDocument.createElement("button");
-    todayBtn.className = "chin-btn today-btn";
-    setIcon(todayBtn, "calendar");
-    todayBtn.append("Today");
-    todayBtn.setAttribute("data-index", "0");
-    todayBtn.onclick = () => this.setTaskToToday(task.id, apiKey, chinContainer, todayBtn);
-    // Add date subtitle after SVG icon
-    const subtitle = activeDocument.createElement("p");
-    subtitle.className = "date-subtitle";
-    // Show today's date as just the day of the month
-    subtitle.textContent = String(new Date().getDate());
-    todayBtn.appendChild(subtitle);
-    chinContainer.appendChild(todayBtn);
-
-    // Tomorrow button
-    const tmrwBtn = activeDocument.createElement("button");
-    tmrwBtn.className = "chin-btn tomorrow-btn";
-    setIcon(tmrwBtn, "sunrise");
-    tmrwBtn.append("Tmrw");
-    tmrwBtn.setAttribute("data-index", "1");
-    tmrwBtn.onclick = () => this.deferTask(task.id, apiKey, chinContainer);
-    chinContainer.appendChild(tmrwBtn);
-
-    // Edit button
-    const editBtn = activeDocument.createElement("button");
-    editBtn.className = "chin-btn edit-btn";
-    setIcon(editBtn, "pencil");
-    editBtn.append("Edit");
-    editBtn.setAttribute("data-index", "2");
-    editBtn.onclick = () => {
+    const actions = Object.assign({}, DEFAULT_SETTINGS.chinBarActions, this.settings.chinBarActions || {});
+    const getFilters = () => {
       let filters: string[] = [];
       const board = row.closest(".todoist-board");
       if (board && board.hasAttribute("data-current-filter")) {
         filters = [board.getAttribute("data-current-filter")!];
       }
       if (!filters.length) filters = ["today"];
-      void this.openEditTaskModalAsync(task, row, filters);
+      return filters;
     };
-    chinContainer.appendChild(editBtn);
-    // --- Hide/Unhide (Dim) toggle ---
-    (() => {
+
+    const appendChinButton = (
+      className: string,
+      iconName: string,
+      label: string,
+      onClick: (event: MouseEvent, button: HTMLButtonElement) => void,
+    ) => {
+      const button = activeDocument.createElement("button");
+      button.className = `chin-btn ${className}`;
+      setIcon(button, iconName);
+      if (label) button.append(label);
+      button.onclick = (event) => onClick(event, button);
+      chinContainer.appendChild(button);
+      return button;
+    };
+
+    if (actions.scheduleToday) {
+      const todayBtn = appendChinButton("today-btn", "calendar", "Today", (_, button) => {
+        void this.setTaskToToday(task.id, apiKey, chinContainer, button);
+      });
+      const subtitle = activeDocument.createElement("p");
+      subtitle.className = "date-subtitle";
+      subtitle.textContent = String(new Date().getDate());
+      todayBtn.appendChild(subtitle);
+    }
+
+    if (actions.scheduleTomorrow) {
+      appendChinButton("tomorrow-btn", "sunrise", "Tmrw", () => {
+        void this.deferTask(task.id, apiKey, chinContainer);
+      });
+    }
+
+    if (actions.editTask) {
+      appendChinButton("edit-btn", "pencil", "Edit", () => {
+        void this.openEditTaskModalAsync(task, row, getFilters());
+      });
+    }
+
+    if (actions.setPriority) {
+      appendChinButton("priority-btn", "flag", "Priority", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const pMenu = new Menu();
+        pMenu.addItem((sub) => sub.setTitle("P1 (high)").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 4, apiKey)));
+        pMenu.addItem((sub) => sub.setTitle("P2").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 3, apiKey)));
+        pMenu.addItem((sub) => sub.setTitle("P3").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 2, apiKey)));
+        pMenu.addItem((sub) => sub.setTitle("P4 (low)").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 1, apiKey)));
+        pMenu.showAtPosition({ x: event.pageX, y: event.pageY });
+      });
+    }
+
+    if (actions.setDeadline) {
+      appendChinButton("deadline-btn", "target", "Deadline", () => {
+        void this.openEditTaskModalAsync(task, row, getFilters());
+      });
+    }
+
+    if (actions.hideTask) {
       try {
         const id = String(task.id);
-        const hidden = getHiddenSet();
-
-        const hideBtn = activeDocument.createElement("button");
-        hideBtn.className = "chin-btn task-hide-btn";
-        setIcon(hideBtn, hidden.has(id) ? "eye-off" : "eye");
-        hideBtn.title = hidden.has(id) ? "Unhide (undim)" : "Hide (dim)";
-        a11yButton(hideBtn, hideBtn.title);
-
-        hideBtn.onclick = (e) => {
+        const hidden = this.storageRepository.getHiddenSet();
+        const hideBtn = appendChinButton("task-hide-btn", hidden.has(id) ? "eye-off" : "eye", "", (e) => {
           e.preventDefault();
           e.stopPropagation();
           const node = (e.currentTarget as HTMLElement)?.closest('[data-task-id], [data-id]') as HTMLElement | null;
-          const set = getHiddenSet();
+          const set = this.storageRepository.getHiddenSet();
           if (set.has(id)) {
             set.delete(id);
-            saveHiddenSet(set);
+            this.storageRepository.saveHiddenSet(set);
             if (node) applyDimClass(node, false);
             setIcon(hideBtn, "eye");
             hideBtn.title = "Hide (dim)";
           } else {
             set.add(id);
-            saveHiddenSet(set);
+            this.storageRepository.saveHiddenSet(set);
             if (node) applyDimClass(node, true);
             setIcon(hideBtn, "eye-off");
             hideBtn.title = "Unhide (undim)";
           }
-        };
-
-        chinContainer.appendChild(hideBtn);
+        });
+        hideBtn.title = hidden.has(id) ? "Unhide (undim)" : "Hide (dim)";
+        a11yButton(hideBtn, hideBtn.title);
       } catch { }
-    })();
-    // --- End Hide/Unhide toggle ---
-    // Delete button
-    const deleteBtn = activeDocument.createElement("button");
-    deleteBtn.className = "chin-btn delete-btn";
-    setIcon(deleteBtn, "trash");
-    deleteBtn.setAttribute("data-index", "3");
-    deleteBtn.onclick = () => this.deleteTask(task.id, apiKey, chinContainer);
-    chinContainer.appendChild(deleteBtn);
+    }
 
+    if (actions.deleteTask) {
+      appendChinButton("delete-btn", "trash", "", () => {
+        void this.deleteTask(task.id, apiKey, chinContainer);
+      });
+    }
+
+    if (actions.openInTodoist && task.url) {
+      appendChinButton("open-todoist-btn", "external-link", "Open", () => {
+        window.open(task.url, "_blank");
+      });
+    }
+
+    if (!chinContainer.childElementCount) return;
     wrapper.appendChild(chinContainer);
     row.appendChild(wrapper);
 
@@ -3323,13 +3084,12 @@ export default class TodoistBoardPlugin extends Plugin {
       const iso = today.toISOString().split("T")[0];
 
       this.ensureRefactoredRuntime(apiKey);
-      const resp = await this.todoistService.scheduleTask(taskId, { due_date: iso });
+      const resp = await this.taskActions.scheduleTask(taskId, { due_date: iso });
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "🎉";
         window.setTimeout(() => {
-          this.taskCache = {};
-          this.taskCacheTimestamps = {};
+          this.deleteTaskEverywhere(taskId);
           const taskRow = activeDocument.getElementById(taskId);
           if (taskRow) taskRow.remove();
         }, 900);
@@ -3349,7 +3109,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private async deferTask(taskId: string, apiKey: string, toolbar: HTMLElement) {
-    const btn = toolbar.querySelector('.chin-btn[data-index="1"]') as HTMLElement;
+    const btn = toolbar.querySelector('.tomorrow-btn') as HTMLElement;
     if ((btn as any)._busy) return;
 
     (btn as any)._busy = true;
@@ -3362,13 +3122,12 @@ export default class TodoistBoardPlugin extends Plugin {
       const iso = tomorrow.toISOString().split("T")[0];
 
       this.ensureRefactoredRuntime(apiKey);
-      const resp = await this.todoistService.scheduleTask(taskId, { due_date: iso });
+      const resp = await this.taskActions.scheduleTask(taskId, { due_date: iso });
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "🎉";
         window.setTimeout(() => {
-          this.taskCache = {};
-          this.taskCacheTimestamps = {};
+          this.deleteTaskEverywhere(taskId);
           // Remove the task element from the DOM manually
           const taskRow = activeDocument.getElementById(taskId);
           if (taskRow) taskRow.remove();
@@ -3392,7 +3151,7 @@ export default class TodoistBoardPlugin extends Plugin {
   private async updateTaskPriority(taskId: string, priority: number, apiKey: string) {
     try {
       this.ensureRefactoredRuntime(apiKey);
-      await this.todoistService.updatePriority(taskId, priority);
+      await this.taskActions.updatePriority(taskId, priority);
       // Optimistic update
       const checkbox = activeDocument.querySelector(`.task[data-id="${taskId}"] input.todoist-checkbox`);
       if (checkbox) {
@@ -3408,7 +3167,7 @@ export default class TodoistBoardPlugin extends Plugin {
   private async deleteTask(taskId: string, apiKey: string, toolbar: HTMLElement) {
     if (!(await this.confirmDeleteTask())) return;
 
-    const btn = toolbar.querySelector('.chin-btn[data-index="3"]') as HTMLElement;
+    const btn = toolbar.querySelector('.delete-btn') as HTMLElement;
     if ((btn as any)._busy) return;
 
     (btn as any)._busy = true;
@@ -3416,13 +3175,12 @@ export default class TodoistBoardPlugin extends Plugin {
 
     try {
       this.ensureRefactoredRuntime(apiKey);
-      const resp = await this.todoistService.deleteTask(taskId);
+      const resp = await this.taskActions.deleteTask(taskId);
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "✅";
         window.setTimeout(() => {
-          this.taskCache = {};
-          this.taskCacheTimestamps = {};
+          this.deleteTaskEverywhere(taskId);
           // Remove the task element from the DOM manually
           const taskRow = activeDocument.getElementById(taskId);
           if (taskRow) taskRow.remove();
@@ -3554,6 +3312,7 @@ export default class TodoistBoardPlugin extends Plugin {
     row.onpointerdown = (ev: PointerEvent) => {
       // Ignore pointerdown if it's on the mini-toolbar/fixed-chin
       if ((ev.target as HTMLElement)?.closest(".fixed-chin")) return;
+      if (row.classList.contains("subtask-row") || row.closest(".subtask-wrapper")) return;
       // // if (this.settings?.enableLogs) console.log("🔽 pointerdown", ev.pointerType, ev.clientX, ev.clientY);
       const tapNow = Date.now();
       if (tapNow - lastTap < 300) return;
@@ -3804,7 +3563,9 @@ export default class TodoistBoardPlugin extends Plugin {
     const rows = Array.from(listWrapper.children) as HTMLDivElement[];
 
     rows.forEach((r, i) => {
-      const titleSpan = r.querySelector(".task-title") as HTMLElement;
+      const titleSpan = r.querySelector(
+        ":scope > .task-scroll-wrapper > .task-inner > .task-content > .task-content-wrapper > .task-title",
+      ) as HTMLElement | null;
       if (!titleSpan) return;
 
       if (active) {

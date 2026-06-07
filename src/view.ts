@@ -6,7 +6,6 @@ import type { Label, Project, TodoistBoardSettings, TodoistTask } from "./types"
 
 export interface TodoistBoardViewPlugin {
   settings: TodoistBoardSettings;
-  taskCache: Record<string, TodoistTask[]>;
   projectCache: Project[];
   labelCache: Label[];
   projectMap: Map<string, any>;
@@ -59,7 +58,7 @@ export class TodoistBoardView extends ItemView {
       checkVisible();
     });
 
-    if (!plugin.taskCache[defaultFilter] || plugin.taskCache[defaultFilter].length === 0) {
+    if (plugin.getViewTasks(defaultFilter).length === 0) {
       await plugin.preloadFilters();
     }
 

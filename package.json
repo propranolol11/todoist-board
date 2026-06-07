@@ -8,9 +8,11 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
+    "test": "node --import ./tests/register-loader.mjs --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "lint:obsidian": "eslint main.ts src/**/*.ts",
-    "lint:obsidian:errors": "eslint main.ts src/**/*.ts --quiet"
+    "lint:obsidian:errors": "eslint main.ts src/**/*.ts --quiet",
+    "verify": "npm run typecheck && npm run lint:obsidian && npm test && npm run build && npm audit"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.6",
@@ -30,7 +32,6 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@vvo/tzdb": "^6.181.0",
     "luxon": "^3.7.1"
   }
 }

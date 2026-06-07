@@ -114,6 +114,17 @@ export interface ContextMenuSettings {
   openInTodoist: boolean;
 }
 
+export interface ChinBarSettings {
+  scheduleToday: boolean;
+  scheduleTomorrow: boolean;
+  editTask: boolean;
+  hideTask: boolean;
+  deleteTask: boolean;
+  setPriority: boolean;
+  setDeadline: boolean;
+  openInTodoist: boolean;
+}
+
 export interface TodoistBoardSettings {
   apiKey: string;
   filters?: Filter[];
@@ -126,6 +137,7 @@ export interface TodoistBoardSettings {
   debug?: boolean;
   enableLogs?: boolean;
   contextMenuActions?: ContextMenuSettings;
+  chinBarActions?: ChinBarSettings;
 }
 
 export interface TodoistMetadata {
