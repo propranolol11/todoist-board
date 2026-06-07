@@ -36,7 +36,9 @@ export const getInlineCompact = (path: string, filterKey: string): boolean => {
 export const setInlineCompact = (path: string, filterKey: string, on: boolean) => {
   try {
     writeJSON(inlineCompactKey(path, filterKey), !!on);
-  } catch { }
+  } catch {
+    // Ignore inline preference write failures; the view can fall back to defaults.
+  }
 };
 
 export const getCountForFilter = (filterKey: string, memCache: Record<string, TodoistTask[]>): number => {

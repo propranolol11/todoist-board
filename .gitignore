@@ -18,6 +18,9 @@
 !tests/**/
 !tests/**/*.ts
 !tests/**/*.mjs
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
 
 # Always ignore OS + logs
 !.gitignore

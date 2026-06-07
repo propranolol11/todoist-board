@@ -75,27 +75,23 @@ const DEFAULT_SETTINGS: TodoistBoardSettings = CORE_DEFAULT_SETTINGS;
 export default class TodoistBoardPlugin extends Plugin {
   // Debug logger helpers (gated by settings.enableLogs)
   private log(...args: LogArg[]) {
-    try { if (this.settings?.enableLogs) window.console?.log(...args); } catch { }
+    if (this.settings?.enableLogs) window.console?.log(...args);
   }
   private info(...args: LogArg[]) {
-    try { if (this.settings?.enableLogs) window.console?.info(...args); } catch { }
+    if (this.settings?.enableLogs) window.console?.info(...args);
   }
   private warn(...args: LogArg[]) {
-    try { if (this.settings?.enableLogs) window.console?.warn(...args); } catch { }
+    if (this.settings?.enableLogs) window.console?.warn(...args);
   }
   private error(...args: LogArg[]) {
-    try { if (this.settings?.enableLogs) window.console?.error(...args); } catch { }
+    if (this.settings?.enableLogs) window.console?.error(...args);
   }
 
   // Closes any Todoist Board modal (edit/add)
   private closeAnyModal() {
-    try {
-      const modal = activeDocument.querySelector('.todoist-modal');
-      if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
-    } catch { }
-    try {
-      this.closeModal();
-    } catch { }
+    const modal = activeDocument.querySelector('.todoist-modal');
+    if (modal && modal.parentElement) modal.parentElement.removeChild(modal);
+    this.closeModal();
   }
 
   // Back-compat
@@ -260,7 +256,9 @@ export default class TodoistBoardPlugin extends Plugin {
           const badge = board.querySelector(`.filter-row[data-filter="${f}"] .filter-badge-count`);
           if (badge) badge.textContent = this.formatFilterCount(tasksForView.length, Boolean(this.filterNextCursor[f]));
         });
-      } catch { }
+      } catch {
+        // Ignore sidebar refresh failures; the next render cycle will recover.
+      }
     }
     this.refreshAllInlineBoards();
   }
@@ -516,6 +514,7 @@ export default class TodoistBoardPlugin extends Plugin {
           this.upsertTasks(key, Array.isArray(tasks) ? tasks : []);
         }
       } catch {
+        // Ignore best-effort preload failures for optional filters.
       }
     }));
   }
@@ -795,7 +794,9 @@ export default class TodoistBoardPlugin extends Plugin {
                   if (!id) return;
                   applyDimClass(node, hidden.has(id));
                 });
-              } catch { }
+              } catch {
+                // Ignore dim-state failures; task rendering should still complete.
+              }
             };
 
             render();
@@ -901,48 +902,6 @@ export default class TodoistBoardPlugin extends Plugin {
             a11yButton(captureBtn, "Add task");
             toolbar.appendChild(captureBtn);
             // --- End Capture (+) Button ---
-            // --- Copy List Button ---
-            const copyBtn = activeDocument.createElement("span");
-            copyBtn.className = "clickable-icon";
-            copyBtn.classList.add(
-              "tb-scale-110",
-              "tb-opacity-60",
-              "tb-flex",
-              "tb-ai-center",
-              "tb-justify-center",
-              "tb-cursor-pointer"
-            );
-            setIcon(copyBtn, "copy");
-            copyBtn.title = "Copy list";
-            copyBtn.onclick = async () => {
-              try {
-                const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
-                // Build the current view using the same sorter as the renderer
-                const base = this.getViewTasks(currentFilterKey);
-                const { viewTasks } = this.buildRenderInput(base, el, currentFilterKey);
-
-                const lines = viewTasks.map((t) => {
-                  const title = String(t?.content || "").trim();
-                  return `- [ ] ${title}`;
-                });
-                const text = lines.join("\n");
-
-                if (!text) {
-                  new Notice("No tasks to copy");
-                  return;
-                }
-
-                // Try Clipboard API first
-                await navigator.clipboard.writeText(text);
-                new Notice("Copied task list");
-              } catch {
-                new Notice("Copy failed");
-              }
-            };
-            // Hover opacity handled in CSS
-            a11yButton(copyBtn, "Copy task list");
-            toolbar.appendChild(copyBtn);
-            // --- End Copy List Button ---
             // --- Manual Sync Button ---
             const syncButton = activeDocument.createElement("span");
             syncButton.className = "clickable-icon";
@@ -1042,6 +1001,7 @@ export default class TodoistBoardPlugin extends Plugin {
                 }
               }
             } catch {
+              // Ignore offline cache fallback failures and continue with live loading.
             }
           }
 
@@ -1364,7 +1324,9 @@ export default class TodoistBoardPlugin extends Plugin {
             if (!id) return;
             applyDimClass(node, hidden.has(id));
           });
-        } catch { }
+        } catch {
+          // Ignore dim-state failures; task rendering should still complete.
+        }
 
         // Fetch metadata in background if stale, then re-render
         const now = Date.now();
@@ -1497,7 +1459,11 @@ export default class TodoistBoardPlugin extends Plugin {
 
       const iconSpan = filterRow.createSpan({ cls: "filter-icon" });
       // If you have an icon name on the option, use it; else fall back.
-      try { setIcon(iconSpan, String(opt.icon ?? "filter")); } catch { }
+      try {
+        setIcon(iconSpan, String(opt.icon ?? "filter"));
+      } catch {
+        iconSpan.textContent = "";
+      }
 
       filterRow.createSpan({ cls: "filter-title", text: String(opt.title ?? "") });
       filterRow.setAttribute("data-filter", opt.filter);
@@ -1661,7 +1627,9 @@ export default class TodoistBoardPlugin extends Plugin {
             // Use live copy for modal fields, but do not overwrite store here to avoid clobbering edits
             task = live;
           }
-        } catch { }
+        } catch {
+          // Ignore live-refresh failures and keep the cached task in the modal.
+        }
       })();
 
       const fields = {
@@ -1743,6 +1711,7 @@ export default class TodoistBoardPlugin extends Plugin {
                     this.projectMap.set(String(dest.id), dest);
                   }
                 } catch {
+                  // Ignore destination metadata failures; the task move can still succeed.
                 }
               }
 
@@ -1758,6 +1727,7 @@ export default class TodoistBoardPlugin extends Plugin {
                     this.projectMap.set(String(dest.id), dest);
                   }
                 } catch {
+                  // Ignore destination metadata failures; the task move can still succeed.
                 }
               }
             }
@@ -1791,7 +1761,7 @@ export default class TodoistBoardPlugin extends Plugin {
               });
             });
           } catch {
-            try { new Notice("Update failed"); } catch { }
+            new Notice("Update failed");
           }
         },
       });
@@ -1835,7 +1805,7 @@ export default class TodoistBoardPlugin extends Plugin {
           await this.preloadFilters();
           this.app.workspace.trigger("markdown-preview-rendered");
         } catch {
-          try { new Notice("Could not add task"); } catch { }
+          new Notice("Could not add task");
         }
       },
     });
@@ -2485,7 +2455,9 @@ export default class TodoistBoardPlugin extends Plugin {
           if (!id) return;
           applyDimClass(node, hidden.has(id));
         });
-      } catch { }
+      } catch {
+        // Ignore dim-state failures; task rendering should still complete.
+      }
       // --- Insert empty quote if no tasks ---
 	      if (taskList.length === 0) {
 	        const quoteDiv = activeDocument.createElement("div");
@@ -2588,7 +2560,9 @@ export default class TodoistBoardPlugin extends Plugin {
         if (!id) return;
         applyDimClass(node, hidden.has(id));
       });
-    } catch { }
+    } catch {
+      // Ignore dim-state failures; task rendering should still complete.
+    }
     // --- Insert empty quote if no tasks ---
 	    if (taskList.length === 0) {
 	      const quoteDiv = activeDocument.createElement("div");
@@ -2602,7 +2576,9 @@ export default class TodoistBoardPlugin extends Plugin {
       if (source && source.trim().startsWith("filter:")) {
         this.storage.setLastFilter(source.trim());
       }
-    } catch { }
+    } catch {
+      // Ignore last-filter persistence failures.
+    }
   }
 
   // ======================= 🧩 Task Row Creation =======================
@@ -3082,7 +3058,9 @@ export default class TodoistBoardPlugin extends Plugin {
         });
         hideBtn.title = hidden.has(id) ? "Unhide (undim)" : "Hide (dim)";
         a11yButton(hideBtn, hideBtn.title);
-      } catch { }
+      } catch {
+        // Ignore hide action UI refresh failures; persisted state is still updated.
+      }
     }
 
     if (actions.deleteTask) {
