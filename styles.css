@@ -3434,7 +3434,7 @@ body.theme-dark .todoist-board .deadline-inline {
   overflow-y: auto;
 }
 
-/* Offscreen positioning for clipboard textarea */
+/* Offscreen positioning for temporary utility elements */
 .todoist-board .tb-fixed-offscreen {
   position: fixed;
   left: -10000px;

@@ -34,7 +34,7 @@ const OBSIDIAN_ICONS = [
   "link", "list", "lock", "map", "mic", "moon", "music", "pause", "phone", "refresh-cw", "save",
   "scissors", "send", "share", "shield", "shopping-cart", "sliders", "sun", "terminal", "thumbs-up",
   "toggle-left", "trash-2", "trending-up", "upload", "user", "video", "watch", "wifi", "x-circle",
-  "alarm-clock", "bell", "briefcase", "clipboard", "coffee", "credit-card", "disc", "dollar-sign",
+  "alarm-clock", "bell", "briefcase", "coffee", "credit-card", "disc", "dollar-sign",
   "edit-2", "fast-forward", "file-text", "film", "gift", "hand", "home", "inbox", "info", "layout",
   "lightbulb", "list-checks", "loader", "log-in", "log-out", "menu", "message-circle", "navigation",
   "notebook", "package", "palette", "paperclip", "play", "printer", "repeat", "rss", "server", "shopping-bag",
