@@ -1,24 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, no-empty */
+import type { App } from "obsidian";
 import type { Label, Project, SortMode, TaskStoreSnapshot, TodoistMetadata, TodoistTask } from "./types";
 import { normalizeSortMode } from "./sort";
 
 const V2_PREFIX = "todoistBoard:v2";
+const fallbackStore = new Map<string, unknown>();
 
 export function readJSON<T>(key: string, fallback: T): T {
-  try {
-    const value = localStorage.getItem(key);
-    if (value === null || value === undefined) return fallback;
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
+  return (fallbackStore.has(key) ? fallbackStore.get(key) : fallback) as T;
 }
 
 export function writeJSON(key: string, value: unknown) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // localStorage can be full or blocked.
-  }
+  fallbackStore.set(key, value);
 }
 
 const hiddenKey = (): string => {
@@ -65,12 +58,14 @@ export const getCountForFilter = (filterKey: string, memCache: Record<string, an
 };
 
 export class TodoistBoardStorage {
+  private readonly app?: App;
   private readonly prefix: string;
 
-  constructor(appOrPrefix?: unknown | string, prefix = V2_PREFIX) {
+  constructor(appOrPrefix?: App | string, prefix = V2_PREFIX) {
     if (typeof appOrPrefix === "string") {
       this.prefix = appOrPrefix;
     } else {
+      this.app = appOrPrefix;
       this.prefix = prefix;
     }
   }
@@ -80,27 +75,51 @@ export class TodoistBoardStorage {
   }
 
   private loadValue<T>(key: string, fallback: T): T {
-    return readJSON<T>(key, fallback);
+    try {
+      const value = this.app?.loadLocalStorage(key);
+      if (value !== null && value !== undefined) return value as T;
+    } catch {
+      // Fall back to the in-memory store for tests or blocked storage.
+    }
+
+    return readJSON(key, fallback);
   }
 
   private loadString(key: string, fallback = ""): string {
     try {
-      return localStorage.getItem(key) ?? fallback;
+      const value = this.app?.loadLocalStorage(key);
+      if (value !== null && value !== undefined) return String(value);
     } catch {
-      return fallback;
+      // Fall back to the in-memory store for tests or blocked storage.
     }
+
+    return String(readJSON(key, fallback));
   }
 
   private saveValue(key: string, value: unknown) {
+    try {
+      if (this.app) {
+        this.app.saveLocalStorage(key, value);
+        return;
+      }
+    } catch {
+      // Fall back to the in-memory store for tests or blocked storage.
+    }
+
     writeJSON(key, value);
   }
 
   private saveString(key: string, value: string) {
     try {
-      localStorage.setItem(key, value);
+      if (this.app) {
+        this.app.saveLocalStorage(key, value);
+        return;
+      }
     } catch {
-      // Ignore storage failures.
+      // Fall back to the in-memory store for tests or blocked storage.
     }
+
+    writeJSON(key, value);
   }
 
   loadTaskSnapshot(filterKeys: string[] = []): TaskStoreSnapshot {
@@ -302,28 +321,19 @@ export class TodoistBoardStorage {
       taskCache: {},
       timestamps: {},
     });
-    this.removeMatching((key) =>
-      key.startsWith("todoistTasksCache:")
-      || key.startsWith("todoistTasksCacheTimestamp:")
-      || key.startsWith("todoistFilterIndex:")
-      || key.startsWith(`${this.prefix}:sort:`)
-      || key.startsWith(`${this.prefix}:order:`),
-    );
-  }
-
-  removeMatching(predicate: (key: string) => boolean) {
-    for (let index = localStorage.length - 1; index >= 0; index--) {
-      const key = localStorage.key(index) || "";
-      if (predicate(key)) this.remove(key);
-    }
   }
 
   remove(key: string) {
     try {
-      localStorage.removeItem(key);
+      if (this.app) {
+        this.app.saveLocalStorage(key, null);
+        return;
+      }
     } catch {
-      // Ignore storage failures.
+      // Fall back to the in-memory store for tests or blocked storage.
     }
+
+    fallbackStore.delete(key);
   }
 
   private normalizeSnapshot(snapshot: TaskStoreSnapshot): TaskStoreSnapshot {

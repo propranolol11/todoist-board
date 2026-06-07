@@ -10,6 +10,7 @@
 !tsconfig.json
 !rollup.config.js
 !eslint.config.mjs
+!CONTRIBUTING.md
 !src/
 !src/**/
 !src/**/*.ts

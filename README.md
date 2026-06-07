@@ -25,6 +25,8 @@ This plugin is not affiliated with, endorsed by, or sponsored by Todoist.
 
 ## Setup
 
+Todoist Board requires Obsidian 1.8.7 or newer.
+
 1. Install the plugin in Obsidian.
 2. Open Obsidian settings and go to Todoist Board.
 3. Paste a Todoist personal API token.

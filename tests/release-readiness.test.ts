@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { resolveFilterFromSource, sourceOrDefault } from "../src/filters.ts";
 import { sortTasksLikeTodoist } from "../src/sort.ts";
-import { TodoistBoardStorage } from "../src/storage.ts";
+import { TodoistBoardStorage, writeJSON } from "../src/storage.ts";
 import { TaskStore } from "../src/task-store.ts";
 import { getSubtasksForParent, TaskHierarchy } from "../src/task-hierarchy.ts";
 import { normalizeTask, toRestTaskPayload, toSyncTaskArgs } from "../src/todoist-service.ts";
@@ -104,8 +104,8 @@ test("task hierarchy merges visible and cached children, dedupes them, and prese
 });
 
 test("task store hydrates legacy cache and writes an authoritative snapshot", () => {
-  localStorage.setItem("todoistTasksCache:today", JSON.stringify([{ id: "1", content: "Cached" }]));
-  localStorage.setItem("todoistTasksCacheTimestamp:today", "123");
+  writeJSON("todoistTasksCache:today", [{ id: "1", content: "Cached" }]);
+  writeJSON("todoistTasksCacheTimestamp:today", "123");
 
   const storage = new TodoistBoardStorage("test");
   const store = new TaskStore(storage);
