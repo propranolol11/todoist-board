@@ -116,7 +116,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     );
 
     const nextSection = container.createDiv({ cls: "todoist-settings-card todoist-settings-next" });
-    nextSection.createEl("h3", { text: "Next", cls: "todoist-settings-card-title" });
+    this.renderHeading(nextSection, "Next", "todoist-settings-card-title");
     const nextList = nextSection.createEl("ul", { cls: "todoist-settings-next-list" });
     nextList.createEl("li", { text: "Command palette: Open Todoist Board" });
     const codeItem = nextList.createEl("li");
@@ -187,10 +187,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     );
 
     const contextMenuSection = container.createDiv({ cls: "settings-context-preview-section" });
-    contextMenuSection.createEl("h3", {
-      cls: "settings-context-preview-title",
-      text: "Context menu actions",
-    });
+    this.renderHeading(contextMenuSection, "Context menu actions", "settings-context-preview-title");
     contextMenuSection.createEl("p", {
       cls: "settings-context-preview-desc",
       text: "Choose which actions appear in the task right-click menu.",
@@ -249,10 +246,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     });
 
     const chinBarSection = container.createDiv({ cls: "settings-chin-preview-section" });
-    chinBarSection.createEl("h3", {
-      cls: "settings-context-preview-title",
-      text: "Chin bar actions",
-    });
+    this.renderHeading(chinBarSection, "Chin bar actions", "settings-context-preview-title");
     chinBarSection.createEl("p", {
       cls: "settings-context-preview-desc",
       text: "Tap actions to show or hide them in the selected-task toolbar.",
@@ -312,7 +306,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     );
 
     const supportCard = container.createDiv({ cls: "todoist-settings-card todoist-settings-support-card" });
-    supportCard.createEl("h3", { text: "Support my work", cls: "todoist-settings-card-title" });
+    this.renderHeading(supportCard, "Support my work", "todoist-settings-card-title");
     supportCard.createEl("p", {
       text: "If Todoist Board is helping your workflow, you can support ongoing development.",
       cls: "todoist-settings-card-desc",
@@ -325,7 +319,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     coffeeButton.onclick = () => window.open("https://ko-fi.com/jamiedaghaim", "_blank");
 
     const repoCard = container.createDiv({ cls: "todoist-settings-card" });
-    repoCard.createEl("h3", { text: "Project links", cls: "todoist-settings-card-title" });
+    this.renderHeading(repoCard, "Project links", "todoist-settings-card-title");
     repoCard.createEl("p", {
       text: "Report issues, browse examples, and follow release notes on GitHub.",
       cls: "todoist-settings-card-desc",
@@ -335,8 +329,17 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
 
   private renderPanelHeader(container: HTMLElement, title: string, description: string) {
     const header = container.createDiv({ cls: "todoist-settings-panel-header" });
-    header.createEl("h2", { text: title, cls: "todoist-settings-panel-title" });
+    this.renderHeading(header, title, "todoist-settings-panel-title");
     header.createEl("p", { text: description, cls: "todoist-settings-panel-desc" });
+  }
+
+  private renderHeading(container: HTMLElement, title: string, titleClass: string) {
+    const heading = new Setting(container)
+      .setName(title)
+      .setHeading();
+    heading.settingEl.addClass("todoist-settings-heading");
+    heading.nameEl.addClass(titleClass);
+    return heading;
   }
 
   private renderTipCard(
@@ -349,7 +352,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     const card = container.createDiv({ cls: "todoist-settings-tip-card" });
     const icon = card.createSpan({ cls: "todoist-settings-tip-icon" });
     setIcon(icon, iconName);
-    card.createEl("h3", { text: title, cls: "todoist-settings-card-title" });
+    this.renderHeading(card, title, "todoist-settings-card-title");
     card.createEl("p", { text: description, cls: "todoist-settings-card-desc" });
     if (code) {
       const pre = card.createEl("pre", { cls: "todoist-settings-code-example" });

@@ -1,4 +1,3 @@
-import type { App } from "obsidian";
 import type { Label, Project, SortMode, TaskStoreSnapshot, TodoistMetadata, TodoistTask } from "./types";
 import { normalizeSortMode } from "./sort";
 
@@ -66,14 +65,12 @@ export const getCountForFilter = (filterKey: string, memCache: Record<string, an
 };
 
 export class TodoistBoardStorage {
-  private readonly app?: App;
   private readonly prefix: string;
 
-  constructor(appOrPrefix?: App | string, prefix = V2_PREFIX) {
+  constructor(appOrPrefix?: unknown | string, prefix = V2_PREFIX) {
     if (typeof appOrPrefix === "string") {
       this.prefix = appOrPrefix;
     } else {
-      this.app = appOrPrefix;
       this.prefix = prefix;
     }
   }
@@ -83,24 +80,10 @@ export class TodoistBoardStorage {
   }
 
   private loadValue<T>(key: string, fallback: T): T {
-    try {
-      const value = this.app?.loadLocalStorage?.(key);
-      if (value !== null && value !== undefined) return value as T;
-    } catch {
-      // Fall back to legacy global localStorage below.
-    }
-
     return readJSON<T>(key, fallback);
   }
 
   private loadString(key: string, fallback = ""): string {
-    try {
-      const value = this.app?.loadLocalStorage?.(key);
-      if (value !== null && value !== undefined) return String(value);
-    } catch {
-      // Fall back to legacy global localStorage below.
-    }
-
     try {
       return localStorage.getItem(key) ?? fallback;
     } catch {
@@ -109,28 +92,10 @@ export class TodoistBoardStorage {
   }
 
   private saveValue(key: string, value: unknown) {
-    try {
-      if (this.app?.saveLocalStorage) {
-        this.app.saveLocalStorage(key, value);
-        return;
-      }
-    } catch {
-      // Fall back to legacy global localStorage below.
-    }
-
     writeJSON(key, value);
   }
 
   private saveString(key: string, value: string) {
-    try {
-      if (this.app?.saveLocalStorage) {
-        this.app.saveLocalStorage(key, value);
-        return;
-      }
-    } catch {
-      // Fall back to legacy global localStorage below.
-    }
-
     try {
       localStorage.setItem(key, value);
     } catch {
@@ -354,15 +319,6 @@ export class TodoistBoardStorage {
   }
 
   remove(key: string) {
-    try {
-      if (this.app?.saveLocalStorage) {
-        this.app.saveLocalStorage(key, null);
-        return;
-      }
-    } catch {
-      // Fall back to legacy global localStorage below.
-    }
-
     try {
       localStorage.removeItem(key);
     } catch {

@@ -3883,6 +3883,19 @@ body.tb-scroll-lock {
   margin: 0;
 }
 
+.todoist-board-settings-tab .todoist-settings-heading {
+  border-top: 0;
+  padding: 0;
+}
+
+.todoist-board-settings-tab .todoist-settings-heading .setting-item-info {
+  margin: 0;
+}
+
+.todoist-board-settings-tab .todoist-settings-heading .setting-item-name {
+  padding: 0;
+}
+
 .todoist-board-settings-tab .todoist-settings-card .setting-item {
   border-top: 0;
   padding: 0;
