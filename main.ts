@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, no-empty */
 // ======================= 🌟 Constants & Interfaces =======================
 // --- Selected Filter Index State ---
 let selectedFilterIndex: number = 0;
@@ -1131,7 +1130,7 @@ export default class TodoistBoardPlugin extends Plugin {
     // Remove global event listener
     activeDocument.removeEventListener("click", this._globalClickListener);
     // Failsafe: always clear drag/body locks
-    activeDocument.body.classList.remove("drag-disable", "tb-scroll-lock");
+    activeDocument.body.classList.remove("drag-disable", "tb-scroll-lock", "tb-has-selected-task");
 
     // Clear dropdowns
     const allDropdowns = activeDocument.querySelectorAll(".menu-dropdown-wrapper");
@@ -2853,7 +2852,7 @@ export default class TodoistBoardPlugin extends Plugin {
     activeDocument.querySelectorAll(".selected-task").forEach(el => {
       if (el !== row) {
         el.classList.add("task-deselecting");
-        el.classList.remove("selected-task");
+        el.classList.remove("selected-task", "has-fixed-chin");
 
         window.setTimeout(() => {
           el.classList.remove("task-deselecting");
@@ -2876,6 +2875,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Apply new selection immediately
     row.classList.add("selected-task");
+    this.syncSelectedTaskState();
 
     if (row.classList.contains("selected-task")) {
       this.selectTask(row, task, titleSpan, rowCheckbox, metaSpan, apiKey);
@@ -2912,6 +2912,7 @@ export default class TodoistBoardPlugin extends Plugin {
     metaSpan.classList.add("task-meta-selected");
 
     row.classList.add("selected-task");
+    this.syncSelectedTaskState();
     // Removed code that adds .show-description to .task-description
 
     this.createMiniToolbar(row, task, apiKey);
@@ -2925,7 +2926,8 @@ export default class TodoistBoardPlugin extends Plugin {
     if (toolbar) toolbar.remove();
 
     window.setTimeout(() => {
-      row.classList.remove("selected-task", "task-deselecting");
+      row.classList.remove("selected-task", "task-deselecting", "has-fixed-chin");
+      this.syncSelectedTaskState();
 
       const titleSpan = row.querySelector(".task-title") as HTMLElement;
       const rowCheckbox = row.querySelector("input[type='checkbox']") as HTMLElement;
@@ -2945,7 +2947,10 @@ export default class TodoistBoardPlugin extends Plugin {
   // ======================= 🧰 Mini Toolbar =======================
   private createMiniToolbar(row: HTMLElement, task: any, apiKey: string) {
     const oldWrapper = activeDocument.getElementById("mini-toolbar-wrapper");
+    const previousRow = oldWrapper?.closest(".task");
+    if (previousRow instanceof HTMLElement) previousRow.classList.remove("has-fixed-chin");
     if (oldWrapper) oldWrapper.remove();
+    row.classList.add("has-fixed-chin");
 
     const wrapper = activeDocument.createElement("div");
     wrapper.id = "mini-toolbar-wrapper";
@@ -3501,7 +3506,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
   clearSelectedTaskHighlight(): void {
     activeDocument.querySelectorAll(".selected-task").forEach((el) => {
-      el.classList.remove("selected-task");
+      el.classList.remove("selected-task", "has-fixed-chin");
       void (el as HTMLElement).offsetWidth; // force reflow
 
       window.setTimeout(() => {
@@ -3509,6 +3514,14 @@ export default class TodoistBoardPlugin extends Plugin {
         if (toolbar) toolbar.remove();
       }, 0); // delay toolbar removal until next frame
     });
+    this.syncSelectedTaskState();
+  }
+
+  private syncSelectedTaskState(): void {
+    activeDocument.body.classList.toggle(
+      "tb-has-selected-task",
+      activeDocument.querySelector(".todoist-board .selected-task") !== null
+    );
   }
 
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, no-empty */
 import { App, Modal, Notice, setIcon } from "obsidian";
 import { clearEl } from "../dom";
 import type { TodoistBoardSettings } from "../types";
@@ -280,10 +279,12 @@ function renderDefaultToggle(
   const defaultInput = defaultLabel.createEl("input", { type: "radio" }) as HTMLInputElement;
   defaultInput.name = "default-filter";
   defaultInput.checked = !!filter.isDefault;
+  defaultLabel.classList.toggle("is-checked", defaultInput.checked);
   defaultInput.onchange = () => {
     settings.filters!.forEach((_, filterIndex) => {
       settings.filters![filterIndex].isDefault = filterIndex === index;
     });
+    defaultLabel.classList.toggle("is-checked", defaultInput.checked);
     rerender();
   };
   const defaultIcon = defaultLabel.createSpan();

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-misused-promises, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, no-empty */
 import { MarkdownRenderer } from "obsidian";
 import { DateTime } from "luxon";
 import { TODOIST_COLORS, TODOIST_COLORS_NUM } from "./constants";
@@ -378,7 +377,7 @@ function createLabelPill(
       part.style.setProperty("--label-color", color);
       at.style.setProperty("--label-color", color);
       at.classList.add("label-at");
-      at.style.cssText += `; --label-color: ${color}; color: ${color} !important;`;
+      at.style.cssText += `; --label-color: ${color}; color: ${color};`;
     }
 
     part.appendChild(at);
