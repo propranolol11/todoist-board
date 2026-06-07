@@ -1,6 +1,6 @@
 {
   "name": "todoist-board",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Obsidian plugin for visualizing Todoist tasks",
   "repository": "https://github.com/propranolol11/todoist-board",
   "main": "main.js",

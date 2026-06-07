@@ -3343,6 +3343,9 @@ export default class TodoistBoardPlugin extends Plugin {
       const isTouch = ev.pointerType === "touch" || ev.pointerType === "pen";
       const startX = ev.clientX;
       const startY = ev.clientY;
+      const startRect = row.getBoundingClientRect();
+      const dragOffsetX = Math.min(Math.max(startX - startRect.left, 12), Math.max(startRect.width - 12, 12));
+      const dragOffsetY = Math.min(Math.max(startY - startRect.top, 12), Math.max(startRect.height - 12, 12));
       let longPressTimer: number | null = null;
       let dragging = false;
       let pid = ev.pointerId;
@@ -3361,9 +3364,34 @@ export default class TodoistBoardPlugin extends Plugin {
           navigator.vibrate([30, 20, 30]);
         }
 
+        const ownerDocument = listWrapper.ownerDocument;
+        const dragLayer = ownerDocument.createElement("div");
+        dragLayer.className = "todoist-board task-drag-layer";
+        dragLayer.setCssProps({
+          "--task-drag-width": `${startRect.width}px`,
+          "--task-drag-min-height": `${startRect.height}px`,
+        });
+
+        const dragPreview = row.cloneNode(true) as HTMLElement;
+        dragPreview.id = "";
+        dragPreview.removeAttribute("data-id");
+        dragPreview.removeAttribute("data-task-id");
+        dragPreview.classList.remove("dragging-row");
+        dragPreview.classList.add("task-drag-preview");
+        dragLayer.appendChild(dragPreview);
+        ownerDocument.body.appendChild(dragLayer);
+
+        const updateDragPreview = (event: PointerEvent) => {
+          const x = event.clientX - dragOffsetX;
+          const y = event.clientY - dragOffsetY;
+          dragLayer.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        };
+        updateDragPreview(e ?? ev);
+
         const placeholder = row.cloneNode(true) as HTMLDivElement;
         placeholder.id = "todoist-placeholder";
         placeholder.className = "task-placeholder";
+        let dragFinished = false;
 
         listWrapper.insertBefore(placeholder, row);
 
@@ -3372,6 +3400,7 @@ export default class TodoistBoardPlugin extends Plugin {
           if (e.pointerId !== pid) return;
           e.preventDefault();
           e.stopPropagation();
+          updateDragPreview(e);
 
           const rows = Array.from(listWrapper.children).filter(c => c !== row && c !== placeholder) as HTMLDivElement[];
           for (let i = 0; i < rows.length; i++) {
@@ -3390,8 +3419,10 @@ export default class TodoistBoardPlugin extends Plugin {
         const finishDrag = (e: PointerEvent) => {
           // // if (this.settings?.enableLogs) console.log("✅ finishDrag");
           if (e.pointerId !== pid) return;
+          if (dragFinished) return;
+          dragFinished = true;
 
-          row.releasePointerCapture(pid);
+          if (row.hasPointerCapture(pid)) row.releasePointerCapture(pid);
           row.removeEventListener("pointermove", moveWhileDragging);
           row.removeEventListener("pointerup", finishDrag);
           row.removeEventListener("pointercancel", finishDrag);
@@ -3399,8 +3430,9 @@ export default class TodoistBoardPlugin extends Plugin {
 
           this.setTaskDragLock(row, listWrapper, false);
 
-          listWrapper.insertBefore(row, placeholder);
+          if (placeholder.parentElement) listWrapper.insertBefore(row, placeholder);
           placeholder.remove();
+          dragLayer.remove();
           const newOrder = Array.from(listWrapper.children)
             .map(c => c.getAttribute("data-id"))
             .filter(id => id);
