@@ -133,6 +133,14 @@ export interface ChinBarSettings {
   openInTodoist: boolean;
 }
 
+export interface AddTaskModalSettings {
+  dueDate: boolean;
+  deadline: boolean;
+  priority: boolean;
+  project: boolean;
+  labels: boolean;
+}
+
 export interface TodoistBoardSettings {
   apiKey: string;
   filters?: Filter[];
@@ -146,6 +154,7 @@ export interface TodoistBoardSettings {
   enableLogs?: boolean;
   contextMenuActions?: ContextMenuSettings;
   chinBarActions?: ChinBarSettings;
+  addTaskModal?: AddTaskModalSettings;
 }
 
 export interface TodoistMetadata {

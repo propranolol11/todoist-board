@@ -5,6 +5,8 @@
   --pill-text: #4b5563;
   --selected-bg: #f6f9ff;
   --selected-border: #b4cef5;
+  --selected-card-radius: 12px;
+  --chin-button-radius: calc(var(--selected-card-radius) - 2px);
   --deadline-bg: #d8d5ff;
   --deadline-text: #6b21a8;
   --meta-text: #6b7280;
@@ -587,7 +589,7 @@ body.theme-dark .todoist-board .task-title {
     rgba(6, 24, 44, 0.4) 0px 0px 0px 0.1px,
     rgba(6, 24, 44, 0.65) 0px 4px 4px -3px,
     rgba(255, 255, 255, 0.08) -3px 1px 0px 0px;
-  border-radius: 12px;
+  border-radius: var(--selected-card-radius);
   border: 1px solid #e5e7eb;
   margin-block-start: 1rem;
   margin-block-end: 0.75rem;
@@ -639,6 +641,59 @@ body.tb-has-selected-task .todoist-board .task:not(.selected-task):not(.subtask-
   position: relative;
 }
 
+.todoist-board .selected-task.has-fixed-chin {
+  display: block;
+  overflow: hidden;
+  padding: 0;
+}
+
+.todoist-board .selected-task.has-fixed-chin > input.todoist-checkbox {
+  left: 14px;
+  margin: 0;
+  position: absolute;
+  top: 14px;
+}
+
+.todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper {
+  display: block;
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  overflow: visible;
+  padding: 0;
+  width: 100%;
+}
+
+.todoist-board .selected-task > .task-scroll-wrapper > .fixed-chin {
+  display: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner,
+.todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner > .task-content,
+.todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner .task-content-wrapper {
+  display: block;
+  flex: 0 0 auto;
+  height: auto;
+  max-height: none;
+  min-height: 0;
+  min-width: 0;
+  overflow: visible;
+  width: 100%;
+}
+
+.todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner {
+  min-height: 0;
+  padding: 12px 12px 8px 54px;
+}
+
+.todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner .task-content-wrapper {
+  flex: 0 0 auto;
+  padding-bottom: 0;
+}
+
 .todoist-board .selected-task .task-inner {
   flex: 0 0 auto;
   min-width: 0;
@@ -659,7 +714,7 @@ body.tb-has-selected-task .todoist-board .task:not(.selected-task):not(.subtask-
   justify-content: flex-start;
   flex-direction: column;
   align-items: stretch;
-  height: 100%;
+  height: auto;
   min-height: unset;
   min-width: 0;
   max-width: 100%;
@@ -942,10 +997,15 @@ input.todoist-checkbox::after {
 
 /* Restrict height and allow scrolling for long descriptions in selected task */
 .todoist-board .selected-task .task-description {
-  max-height: 80px;
+  max-height: 112px;
   padding-bottom: 0.5rem;
   overflow-y: auto;
   position: relative;
+}
+
+.todoist-board .selected-task .task-description.desc-expanded {
+  max-height: none;
+  overflow: visible;
 }
 
 
@@ -1049,6 +1109,45 @@ input.todoist-checkbox::after {
   white-space: pre-line;
 }
 
+.todoist-board .task-description-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  bottom: 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 22px;
+  justify-content: center;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  width: 22px;
+}
+
+.todoist-board .task-description-toggle svg {
+  height: 16px;
+  width: 16px;
+}
+
+.todoist-board .selected-task .task-description.has-description:hover .task-description-toggle,
+.todoist-board .selected-task .task-description.has-description:focus-within .task-description-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.todoist-board .task-description-toggle:hover,
+.todoist-board .task-description-toggle:focus-visible {
+  background: color-mix(in srgb, var(--background-modifier-hover) 70%, transparent);
+  color: var(--text-normal);
+  outline: none;
+}
+
 
 
 
@@ -1095,22 +1194,27 @@ input.todoist-checkbox::after {
   max-width: 220px;
 }
 
-/* Space reserved for chin/mini‑toolbar */
-:root {
-  --chin-height: 16px;
-}
-
-/* desktop/tablet default */
-@media (max-width: 600px) {
-  :root {
-    --chin-height: 22px;
-  }
-}
-
-/* mobile */
-
 .todoist-board .selected-task.has-fixed-chin .task-content-wrapper {
-  padding-bottom: var(--chin-height);
+  padding-bottom: 0;
+}
+
+.todoist-board .selected-task.has-fixed-chin .task-description.desc-empty {
+  display: none;
+  margin: 0;
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+}
+
+.todoist-board .selected-task.has-fixed-chin .task-description.has-description {
+  margin: 4px 0 0;
+  max-height: 5.6em;
+  padding: 0 28px 0 0;
+}
+
+.todoist-board .selected-task.has-fixed-chin .task-description.has-description.desc-expanded {
+  max-height: none;
+  overflow: visible;
 }
 
 .selected-task .mini-toolbar {
@@ -2045,6 +2149,24 @@ body.theme-dark .non-task-note {
   margin: 0 auto;
 }
 
+.todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin {
+  align-items: stretch;
+  bottom: auto;
+  display: flex;
+  flex: 0 0 auto;
+  left: auto;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  position: static;
+  width: 100%;
+}
+
+.todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-inner {
+  margin: 0;
+  padding: 6px 4px;
+}
+
 
 .selected-task .mini-toolbar-wrapper .circle-btn.delete-btn {
   display: flex;
@@ -2124,7 +2246,7 @@ body.theme-dark .non-task-note {
   position: relative;
   max-width: 100%;
   width: 100%;
-  padding: 0.5rem 1rem 0.5rem;
+  padding: 0.375rem 0.25rem;
   align-items: flex-end;
   justify-content: flex-start;
   flex-direction: column;
@@ -2143,48 +2265,72 @@ body.theme-dark .non-task-note {
 .selected-task .chin-inner {
   box-sizing: border-box;
   display: flex;
-  gap: 0.25rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 0.375rem;
+  border-top: 1px solid rgba(180, 206, 245, 0.38);
   margin-top: 1rem;
   max-width: 100%;
   width: 100%;
   justify-content: flex-start;
-  flex-wrap: wrap;
-  background-color: rgba(243, 244, 246, 0.2);
-  /* light gray background */
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
+  flex-wrap: nowrap;
+  background: color-mix(in srgb, var(--selected-bg) 88%, white 12%);
+  border-radius: 0 0 var(--selected-card-radius) var(--selected-card-radius);
+  padding: 0.375rem 0.25rem;
+}
+
+.selected-task .chin-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.selected-task .chin-actions-primary {
+  flex: 0 1 auto;
+}
+
+.selected-task .chin-actions-secondary {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 
 body.theme-dark .selected-task .chin-inner {
-  background-color: var(--background-primary, #1e1e1e);
-  border-radius: 12px;
+  background: color-mix(in srgb, var(--selected-bg) 88%, black 12%);
+  border-top-color: rgba(255, 255, 255, 0.08);
+  border-radius: 0 0 var(--selected-card-radius) var(--selected-card-radius);
 }
 
 .chin-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  background: white;
+  gap: 3px;
+  padding: 3px 7px;
+  border: 1px solid rgba(180, 206, 245, 0.58);
+  border-radius: var(--chin-button-radius);
+  background: color-mix(in srgb, var(--selected-bg) 72%, white 28%);
   color: #374151;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 500;
   cursor: pointer;
   box-shadow: none;
   transition: all var(--transition-fast);
 }
 
+.selected-task .task-hide-btn,
+.selected-task .delete-btn {
+  flex: 0 0 auto;
+  justify-content: center;
+  min-width: 34px;
+  padding-inline: 0;
+}
+
 
 .chin-btn:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
+  background: color-mix(in srgb, var(--selected-bg) 55%, white 45%);
+  border-color: rgba(99, 102, 241, 0.26);
 }
 
 .chin-btn:active {
-  background: #e5e7eb;
+  background: color-mix(in srgb, var(--selected-bg) 48%, white 52%);
   transform: scale(0.97);
 }
 
@@ -2194,21 +2340,21 @@ body.theme-dark .selected-task .chin-inner {
 }
 
 body.theme-dark .chin-btn {
-  background: #1f2937;
-  border-color: #374151;
+  background: color-mix(in srgb, var(--selected-bg) 78%, white 6%);
+  border-color: rgba(255, 255, 255, 0.1);
   color: #f9fafb;
 }
 
 body.theme-dark .chin-btn:hover {
-  background: #374151;
-  border-color: #4b5563;
+  background: color-mix(in srgb, var(--selected-bg) 66%, white 10%);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 /* Chin-Style Button Customizations for Selected Task */
 .selected-task .mini-toolbar-wrapper .delete-btn {
   color: red;
   right: 0;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .selected-task .mini-toolbar-wrapper .delete-btn .lucide {
@@ -3434,7 +3580,7 @@ body.theme-dark .todoist-board .deadline-inline {
   overflow-y: auto;
 }
 
-/* Offscreen positioning for temporary utility elements */
+/* Offscreen positioning for clipboard textarea */
 .todoist-board .tb-fixed-offscreen {
   position: fixed;
   left: -10000px;
@@ -4090,6 +4236,13 @@ body.tb-scroll-lock {
 
 .settings-chin-preview-section {
   margin-top: 14px;
+}
+
+.settings-chin-preview-section.is-settings-focus-target {
+  border-radius: 8px;
+  outline: 2px solid rgba(99, 102, 241, 0.35);
+  outline-offset: 8px;
+  transition: outline-color var(--transition-medium);
 }
 
 .settings-chin-preview {
@@ -5701,12 +5854,13 @@ body.tb-scroll-lock {
   background: transparent;
   border: 0;
   box-shadow: none;
+  cursor: pointer;
   height: 100%;
   left: 0;
   margin: 0;
   opacity: 0;
   padding: 0;
-  pointer-events: auto;
+  pointer-events: none;
   position: absolute;
   right: 28px;
   top: 0;
@@ -5720,6 +5874,7 @@ body.tb-scroll-lock {
   border-radius: 7px;
   box-shadow: none;
   color: var(--text-muted);
+  cursor: pointer;
   display: inline-flex;
   font-size: 0.95rem;
   font-weight: 500;
@@ -5737,6 +5892,14 @@ body.tb-scroll-lock {
   outline: none;
 }
 
+.todoist-task-sheet-modal .taskmodal-more-settings-button {
+  font-size: 1rem;
+  justify-content: center;
+  letter-spacing: 1px;
+  min-width: 34px;
+  padding: 0 8px;
+}
+
 .todoist-task-sheet-modal .taskmodal-date-chip.has-value {
   color: #058527;
 }
@@ -5752,11 +5915,12 @@ body.tb-scroll-lock {
   border-radius: 7px;
   box-shadow: none;
   color: var(--text-muted);
+  cursor: pointer;
   display: inline-grid;
-  gap: 8px;
-  grid-template-columns: 18px minmax(0, auto);
+  gap: 6px;
+  grid-template-columns: 18px auto;
   height: 34px;
-  padding: 0 11px;
+  padding: 0 10px;
   position: relative;
 }
 
@@ -5795,9 +5959,10 @@ body.tb-scroll-lock {
   height: 32px;
   line-height: 32px;
   margin: 0;
-  min-width: 68px;
+  min-width: 0;
   padding: 0;
   text-align: left;
+  width: auto;
 }
 
 .todoist-task-sheet-modal .taskmodal-priority-menu {
@@ -5825,6 +5990,7 @@ body.tb-scroll-lock {
   border: 0;
   border-radius: 6px;
   color: var(--text-normal);
+  cursor: pointer;
   display: flex;
   font-size: 0.9rem;
   height: 34px;
@@ -5844,6 +6010,7 @@ body.tb-scroll-lock {
 
 .todoist-task-sheet-modal .taskmodal-chip-clear {
   color: var(--text-muted);
+  cursor: pointer;
   display: none;
   height: 16px;
   position: relative;
@@ -6048,6 +6215,7 @@ body.tb-scroll-lock {
 .todoist-task-sheet-modal .taskmodal-button-save,
 .todoist-task-sheet-modal .taskmodal-button-cancel {
   border-radius: 8px;
+  cursor: pointer;
   flex: 0 0 auto;
   font-size: 0.95rem;
   font-weight: 650;
@@ -6148,17 +6316,17 @@ body.tb-scroll-lock {
   }
 
   .todoist-task-sheet-modal .taskmodal-priority-field {
-    gap: 6px;
-    grid-template-columns: 16px minmax(0, auto);
+    gap: 5px;
+    grid-template-columns: 16px auto;
     height: 30px;
-    padding: 0 9px;
+    padding: 0 8px;
   }
 
   .todoist-task-sheet-modal .taskmodal-priority-button {
     font-size: 0.82rem;
     height: 28px;
     line-height: 28px;
-    min-width: 58px;
+    min-width: 0;
   }
 
   .todoist-task-sheet-modal .taskmodal-label-popover {
@@ -6344,6 +6512,10 @@ body.tb-scroll-lock {
     padding: 0;
   }
 
+  .todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner .task-content-wrapper {
+    padding-bottom: 0;
+  }
+
   .todoist-board .selected-task.has-fixed-chin > .task-scroll-wrapper > .task-inner {
     padding-bottom: 14px;
   }
@@ -6406,51 +6578,68 @@ body.tb-scroll-lock {
 
   .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-inner {
     align-items: center;
-    background: rgba(248, 250, 252, 0.78);
-    border-radius: 0;
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
-    display: grid;
+    background: color-mix(in srgb, var(--selected-bg) 88%, white 12%);
+    border-radius: 0 0 var(--selected-card-radius) var(--selected-card-radius);
+    border-top: 1px solid rgba(180, 206, 245, 0.38);
+    display: flex;
+    flex-wrap: nowrap;
     gap: 4px;
-    grid-template-columns:
-      minmax(64px, 1fr)
-      minmax(62px, 1fr)
-      minmax(58px, 1fr)
-      minmax(42px, 0.68fr)
-      minmax(42px, 0.68fr);
-    justify-content: stretch;
+    justify-content: flex-start;
     margin: 0;
-    padding: 7px;
+    padding: 6px 4px;
     width: 100%;
+  }
+
+  .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-actions {
+    display: flex;
+    gap: 4px;
+  }
+
+  .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-actions-primary {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-actions-secondary {
+    flex: 0 0 auto;
+    margin-left: auto;
   }
 
   body.theme-dark .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-inner {
-    background: rgba(15, 23, 42, 0.34);
-    border-top-color: rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--selected-bg) 88%, black 12%);
+    border-top-color: rgba(255, 255, 255, 0.08);
   }
 
   .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-btn {
-    flex: 1 1 0;
-    font-size: 0.76rem;
-    gap: 4px;
-    height: 36px;
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    gap: 3px;
+    height: 30px;
     justify-content: center;
-    min-height: 36px;
+    min-height: 30px;
     min-width: 0;
     overflow: hidden;
-    padding: 0 5px;
+    padding: 0 6px;
     white-space: nowrap;
-    width: 100%;
+    width: auto;
+  }
+
+  .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .task-hide-btn,
+  .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .delete-btn {
+    flex: 0 0 34px;
+    padding: 0;
+    width: 34px;
   }
 
   .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-btn svg {
     flex: 0 0 auto;
-    height: 20px;
+    height: 16px;
     margin: 0;
-    width: 20px;
+    width: 16px;
   }
 
   .todoist-board .selected-task > #mini-toolbar-wrapper.fixed-chin .chin-btn.delete-btn {
-    flex: 1 1 0;
+    flex: 0 0 34px;
     margin-left: 0;
     min-width: 0;
   }
@@ -6465,5 +6654,47 @@ body.tb-scroll-lock {
     display: flex;
     max-height: none;
     opacity: 1;
+  }
+}
+
+@media only screen and (max-width: 700px), (pointer: coarse) {
+  .todoist-board .selected-task > .task-scroll-wrapper > .task-inner .task-description.has-description {
+    display: block;
+    max-height: 5.6em;
+    overflow: hidden;
+    padding: 0 28px 0 0;
+  }
+
+  .todoist-board .selected-task > .task-scroll-wrapper > .task-inner .task-description.has-description.desc-expanded {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .todoist-board .selected-task > .task-scroll-wrapper > .task-inner .task-description.has-description .task-description-toggle {
+    opacity: 1;
+    pointer-events: auto;
+    touch-action: manipulation;
+    z-index: 2;
+  }
+}
+
+@media only screen and (max-width: 700px), (pointer: coarse) {
+  .todoist-board .selected-task .task-description.has-description.desc-collapsed {
+    display: block !important;
+    max-height: 5.6em !important;
+    overflow: hidden !important;
+    padding-right: 28px !important;
+  }
+
+  .todoist-board .selected-task .task-description.has-description.desc-expanded {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .todoist-board .selected-task .task-description.has-description .task-description-toggle {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    z-index: 2;
   }
 }

@@ -1,8 +1,9 @@
 import { App, Notice, Plugin, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { COMMON_TIMEZONES } from "./settings";
-import type { ChinBarSettings, ContextMenuSettings, TodoistBoardSettings } from "./types";
+import type { AddTaskModalSettings, ChinBarSettings, ContextMenuSettings, TodoistBoardSettings } from "./types";
 
-type SettingsTabId = "getting-started" | "behavior" | "actions" | "support";
+type SettingsTabId = "getting-started" | "preferences" | "advanced" | "support";
+type SettingsFocusTarget = "add-task-modal";
 
 export interface TodoistSettingsPlugin {
   settings: TodoistBoardSettings;
@@ -13,6 +14,7 @@ export interface TodoistSettingsPlugin {
 
 export class TodoistBoardSettingTab extends PluginSettingTab {
   private activeTab: SettingsTabId = "getting-started";
+  private pendingFocusTarget: SettingsFocusTarget | null = null;
 
   constructor(app: App, readonly plugin: Plugin & TodoistSettingsPlugin) {
     super(app, plugin);
@@ -30,8 +32,8 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
 
     const tabs: Array<{ id: SettingsTabId; label: string; icon: string }> = [
       { id: "getting-started", label: "Start", icon: "sparkles" },
-      { id: "behavior", label: "Behavior", icon: "sliders-horizontal" },
-      { id: "actions", label: "Actions", icon: "mouse-pointer-click" },
+      { id: "preferences", label: "Preferences", icon: "mouse-pointer-click" },
+      { id: "advanced", label: "Advanced", icon: "sliders-horizontal" },
       { id: "support", label: "Support", icon: "heart" },
     ];
 
@@ -51,13 +53,19 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
 
     if (this.activeTab === "getting-started") {
       this.renderGettingStarted(content, pluginSettings);
-    } else if (this.activeTab === "behavior") {
-      this.renderBehavior(content, pluginSettings);
-    } else if (this.activeTab === "actions") {
-      this.renderActions(content, pluginSettings);
+    } else if (this.activeTab === "preferences") {
+      this.renderPreferences(content, pluginSettings);
+    } else if (this.activeTab === "advanced") {
+      this.renderAdvanced(content, pluginSettings);
     } else {
       this.renderSupport(content);
     }
+  }
+
+  public openPreferencesAddTaskModalSection() {
+    this.activeTab = "preferences";
+    this.pendingFocusTarget = "add-task-modal";
+    this.display();
   }
 
   private renderGettingStarted(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
@@ -127,15 +135,15 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     this.createExternalLink(repoItem, "GitHub", "https://github.com/propranolol11/todoist-board", "github");
   }
 
-  private renderBehavior(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
+  private renderAdvanced(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
     this.renderPanelHeader(
       container,
-      "Behavior",
+      "Advanced",
       "Tune logging and date handling for this vault.",
     );
 
-    const behaviorCard = container.createDiv({ cls: "todoist-settings-card" });
-    new Setting(behaviorCard)
+    const advancedCard = container.createDiv({ cls: "todoist-settings-card" });
+    new Setting(advancedCard)
       .setName("Console logging")
       .setDesc("Print debug output of Todoist Board to the developer console.")
       .addToggle((toggle) => {
@@ -148,7 +156,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
           });
       });
 
-    new Setting(behaviorCard)
+    new Setting(advancedCard)
       .setName("Timezone mode")
       .setDesc("Choose how timezone is determined for your tasks.")
       .addDropdown((dropdown) =>
@@ -164,7 +172,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       );
 
     if (pluginSettings.timezoneMode === "manual") {
-      new Setting(behaviorCard)
+      new Setting(advancedCard)
         .setName("Manual timezone")
         .setDesc("Overrides system timezone if 'manual' mode is selected above")
         .addDropdown((dropdown) => {
@@ -179,11 +187,11 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     }
   }
 
-  private renderActions(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
+  private renderPreferences(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
     this.renderPanelHeader(
       container,
-      "Task Actions",
-      "Choose which actions appear when you right-click a task.",
+      "Preferences",
+      "Choose which task controls are shown throughout Todoist Board.",
     );
 
     const contextMenuSection = container.createDiv({ cls: "settings-context-preview-section" });
@@ -300,6 +308,72 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
         })();
       });
     });
+
+    const addTaskSection = container.createDiv({ cls: "settings-chin-preview-section" });
+    addTaskSection.dataset.settingsSection = "add-task-modal";
+    this.renderHeading(addTaskSection, "Add task modal", "settings-context-preview-title");
+    addTaskSection.createEl("p", {
+      cls: "settings-context-preview-desc",
+      text: "User friendly controls for showing or hiding optional fields in the Add Task modal.",
+    });
+
+    const addTaskActions: Array<{ key: keyof AddTaskModalSettings; label: string; icon: string }> = [
+      { key: "dueDate", label: "Date", icon: "calendar" },
+      { key: "deadline", label: "Deadline", icon: "target" },
+      { key: "priority", label: "Priority", icon: "flag" },
+      { key: "project", label: "Project", icon: "inbox" },
+      { key: "labels", label: "Labels", icon: "tag" },
+    ];
+    const previewAddTask = addTaskSection.createDiv({ cls: "settings-chin-preview settings-add-task-preview" });
+    const ensureAddTaskModal = (): AddTaskModalSettings => {
+      if (!pluginSettings.addTaskModal) {
+        pluginSettings.addTaskModal = {} as AddTaskModalSettings;
+      }
+      return pluginSettings.addTaskModal;
+    };
+    const addTaskControlIsEnabled = (key: keyof AddTaskModalSettings): boolean =>
+      pluginSettings.addTaskModal?.[key] ?? true;
+
+    addTaskActions.forEach((action) => {
+      const actionButton = previewAddTask.createEl("button", {
+        cls: "settings-chin-action",
+        type: "button",
+      });
+      const icon = actionButton.createSpan({ cls: "settings-chin-action-icon" });
+      setIcon(icon, action.icon);
+      actionButton.createSpan({ text: action.label });
+
+      const syncActionButton = () => {
+        const enabled = addTaskControlIsEnabled(action.key);
+        actionButton.classList.toggle("is-enabled", enabled);
+        actionButton.setAttribute("aria-pressed", String(enabled));
+        actionButton.setAttribute("aria-label", `${enabled ? "Hide" : "Show"} ${action.label}`);
+      };
+
+      syncActionButton();
+      actionButton.addEventListener("click", () => {
+        void (async () => {
+        const addTaskModal = ensureAddTaskModal();
+        addTaskModal[action.key] = !addTaskControlIsEnabled(action.key);
+        syncActionButton();
+        await this.plugin.saveSettings();
+        })();
+      });
+    });
+
+    this.focusSectionIfPending("add-task-modal", addTaskSection);
+  }
+
+  private focusSectionIfPending(target: SettingsFocusTarget, element: HTMLElement) {
+    if (this.pendingFocusTarget !== target) return;
+    window.requestAnimationFrame(() => {
+      element.scrollIntoView({ block: "start", behavior: "smooth" });
+      element.classList.add("is-settings-focus-target");
+      window.setTimeout(() => {
+        element.classList.remove("is-settings-focus-target");
+      }, 1400);
+    });
+    this.pendingFocusTarget = null;
   }
 
   private renderSupport(container: HTMLElement) {
