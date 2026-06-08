@@ -188,6 +188,7 @@ export default class TodoistBoardPlugin extends Plugin {
   private todoistService!: TodoistService;
   private taskActions!: TaskActions;
   private stopTaskPolling?: () => void;
+  private settingsTab?: TodoistBoardSettingTab;
   private readonly taskPageSize = 100;
   private filterNextCursor: Record<string, string | null> = {};
   private taskHierarchy = new TaskHierarchy();
@@ -619,10 +620,12 @@ export default class TodoistBoardPlugin extends Plugin {
       if (!initialToken) {
         // console.warn("[Todoist Board] No Todoist API token found. Set one in the plugin settings.");
         // Still register the settings tab so the user can open settings even when not authenticated
-        this.addSettingTab(new TodoistBoardSettingTab(this.app, this));
+        this.settingsTab = new TodoistBoardSettingTab(this.app, this);
+        this.addSettingTab(this.settingsTab);
         return;
       }
-      this.addSettingTab(new TodoistBoardSettingTab(this.app, this));
+      this.settingsTab = new TodoistBoardSettingTab(this.app, this);
+      this.addSettingTab(this.settingsTab);
 
 
       if (!this.settings.filters?.some(f => f.isDefault)) {
@@ -1567,6 +1570,24 @@ export default class TodoistBoardPlugin extends Plugin {
     }
   }
 
+  private openAddTaskModalPreferences() {
+    this.closeModal();
+    this.settingsTab?.openPreferencesAddTaskModalSection();
+
+    const appWithSettings = this.app as typeof this.app & {
+      setting?: {
+        open?: () => void;
+        openTabById?: (id: string) => void;
+      };
+    };
+    appWithSettings.setting?.open?.();
+    appWithSettings.setting?.openTabById?.(this.manifest.id);
+
+    window.setTimeout(() => {
+      this.settingsTab?.openPreferencesAddTaskModalSection();
+    }, 80);
+  }
+
   private confirmDeleteTask(): Promise<boolean> {
     return new Promise((resolve) => {
       const modal = new Modal(this.app);
@@ -1791,6 +1812,8 @@ export default class TodoistBoardPlugin extends Plugin {
       submitLabel: "Add task",
       projects: this.projectCache,
       labels: this.labelCache,
+      visibleFields: this.settings.addTaskModal,
+      onOpenSettings: () => this.openAddTaskModalPreferences(),
       onSubmit: async ({ title, description, due, deadline, priority, projectId, labels }) => {
         try {
           await this.taskActions.addTask({
@@ -1830,6 +1853,7 @@ export default class TodoistBoardPlugin extends Plugin {
           modal.setForm({
             projects: this.projectCache,
             labels: this.labelCache,
+            visibleFields: this.settings.addTaskModal,
             fields: {
               title: "",
               description: "",
@@ -2966,6 +2990,12 @@ export default class TodoistBoardPlugin extends Plugin {
 
     const chinContainer = activeDocument.createElement("div");
     chinContainer.className = "chin-inner";
+    const primaryActions = activeDocument.createElement("div");
+    primaryActions.className = "chin-actions chin-actions-primary";
+    const secondaryActions = activeDocument.createElement("div");
+    secondaryActions.className = "chin-actions chin-actions-secondary";
+    chinContainer.appendChild(primaryActions);
+    chinContainer.appendChild(secondaryActions);
     const actions = Object.assign({}, DEFAULT_SETTINGS.chinBarActions, this.settings.chinBarActions || {});
     const getFilters = () => {
       let filters: string[] = [];
@@ -2982,13 +3012,14 @@ export default class TodoistBoardPlugin extends Plugin {
       iconName: string,
       label: string,
       onClick: (event: MouseEvent, button: HTMLButtonElement) => void,
+      container: HTMLElement = primaryActions,
     ) => {
       const button = activeDocument.createElement("button");
       button.className = `chin-btn ${className}`;
       setIcon(button, iconName);
       if (label) button.append(label);
       button.onclick = (event) => onClick(event, button);
-      chinContainer.appendChild(button);
+      container.appendChild(button);
       return button;
     };
 
@@ -3055,7 +3086,7 @@ export default class TodoistBoardPlugin extends Plugin {
             setIcon(hideBtn, "eye-off");
             hideBtn.title = "Unhide (undim)";
           }
-        });
+        }, secondaryActions);
         hideBtn.title = hidden.has(id) ? "Unhide (undim)" : "Hide (dim)";
         a11yButton(hideBtn, hideBtn.title);
       } catch {
@@ -3066,16 +3097,16 @@ export default class TodoistBoardPlugin extends Plugin {
     if (actions.deleteTask) {
       appendChinButton("delete-btn", "trash", "", () => {
         void this.deleteTask(task.id, apiKey, chinContainer);
-      });
+      }, secondaryActions);
     }
 
     if (actions.openInTodoist && task.url) {
       appendChinButton("open-todoist-btn", "external-link", "Open", () => {
         window.open(task.url, "_blank");
-      });
+      }, secondaryActions);
     }
 
-    if (!chinContainer.childElementCount) return;
+    if (!chinContainer.querySelector(".chin-btn")) return;
     wrapper.appendChild(chinContainer);
     row.appendChild(wrapper);
 

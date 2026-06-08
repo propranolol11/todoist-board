@@ -1,7 +1,7 @@
 import { App, Modal, setIcon } from "obsidian";
 import { TODOIST_COLORS, TODOIST_COLORS_NUM } from "../constants";
 import { clearEl } from "../dom";
-import type { Label, Project } from "../types";
+import type { AddTaskModalSettings, Label, Project } from "../types";
 
 export interface TaskModalFields {
   title?: string;
@@ -29,6 +29,8 @@ export interface TaskSheetModalOptions {
   submitLabel: string;
   projects: Project[];
   labels: Label[];
+  visibleFields?: Partial<AddTaskModalSettings>;
+  onOpenSettings?: () => void;
   onSubmit: (data: TaskModalSubmitData) => Promise<void> | void;
 }
 
@@ -95,6 +97,28 @@ export class TaskSheetModal extends Modal {
       event.preventDefault();
       this.lastTextInput?.focus();
     });
+  }
+
+  private restoreTextFocus(delay = 0) {
+    const input = this.lastTextInput;
+    if (!input) return;
+    window.setTimeout(() => input.focus(), delay);
+  }
+
+  private openDatePicker(input: HTMLInputElement) {
+    const dateInput = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof dateInput.showPicker === "function") {
+      try {
+        dateInput.showPicker();
+        this.restoreTextFocus();
+        return;
+      } catch {
+        // Fall back to a normal click for hosts that expose but reject showPicker.
+      }
+    }
+    input.click();
+    this.restoreTextFocus();
+    this.restoreTextFocus(250);
   }
 
   private renderForm() {
@@ -205,12 +229,20 @@ export class TaskSheetModal extends Modal {
 
   private createForm(): HTMLElement {
     const { fields, submitLabel, projects, labels } = this.options;
+    const visibleFields: AddTaskModalSettings = {
+      dueDate: true,
+      deadline: true,
+      priority: true,
+      project: true,
+      labels: true,
+      ...(this.options.visibleFields || {}),
+    };
     const ownerDocument = this.containerEl.ownerDocument;
     const wrapper = ownerDocument.createElement("div");
     wrapper.className = "taskmodal-wrapper";
 
     const formatDueText = (value: string) => {
-      if (!value) return "Due date";
+      if (!value) return "Date";
       const today = new Date();
       const todayIso = today.toISOString().slice(0, 10);
       if (value === todayIso) return "Today";
@@ -259,79 +291,105 @@ export class TaskSheetModal extends Modal {
 
     const chipRow = wrapper.createDiv({ cls: "taskmodal-chip-row" });
 
-    const dueAnchor = chipRow.createDiv({ cls: "taskmodal-date-anchor" });
+    const dueAnchor = visibleFields.dueDate
+      ? chipRow.createDiv({ cls: "taskmodal-date-anchor" })
+      : ownerDocument.createElement("div");
     const dueInput = dueAnchor.createEl("input", {
       cls: "taskmodal-date-input taskmodal-date-chip-native",
       type: "date",
       value: fields.due ?? "",
     });
 
-    const dueChip = dueAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-date-chip" });
-    dueChip.type = "button";
-    const dueIcon = dueChip.createSpan({ cls: "taskmodal-chip-icon" });
-    setIcon(dueIcon, "calendar");
-    const dueText = dueChip.createSpan({ cls: "taskmodal-chip-text" });
-    const dueClear = dueChip.createSpan({ cls: "taskmodal-chip-clear" });
-    setIcon(dueClear, "x");
+    if (visibleFields.dueDate) {
+      const dueChip = dueAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-date-chip" });
+      dueChip.type = "button";
+      const dueIcon = dueChip.createSpan({ cls: "taskmodal-chip-icon" });
+      setIcon(dueIcon, "calendar");
+      const dueText = dueChip.createSpan({ cls: "taskmodal-chip-text" });
+      const dueClear = dueChip.createSpan({ cls: "taskmodal-chip-clear" });
+      setIcon(dueClear, "x");
 
-    const syncDueChip = () => {
-      dueText.textContent = formatDueText(dueInput.value);
-      dueChip.classList.toggle("has-value", !!dueInput.value);
-      dueChip.setAttribute("aria-label", dueInput.value ? `Due ${dueText.textContent}` : "Set due date");
-    };
+      const syncDueChip = () => {
+        dueText.textContent = formatDueText(dueInput.value);
+        dueChip.classList.toggle("has-value", !!dueInput.value);
+        dueChip.setAttribute("aria-label", dueInput.value ? `Date ${dueText.textContent}` : "Set date");
+      };
 
-    dueChip.onclick = () => dueInput.click();
-    dueClear.onclick = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      dueInput.value = "";
+      this.keepKeyboardOnPointerDown(dueChip);
+      dueChip.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.openDatePicker(dueInput);
+      };
+      dueClear.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dueInput.value = "";
+        syncDueChip();
+        this.lastTextInput?.focus();
+      };
+      this.keepKeyboardOnPointerDown(dueClear);
+      dueInput.addEventListener("change", syncDueChip);
       syncDueChip();
-      this.lastTextInput?.focus();
-    };
-    this.keepKeyboardOnPointerDown(dueClear);
-    dueInput.addEventListener("change", syncDueChip);
-    syncDueChip();
+    }
 
-    const deadlineAnchor = chipRow.createDiv({ cls: "taskmodal-date-anchor" });
+    const deadlineAnchor = visibleFields.deadline
+      ? chipRow.createDiv({ cls: "taskmodal-date-anchor" })
+      : ownerDocument.createElement("div");
     const deadlineInput = deadlineAnchor.createEl("input", {
       cls: "taskmodal-date-input taskmodal-deadline-chip-native",
       type: "date",
       value: fields.deadline ?? "",
     });
 
-    const deadlineChip = deadlineAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-deadline-chip" });
-    deadlineChip.type = "button";
-    const deadlineIcon = deadlineChip.createSpan({ cls: "taskmodal-chip-icon" });
-    setIcon(deadlineIcon, "target");
-    const deadlineText = deadlineChip.createSpan({ cls: "taskmodal-chip-text" });
-    const deadlineClear = deadlineChip.createSpan({ cls: "taskmodal-chip-clear" });
-    setIcon(deadlineClear, "x");
+    if (visibleFields.deadline) {
+      const deadlineChip = deadlineAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-deadline-chip" });
+      deadlineChip.type = "button";
+      const deadlineIcon = deadlineChip.createSpan({ cls: "taskmodal-chip-icon" });
+      setIcon(deadlineIcon, "target");
+      const deadlineText = deadlineChip.createSpan({ cls: "taskmodal-chip-text" });
+      const deadlineClear = deadlineChip.createSpan({ cls: "taskmodal-chip-clear" });
+      setIcon(deadlineClear, "x");
 
-    const syncDeadlineChip = () => {
-      deadlineText.textContent = formatDeadlineText(deadlineInput.value);
-      deadlineChip.classList.toggle("has-value", !!deadlineInput.value);
-      deadlineChip.setAttribute("aria-label", deadlineInput.value ? `Deadline ${deadlineText.textContent}` : "Set deadline");
-    };
+      const syncDeadlineChip = () => {
+        deadlineText.textContent = formatDeadlineText(deadlineInput.value);
+        deadlineChip.classList.toggle("has-value", !!deadlineInput.value);
+        deadlineChip.setAttribute("aria-label", deadlineInput.value ? `Deadline ${deadlineText.textContent}` : "Set deadline");
+      };
 
-    deadlineChip.onclick = () => deadlineInput.click();
-    deadlineClear.onclick = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      deadlineInput.value = "";
+      this.keepKeyboardOnPointerDown(deadlineChip);
+      deadlineChip.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.openDatePicker(deadlineInput);
+      };
+      deadlineClear.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        deadlineInput.value = "";
+        syncDeadlineChip();
+        this.lastTextInput?.focus();
+      };
+      this.keepKeyboardOnPointerDown(deadlineClear);
+      deadlineInput.addEventListener("change", syncDeadlineChip);
       syncDeadlineChip();
-      this.lastTextInput?.focus();
-    };
-    this.keepKeyboardOnPointerDown(deadlineClear);
-    deadlineInput.addEventListener("change", syncDeadlineChip);
-    syncDeadlineChip();
+    }
 
-    const priorityField = chipRow.createDiv({ cls: "taskmodal-priority-field" });
-    const priorityIcon = priorityField.createSpan({ cls: "taskmodal-chip-icon taskmodal-priority-icon" });
-    setIcon(priorityIcon, "flag");
-    const priorityButton = priorityField.createEl("button", { cls: "taskmodal-priority-button" });
+    const priorityField = visibleFields.priority
+      ? chipRow.createDiv({ cls: "taskmodal-priority-field" })
+      : ownerDocument.createElement("div");
+    if (visibleFields.priority) {
+      const priorityIcon = priorityField.createSpan({ cls: "taskmodal-chip-icon taskmodal-priority-icon" });
+      setIcon(priorityIcon, "flag");
+    }
+    const priorityButton = visibleFields.priority
+      ? priorityField.createEl("button", { cls: "taskmodal-priority-button" })
+      : ownerDocument.createElement("button");
     priorityButton.type = "button";
     const prioritySelect = priorityField.createEl("input", { cls: "taskmodal-priority-value", type: "hidden" });
-    const priorityMenu = priorityField.createDiv({ cls: "taskmodal-priority-menu" });
+    const priorityMenu = visibleFields.priority
+      ? priorityField.createDiv({ cls: "taskmodal-priority-menu" })
+      : ownerDocument.createElement("div");
     [
       { value: "1", label: "Priority" },
       { value: "4", label: "P1" },
@@ -355,35 +413,55 @@ export class TaskSheetModal extends Modal {
     });
     priorityField.setAttribute("data-priority", String(fields.priority ?? 1));
     prioritySelect.value = String(fields.priority ?? 1);
-    priorityButton.textContent = priorityLabel(Number(prioritySelect.value));
-    priorityButton.setAttribute("aria-label", priorityLabel(Number(prioritySelect.value)));
-    this.keepKeyboardOnPointerDown(priorityButton);
-    priorityButton.onclick = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      priorityMenu.classList.toggle("is-open");
-      this.lastTextInput?.focus();
-    };
+    if (visibleFields.priority) {
+      priorityButton.textContent = priorityLabel(Number(prioritySelect.value));
+      priorityButton.setAttribute("aria-label", priorityLabel(Number(prioritySelect.value)));
+      this.keepKeyboardOnPointerDown(priorityButton);
+      priorityButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        priorityMenu.classList.toggle("is-open");
+        this.lastTextInput?.focus();
+      };
+    }
 
-    const labelAnchor = chipRow.createDiv({ cls: "taskmodal-label-anchor" });
-    const labelButton = labelAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-label-chip" });
+    const labelAnchor = visibleFields.labels
+      ? chipRow.createDiv({ cls: "taskmodal-label-anchor" })
+      : ownerDocument.createElement("div");
+    const labelButton = visibleFields.labels
+      ? labelAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-label-chip" })
+      : ownerDocument.createElement("button");
     labelButton.type = "button";
-    this.keepKeyboardOnPointerDown(labelButton);
-    const labelButtonIcon = labelButton.createSpan({ cls: "taskmodal-chip-icon" });
-    setIcon(labelButtonIcon, "tag");
-    const labelButtonText = labelButton.createSpan({ cls: "taskmodal-chip-text" });
+    if (visibleFields.labels) {
+      this.keepKeyboardOnPointerDown(labelButton);
+    }
+    let labelButtonText: HTMLElement | null = null;
+    if (visibleFields.labels) {
+      const labelButtonIcon = labelButton.createSpan({ cls: "taskmodal-chip-icon" });
+      setIcon(labelButtonIcon, "tag");
+      labelButtonText = labelButton.createSpan({ cls: "taskmodal-chip-text" });
+    }
 
-    const labelPopover = labelAnchor.createDiv({ cls: "taskmodal-label-popover" });
-    const labelSearch = labelPopover.createEl("input", {
-      cls: "taskmodal-label-search",
-      type: "text",
-      placeholder: "Type a label",
-    });
-    const labelList = labelPopover.createDiv({ cls: "taskmodal-label-list" });
+    const labelPopover = visibleFields.labels
+      ? labelAnchor.createDiv({ cls: "taskmodal-label-popover" })
+      : ownerDocument.createElement("div");
+    const labelSearch = visibleFields.labels
+      ? labelPopover.createEl("input", {
+        cls: "taskmodal-label-search",
+        type: "text",
+        placeholder: "Type a label",
+      })
+      : ownerDocument.createElement("input");
+    const labelList = visibleFields.labels
+      ? labelPopover.createDiv({ cls: "taskmodal-label-list" })
+      : ownerDocument.createElement("div");
+    if (visibleFields.labels) {
+      this.rememberTextInput(labelSearch);
+    }
 
     const syncLabelChip = () => {
       const checked = Array.from(labelList.querySelectorAll<HTMLInputElement>("input[type='checkbox']:checked"));
-      labelButtonText.textContent = checked.length ? `Labels ${checked.length}` : "Labels";
+      if (labelButtonText) labelButtonText.textContent = checked.length ? `Labels ${checked.length}` : "Labels";
       labelButton.classList.toggle("has-value", checked.length > 0);
     };
 
@@ -400,27 +478,55 @@ export class TaskSheetModal extends Modal {
       labelCheckbox.createSpan({ cls: "taskmodal-label-option-name", text: label.name });
       const checkIcon = labelCheckbox.createSpan({ cls: "taskmodal-label-option-check" });
       setIcon(checkIcon, "check");
-      checkbox.addEventListener("change", () => {
+      const syncLabelOption = () => {
         labelCheckbox.classList.toggle("is-selected", checkbox.checked);
         syncLabelChip();
+        this.restoreTextFocus();
+      };
+      labelCheckbox.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        checkbox.checked = !checkbox.checked;
+        syncLabelOption();
+      };
+      checkbox.addEventListener("change", () => {
+        syncLabelOption();
       });
     }
     syncLabelChip();
 
-    labelButton.onclick = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      labelAnchor.classList.toggle("is-open");
-      this.lastTextInput?.focus();
-    };
-    labelPopover.addEventListener("click", (event) => event.stopPropagation());
-    labelSearch.addEventListener("input", () => {
-      const query = labelSearch.value.trim().toLowerCase();
-      labelList.querySelectorAll<HTMLElement>(".taskmodal-label-option").forEach((option) => {
-        const name = option.querySelector<HTMLElement>(".taskmodal-label-option-name")?.textContent || "";
-        option.classList.toggle("tb-hidden", !!query && !name.toLowerCase().includes(query));
+    if (visibleFields.labels) {
+      labelButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        labelAnchor.classList.toggle("is-open");
+        this.lastTextInput?.focus();
+      };
+      labelPopover.addEventListener("click", (event) => event.stopPropagation());
+      labelSearch.addEventListener("input", () => {
+        const query = labelSearch.value.trim().toLowerCase();
+        labelList.querySelectorAll<HTMLElement>(".taskmodal-label-option").forEach((option) => {
+          const name = option.querySelector<HTMLElement>(".taskmodal-label-option-name")?.textContent || "";
+          option.classList.toggle("tb-hidden", !!query && !name.toLowerCase().includes(query));
+        });
       });
-    });
+    }
+
+    if (this.options.onOpenSettings) {
+      const settingsButton = chipRow.createEl("button", {
+        cls: "taskmodal-chip taskmodal-more-settings-button",
+        text: "...",
+        type: "button",
+      });
+      settingsButton.setAttribute("aria-label", "Edit add task modal fields");
+      settingsButton.title = "Edit add task modal fields";
+      this.keepKeyboardOnPointerDown(settingsButton);
+      settingsButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.options.onOpenSettings?.();
+      };
+    }
 
     wrapper.addEventListener("click", (event) => {
       if (!(event.target as HTMLElement).closest(".taskmodal-label-anchor")) {
@@ -432,13 +538,19 @@ export class TaskSheetModal extends Modal {
     });
 
     const footerRow = wrapper.createDiv({ cls: "taskmodal-footer-row" });
-    const projectField = footerRow.createDiv({ cls: "taskmodal-project-field" });
-    const projectIcon = projectField.createSpan({ cls: "taskmodal-footer-icon" });
-    setIcon(projectIcon, "inbox");
-    const projectVisible = projectField.createDiv({ cls: "taskmodal-project-visible" });
-    const projectName = projectVisible.createSpan({ cls: "taskmodal-project-name" });
-    const projectChevron = projectVisible.createSpan({ cls: "taskmodal-project-chevron" });
-    setIcon(projectChevron, "chevron-down");
+    const projectField = visibleFields.project
+      ? footerRow.createDiv({ cls: "taskmodal-project-field" })
+      : ownerDocument.createElement("div");
+    let projectIcon: HTMLElement | null = null;
+    let projectName: HTMLElement | null = null;
+    if (visibleFields.project) {
+      projectIcon = projectField.createSpan({ cls: "taskmodal-footer-icon" });
+      setIcon(projectIcon, "inbox");
+      const projectVisible = projectField.createDiv({ cls: "taskmodal-project-visible" });
+      projectName = projectVisible.createSpan({ cls: "taskmodal-project-name" });
+      const projectChevron = projectVisible.createSpan({ cls: "taskmodal-project-chevron" });
+      setIcon(projectChevron, "chevron-down");
+    }
     const projectSelect = projectField.createEl("select", { cls: "taskmodal-project-select" });
     for (const project of Array.isArray(projects) ? projects : []) {
       const option = ownerDocument.createElement("option");
@@ -451,8 +563,8 @@ export class TaskSheetModal extends Modal {
     }
     const syncProjectChrome = () => {
       const selectedName = projectSelect.selectedOptions[0]?.textContent || "";
-      projectName.textContent = selectedName || "Inbox";
-      projectIcon.classList.toggle("tb-hidden", selectedName.trim().toLowerCase() !== "inbox");
+      if (projectName) projectName.textContent = selectedName || "Inbox";
+      projectIcon?.classList.toggle("tb-hidden", selectedName.trim().toLowerCase() !== "inbox");
     };
     projectSelect.addEventListener("change", syncProjectChrome);
     syncProjectChrome();

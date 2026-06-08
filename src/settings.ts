@@ -128,6 +128,13 @@ export const DEFAULT_SETTINGS: TodoistBoardSettings = {
     setDeadline: false,
     openInTodoist: false,
   },
+  addTaskModal: {
+    dueDate: true,
+    deadline: true,
+    priority: true,
+    project: true,
+    labels: true,
+  },
 };
 
 export function normalizeSettings(saved: Partial<TodoistBoardSettings> | null | undefined): TodoistBoardSettings {
@@ -147,6 +154,11 @@ export function normalizeSettings(saved: Partial<TodoistBoardSettings> | null | 
     {},
     DEFAULT_SETTINGS.chinBarActions,
     merged.chinBarActions || {},
+  );
+  merged.addTaskModal = Object.assign(
+    {},
+    DEFAULT_SETTINGS.addTaskModal,
+    merged.addTaskModal || {},
   );
   return merged;
 }

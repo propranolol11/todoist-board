@@ -1,4 +1,4 @@
-import { MarkdownRenderer } from "obsidian";
+import { MarkdownRenderer, setIcon } from "obsidian";
 import { DateTime } from "luxon";
 import { TODOIST_COLORS, TODOIST_COLORS_NUM } from "./constants";
 import { clearEl } from "./dom";
@@ -68,8 +68,48 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   descEl.className = "task-description";
   if (typeof task.description === "string" && task.description.trim()) {
     descEl.textContent = task.description;
+    descEl.classList.add("has-description", "desc-collapsed");
+    const toggleDescription = activeDocument.createElement("button");
+    toggleDescription.className = "task-description-toggle";
+    toggleDescription.type = "button";
+    toggleDescription.setAttribute("aria-label", "Expand description");
+    toggleDescription.setAttribute("aria-expanded", "false");
+    setIcon(toggleDescription, "chevron-down");
+    const syncDescriptionToggle = (expanded: boolean) => {
+      descEl.classList.toggle("desc-expanded", expanded);
+      descEl.classList.toggle("desc-collapsed", !expanded);
+      toggleDescription.setAttribute("aria-expanded", String(expanded));
+      toggleDescription.setAttribute("aria-label", expanded ? "Collapse description" : "Expand description");
+      setIcon(toggleDescription, expanded ? "chevron-up" : "chevron-down");
+    };
+    const toggleExpandedDescription = () => {
+      const expanded = !descEl.classList.contains("desc-expanded");
+      syncDescriptionToggle(expanded);
+    };
+    let toggledFromTouchPointer = false;
+    toggleDescription.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    toggleDescription.addEventListener("pointerup", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.pointerType === "touch" || event.pointerType === "pen") {
+        toggledFromTouchPointer = true;
+        toggleExpandedDescription();
+        window.setTimeout(() => {
+          toggledFromTouchPointer = false;
+        }, 0);
+      }
+    });
+    toggleDescription.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (toggledFromTouchPointer) return;
+      toggleExpandedDescription();
+    };
+    descEl.appendChild(toggleDescription);
   } else {
-    descEl.textContent = " ";
     descEl.classList.add("desc-empty");
   }
 
