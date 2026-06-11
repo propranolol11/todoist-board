@@ -2635,15 +2635,6 @@ export default class TodoistBoardPlugin extends Plugin {
       row.classList.add("parent-task");
     }
 
-    // Add repeating task icon if task is recurring ---
-    const isRepeating = !!task.due?.is_recurring;
-    if (isRepeating) {
-      const repeatIcon = activeDocument.createElement("span");
-      repeatIcon.classList.add("repeat-icon");
-      setIcon(repeatIcon, "repeat");
-      row.appendChild(repeatIcon);
-    }
-
     // Context Menu ---
     row.addEventListener("contextmenu", (event) => {
       event.preventDefault();
@@ -2813,12 +2804,14 @@ export default class TodoistBoardPlugin extends Plugin {
     let tapStartY = 0;
 
     row.addEventListener("pointerdown", (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest(".fixed-chin")) return;
       if (row.classList.contains("subtask-row")) return;
       tapStartX = e.clientX;
       tapStartY = e.clientY;
     });
 
     row.addEventListener("pointerup", (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest(".fixed-chin")) return;
       const isCheckbox = (e.target as HTMLElement).closest('input[type="checkbox"]');
       if (isCheckbox) return;
 
@@ -3013,11 +3006,19 @@ export default class TodoistBoardPlugin extends Plugin {
       label: string,
       onClick: (event: MouseEvent, button: HTMLButtonElement) => void,
       container: HTMLElement = primaryActions,
+      accessibleLabel: string = label,
     ) => {
       const button = activeDocument.createElement("button");
       button.className = `chin-btn ${className}`;
       setIcon(button, iconName);
       if (label) button.append(label);
+      if (accessibleLabel) {
+        button.title = accessibleLabel;
+        a11yButton(button, accessibleLabel);
+      }
+      ["pointerdown", "pointerup", "mousedown", "mouseup", "touchstart", "touchend"].forEach((eventName) => {
+        button.addEventListener(eventName, (event) => event.stopPropagation());
+      });
       button.onclick = (event) => onClick(event, button);
       container.appendChild(button);
       return button;
@@ -3040,13 +3041,13 @@ export default class TodoistBoardPlugin extends Plugin {
     }
 
     if (actions.editTask) {
-      appendChinButton("edit-btn", "pencil", "Edit", () => {
+      appendChinButton("edit-btn", "pencil", "", () => {
         void this.openEditTaskModalAsync(task, row, getFilters());
-      });
+      }, primaryActions, "Edit task");
     }
 
     if (actions.setPriority) {
-      appendChinButton("priority-btn", "flag", "Priority", (event) => {
+      appendChinButton("priority-btn", "flag", "", (event) => {
         event.preventDefault();
         event.stopPropagation();
         const pMenu = new Menu();
@@ -3055,7 +3056,7 @@ export default class TodoistBoardPlugin extends Plugin {
         pMenu.addItem((sub) => sub.setTitle("P3").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 2, apiKey)));
         pMenu.addItem((sub) => sub.setTitle("P4 (low)").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 1, apiKey)));
         pMenu.showAtPosition({ x: event.pageX, y: event.pageY });
-      });
+      }, primaryActions, "Set priority");
     }
 
     if (actions.setDeadline) {
@@ -3110,7 +3111,9 @@ export default class TodoistBoardPlugin extends Plugin {
     wrapper.appendChild(chinContainer);
     row.appendChild(wrapper);
 
-    wrapper.addEventListener("click", (e) => e.stopPropagation());
+    ["pointerdown", "pointerup", "mousedown", "mouseup", "touchstart", "touchend", "click"].forEach((eventName) => {
+      wrapper.addEventListener(eventName, (event) => event.stopPropagation());
+    });
   }
 
   // ======================= Edit Task Modal =======================
