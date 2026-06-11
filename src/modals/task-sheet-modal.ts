@@ -63,6 +63,7 @@ export class TaskSheetModal extends Modal {
     this.containerEl.style.removeProperty("--todoist-task-sheet-viewport-height");
     clearEl(this.contentEl);
     this.titleInput = null;
+    this.lastTextInput = null;
   }
 
   setLoading(title = this.options.title) {
@@ -86,39 +87,239 @@ export class TaskSheetModal extends Modal {
   }
 
   private rememberTextInput(input: HTMLInputElement | HTMLTextAreaElement) {
-    this.lastTextInput = input;
+    if (!this.lastTextInput) this.lastTextInput = input;
     input.addEventListener("focus", () => {
       this.lastTextInput = input;
     });
   }
 
-  private keepKeyboardOnPointerDown(element: HTMLElement) {
-    element.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      this.lastTextInput?.focus();
-    });
+  private getActiveTextInput(): HTMLInputElement | HTMLTextAreaElement | null {
+    const focused = this.containerEl.ownerDocument.activeElement;
+    if (!(focused instanceof HTMLElement) || !this.contentEl.contains(focused)) return null;
+    if (focused.instanceOf(HTMLTextAreaElement)) return focused;
+    if (!focused.instanceOf(HTMLInputElement)) return null;
+    if ([
+      "button",
+      "checkbox",
+      "color",
+      "date",
+      "file",
+      "hidden",
+      "image",
+      "radio",
+      "range",
+      "reset",
+      "submit",
+      "time",
+    ].includes(focused.type)) {
+      return null;
+    }
+    return focused;
+  }
+
+  private isKeyboardTarget(input: HTMLInputElement | HTMLTextAreaElement | null): input is HTMLInputElement | HTMLTextAreaElement {
+    if (!input || !this.contentEl.contains(input) || input.disabled) return false;
+    const labelPopover = input.closest(".taskmodal-label-popover");
+    if (labelPopover && !labelPopover.closest(".taskmodal-label-anchor.is-open")) return false;
+    const datePopover = input.closest(".taskmodal-date-popover");
+    if (datePopover && !datePopover.classList.contains("is-open")) return false;
+    return true;
+  }
+
+  private getKeyboardTarget(): HTMLInputElement | HTMLTextAreaElement | null {
+    const activeInput = this.getActiveTextInput();
+    if (this.isKeyboardTarget(activeInput)) return activeInput;
+    if (this.isKeyboardTarget(this.lastTextInput)) return this.lastTextInput;
+    if (this.isKeyboardTarget(this.titleInput)) return this.titleInput;
+    return null;
+  }
+
+  private focusTextInput(input: HTMLInputElement | HTMLTextAreaElement) {
+    try {
+      input.focus({ preventScroll: true });
+    } catch {
+      input.focus();
+    }
   }
 
   private restoreTextFocus(delay = 0) {
-    const input = this.lastTextInput;
+    const input = this.getKeyboardTarget();
     if (!input) return;
-    window.setTimeout(() => input.focus(), delay);
+    if (delay <= 0) {
+      this.focusTextInput(input);
+      return;
+    }
+    window.setTimeout(() => this.focusTextInput(input), delay);
   }
 
-  private openDatePicker(input: HTMLInputElement) {
-    const dateInput = input as HTMLInputElement & { showPicker?: () => void };
-    if (typeof dateInput.showPicker === "function") {
-      try {
-        dateInput.showPicker();
-        this.restoreTextFocus();
-        return;
-      } catch {
-        // Fall back to a normal click for hosts that expose but reject showPicker.
-      }
+  private keepKeyboardOnPointerDown(element: HTMLElement) {
+    if (element.instanceOf(HTMLButtonElement)) {
+      element.tabIndex = -1;
     }
-    input.click();
+
+    element.addEventListener("focus", () => this.restoreTextFocus());
+    element.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.restoreTextFocus();
+    });
+    element.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      this.restoreTextFocus();
+    });
+    element.addEventListener("touchstart", (event) => {
+      event.stopPropagation();
+      this.restoreTextFocus();
+    }, { passive: true });
+  }
+
+  private parseDateValue(value: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+    const date = new Date(year, month, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) return null;
+    return date;
+  }
+
+  private toDateValue(date: Date): string {
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
+  }
+
+  private dispatchInputChange(input: HTMLInputElement) {
+    const EventCtor = input.ownerDocument.defaultView?.Event ?? Event;
+    input.dispatchEvent(new EventCtor("change", { bubbles: true }));
+  }
+
+  private sameDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+
+  private initialCalendarMonth(value: string): Date {
+    const selected = this.parseDateValue(value) ?? new Date();
+    return new Date(selected.getFullYear(), selected.getMonth(), 1);
+  }
+
+  private closeDatePopovers(except?: HTMLElement) {
+    this.contentEl.querySelectorAll<HTMLElement>(".taskmodal-date-popover.is-open").forEach((popover) => {
+      if (popover === except) return;
+      popover.classList.remove("is-open");
+      popover.closest(".taskmodal-date-anchor")?.classList.remove("is-open");
+    });
+  }
+
+  private openDatePopover(anchor: HTMLElement, popover: HTMLElement, input: HTMLInputElement, monthState: { value: Date }) {
+    const willOpen = !popover.classList.contains("is-open");
+    this.closeDatePopovers(popover);
+    anchor.classList.toggle("is-open", willOpen);
+    popover.classList.toggle("is-open", willOpen);
+    if (willOpen) {
+      monthState.value = this.initialCalendarMonth(input.value);
+      this.renderDatePopover(anchor, popover, input, monthState);
+    }
     this.restoreTextFocus();
-    this.restoreTextFocus(250);
+  }
+
+  private renderDatePopover(anchor: HTMLElement, popover: HTMLElement, input: HTMLInputElement, monthState: { value: Date }) {
+    clearEl(popover);
+    if (!popover.dataset.keyboardGuardInstalled) {
+      ["pointerdown", "mousedown", "touchstart", "click"].forEach((eventName) => {
+        popover.addEventListener(eventName, (event) => event.stopPropagation());
+      });
+      popover.dataset.keyboardGuardInstalled = "true";
+    }
+    const selectedDate = this.parseDateValue(input.value);
+    const today = new Date();
+    const monthStart = new Date(monthState.value.getFullYear(), monthState.value.getMonth(), 1);
+    const firstGridDay = new Date(monthStart);
+    firstGridDay.setDate(1 - monthStart.getDay());
+
+    const header = popover.createDiv({ cls: "taskmodal-date-popover-header" });
+    const prevButton = header.createEl("button", { cls: "taskmodal-date-nav", type: "button" });
+    setIcon(prevButton, "chevron-left");
+    header.createDiv({
+      cls: "taskmodal-date-month",
+      text: monthStart.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+    });
+    const nextButton = header.createEl("button", { cls: "taskmodal-date-nav", type: "button" });
+    setIcon(nextButton, "chevron-right");
+
+    const moveMonth = (offset: number) => {
+      monthState.value = new Date(monthState.value.getFullYear(), monthState.value.getMonth() + offset, 1);
+      this.renderDatePopover(anchor, popover, input, monthState);
+      this.restoreTextFocus();
+      this.restoreTextFocus(80);
+    };
+
+    [prevButton, nextButton].forEach((button) => this.keepKeyboardOnPointerDown(button));
+    prevButton.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      moveMonth(-1);
+    };
+    nextButton.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      moveMonth(1);
+    };
+
+    const weekdays = popover.createDiv({ cls: "taskmodal-date-weekdays" });
+    ["S", "M", "T", "W", "T", "F", "S"].forEach((day) => {
+      weekdays.createSpan({ text: day });
+    });
+
+    const grid = popover.createDiv({ cls: "taskmodal-date-grid" });
+    for (let index = 0; index < 42; index += 1) {
+      const date = new Date(firstGridDay);
+      date.setDate(firstGridDay.getDate() + index);
+      const button = grid.createEl("button", {
+        cls: "taskmodal-date-day",
+        text: String(date.getDate()),
+        type: "button",
+      });
+      button.classList.toggle("is-muted", date.getMonth() !== monthStart.getMonth());
+      button.classList.toggle("is-today", this.sameDay(date, today));
+      button.classList.toggle("is-selected", !!selectedDate && this.sameDay(date, selectedDate));
+      this.keepKeyboardOnPointerDown(button);
+      button.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        input.value = this.toDateValue(date);
+        this.dispatchInputChange(input);
+        popover.classList.remove("is-open");
+        anchor.classList.remove("is-open");
+        this.restoreTextFocus();
+      };
+    }
+
+    const footer = popover.createDiv({ cls: "taskmodal-date-popover-footer" });
+    const cancelButton = footer.createEl("button", { cls: "taskmodal-date-cancel", text: "Cancel", type: "button" });
+    const todayButton = footer.createEl("button", { cls: "taskmodal-date-today", text: "Today", type: "button" });
+    this.keepKeyboardOnPointerDown(cancelButton);
+    this.keepKeyboardOnPointerDown(todayButton);
+    cancelButton.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      popover.classList.remove("is-open");
+      anchor.classList.remove("is-open");
+      this.restoreTextFocus();
+    };
+    todayButton.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      input.value = this.toDateValue(new Date());
+      this.dispatchInputChange(input);
+      popover.classList.remove("is-open");
+      anchor.classList.remove("is-open");
+      this.restoreTextFocus();
+    };
   }
 
   private renderForm() {
@@ -299,6 +500,10 @@ export class TaskSheetModal extends Modal {
       type: "date",
       value: fields.due ?? "",
     });
+    const duePopover = visibleFields.dueDate
+      ? dueAnchor.createDiv({ cls: "taskmodal-date-popover" })
+      : ownerDocument.createElement("div");
+    const dueMonthState = { value: this.initialCalendarMonth(fields.due ?? "") };
 
     if (visibleFields.dueDate) {
       const dueChip = dueAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-date-chip" });
@@ -319,14 +524,14 @@ export class TaskSheetModal extends Modal {
       dueChip.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.openDatePicker(dueInput);
+        this.openDatePopover(dueAnchor, duePopover, dueInput, dueMonthState);
       };
       dueClear.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
         dueInput.value = "";
         syncDueChip();
-        this.lastTextInput?.focus();
+        this.restoreTextFocus();
       };
       this.keepKeyboardOnPointerDown(dueClear);
       dueInput.addEventListener("change", syncDueChip);
@@ -341,6 +546,10 @@ export class TaskSheetModal extends Modal {
       type: "date",
       value: fields.deadline ?? "",
     });
+    const deadlinePopover = visibleFields.deadline
+      ? deadlineAnchor.createDiv({ cls: "taskmodal-date-popover taskmodal-date-popover-right" })
+      : ownerDocument.createElement("div");
+    const deadlineMonthState = { value: this.initialCalendarMonth(fields.deadline ?? "") };
 
     if (visibleFields.deadline) {
       const deadlineChip = deadlineAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-deadline-chip" });
@@ -361,14 +570,14 @@ export class TaskSheetModal extends Modal {
       deadlineChip.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.openDatePicker(deadlineInput);
+        this.openDatePopover(deadlineAnchor, deadlinePopover, deadlineInput, deadlineMonthState);
       };
       deadlineClear.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
         deadlineInput.value = "";
         syncDeadlineChip();
-        this.lastTextInput?.focus();
+        this.restoreTextFocus();
       };
       this.keepKeyboardOnPointerDown(deadlineClear);
       deadlineInput.addEventListener("change", syncDeadlineChip);
@@ -408,7 +617,7 @@ export class TaskSheetModal extends Modal {
         priorityButton.textContent = priorityLabel(Number(prioritySelect.value));
         priorityButton.setAttribute("aria-label", priorityLabel(Number(prioritySelect.value)));
         priorityMenu.classList.remove("is-open");
-        this.lastTextInput?.focus();
+        this.restoreTextFocus();
       };
     });
     priorityField.setAttribute("data-priority", String(fields.priority ?? 1));
@@ -421,7 +630,7 @@ export class TaskSheetModal extends Modal {
         event.preventDefault();
         event.stopPropagation();
         priorityMenu.classList.toggle("is-open");
-        this.lastTextInput?.focus();
+        this.restoreTextFocus();
       };
     }
 
@@ -496,11 +705,25 @@ export class TaskSheetModal extends Modal {
     syncLabelChip();
 
     if (visibleFields.labels) {
+      const labelFooter = labelPopover.createDiv({ cls: "taskmodal-label-popover-footer" });
+      const labelCancelButton = labelFooter.createEl("button", {
+        cls: "taskmodal-label-cancel",
+        text: "Cancel",
+        type: "button",
+      });
+      this.keepKeyboardOnPointerDown(labelCancelButton);
+      labelCancelButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        labelAnchor.classList.remove("is-open");
+        this.restoreTextFocus();
+      };
+
       labelButton.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
         labelAnchor.classList.toggle("is-open");
-        this.lastTextInput?.focus();
+        this.restoreTextFocus();
       };
       labelPopover.addEventListener("click", (event) => event.stopPropagation());
       labelSearch.addEventListener("input", () => {
@@ -529,6 +752,9 @@ export class TaskSheetModal extends Modal {
     }
 
     wrapper.addEventListener("click", (event) => {
+      if (!(event.target as HTMLElement).closest(".taskmodal-date-anchor")) {
+        this.closeDatePopovers();
+      }
       if (!(event.target as HTMLElement).closest(".taskmodal-label-anchor")) {
         labelAnchor.classList.remove("is-open");
       }

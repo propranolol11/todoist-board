@@ -109,6 +109,7 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
       toggleExpandedDescription();
     };
     descEl.appendChild(toggleDescription);
+    scheduleDescriptionOverflowSync(descEl);
   } else {
     descEl.classList.add("desc-empty");
   }
@@ -116,6 +117,7 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   const contentWrapper = activeDocument.createElement("div");
   contentWrapper.className = "task-content-wrapper";
   contentWrapper.appendChild(titleSpan);
+  contentWrapper.appendChild(descEl);
 
   const whenRow = activeDocument.createElement("div");
   whenRow.className = "task-when";
@@ -138,7 +140,7 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   const projectInline = createProjectPill(task.projectId, projectMap, projects);
   if (projectInline) metaRow.appendChild(projectInline);
 
-  const labelsInline = createLabelPill(task.labels, labelMap, labelColorMap, labels);
+  const labelsInline = createLabelPill(task.labels, labelMap, labelColorMap, labels, isTaskRecurring(task));
   if (labelsInline) {
     if (projectInline) {
       metaRow.appendChild(createMidSeparator());
@@ -147,11 +149,29 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   }
   contentWrapper.appendChild(metaRow);
 
-  contentWrapper.appendChild(descEl);
   contentWrapper.appendChild(metaSpan);
   left.appendChild(contentWrapper);
 
   return left;
+}
+
+function scheduleDescriptionOverflowSync(descEl: HTMLElement) {
+  const sync = () => {
+    const wasExpanded = descEl.classList.contains("desc-expanded");
+    if (wasExpanded) descEl.classList.remove("desc-expanded");
+    descEl.classList.add("desc-collapsed");
+    const hasOverflow = descEl.scrollHeight > descEl.clientHeight + 1;
+    descEl.classList.toggle("has-overflow", hasOverflow);
+    if (wasExpanded) {
+      descEl.classList.toggle("desc-expanded", hasOverflow);
+      descEl.classList.toggle("desc-collapsed", !hasOverflow);
+    }
+  };
+
+  window.requestAnimationFrame(() => {
+    sync();
+    window.setTimeout(sync, 60);
+  });
 }
 
 interface TaskPillOptions {
@@ -195,7 +215,7 @@ function createTaskPills(options: TaskPillOptions): HTMLElement[] {
   const projectPill = createProjectPill(task.projectId, projectMap, projects);
   if (projectPill) pills.push(projectPill);
 
-  const labelPill = createLabelPill(task.labels, labelMap, labelColorMap, labels);
+  const labelPill = createLabelPill(task.labels, labelMap, labelColorMap, labels, isTaskRecurring(task));
   if (labelPill) pills.push(labelPill);
 
   return pills.filter((pill) => pill.style.display !== "none");
@@ -223,11 +243,7 @@ function createDueInline(task: TodoistTask, settings: TodoistBoardSettings): HTM
   span.className = "due-inline";
   span.textContent = hasTime ? `${dateLabel} @ ${dt.toFormat(useHour12() ? "h:mm a" : "HH:mm")}` : dateLabel;
 
-  const isRecurring = Boolean(
-    task?.due?.isRecurring === true ||
-    (typeof task?.due?.string === "string" && /\b(every|daily|weekly|monthly|yearly|weekday|weekend)\b/i.test(task.due.string))
-  );
-  if (isRecurring) {
+  if (isTaskRecurring(task)) {
     const recurring = activeDocument.createElement("span");
     recurring.className = "repeat-indicator";
     recurring.setAttribute("aria-label", "Repeats");
@@ -237,6 +253,14 @@ function createDueInline(task: TodoistTask, settings: TodoistBoardSettings): HTM
   }
 
   return span;
+}
+
+function isTaskRecurring(task: TodoistTask): boolean {
+  return Boolean(
+    task?.due?.isRecurring === true ||
+    task?.due?.is_recurring === true ||
+    (typeof task?.due?.string === "string" && /\b(every|daily|weekly|monthly|yearly|weekday|weekend)\b/i.test(task.due.string))
+  );
 }
 
 function createDeadlineInline(task: TodoistTask, settings: TodoistBoardSettings): HTMLElement | null {
@@ -365,6 +389,7 @@ function createLabelPill(
   labelMap: Record<string, string>,
   labelColorMap: Record<string, string>,
   labelCache: Label[],
+  hideLeadingRepeatEmoji = false,
 ): HTMLElement | null {
   if (!Array.isArray(labels) || labels.length === 0) return null;
 
@@ -386,7 +411,11 @@ function createLabelPill(
   labels.forEach((raw, index) => {
     const input = String(raw);
     const idKey = resolveIdKey(input);
-    const name = idKey ? (labelMap[idKey] ?? input) : input;
+    const rawName = idKey ? (labelMap[idKey] ?? input) : input;
+    const repeatStrippedName = rawName.replace(/^\s*(?:🔁|🔄|↻|⟳|⟲)\s*/u, "");
+    const name = hideLeadingRepeatEmoji && repeatStrippedName.trim()
+      ? repeatStrippedName
+      : rawName;
 
     let rawColor: string | number | undefined = idKey ? labelColorMap[idKey] : undefined;
     if (!rawColor && labelColorMap[input] !== undefined) {
