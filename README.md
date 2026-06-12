@@ -1,7 +1,7 @@
 # Todoist Board
 
 > [!IMPORTANT]
-> If you update to Todoist Board 2.1.0 and your tasks do not load, open the plugin settings and re-enter your Todoist API token. Todoist Board now uses Obsidian Secret Storage for API tokens when available, which keeps the token out of the plugin's `data.json` file.
+> Todoist Board now uses Obsidian Secret Storage for API tokens when available, which keeps the token out of the plugin's `data.json` file. If you update to Todoist Board 2.1.0 and your tasks do not load, open the plugin settings and re-enter your Todoist API token. 
 
 Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive boards in the sidebar or directly inside notes.
 
