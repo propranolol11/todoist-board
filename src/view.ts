@@ -23,8 +23,11 @@ export interface TodoistBoardViewPlugin {
 }
 
 export class TodoistBoardView extends ItemView {
-  constructor(leaf: WorkspaceLeaf, private readonly plugin: TodoistBoardViewPlugin) {
+  private readonly plugin: TodoistBoardViewPlugin;
+
+  constructor(leaf: WorkspaceLeaf, plugin: TodoistBoardViewPlugin) {
     super(leaf);
+    this.plugin = plugin;
     this.icon = "list-todo";
   }
 
@@ -34,6 +37,10 @@ export class TodoistBoardView extends ItemView {
 
   getDisplayText() {
     return "Todoist Board";
+  }
+
+  getIcon() {
+    return "list-todo";
   }
 
   async onOpen() {
@@ -49,14 +56,6 @@ export class TodoistBoardView extends ItemView {
     const defaultFilter = getDefaultFilter(plugin.settings);
     plugin.settings.currentFilter = defaultFilter;
     container.setAttribute("data-current-filter", String(defaultFilter));
-
-    await new Promise((resolve) => {
-      const checkVisible = () => {
-        if (container.offsetParent !== null) return resolve(undefined);
-        window.setTimeout(checkVisible, 100);
-      };
-      checkVisible();
-    });
 
     if (plugin.getViewTasks(defaultFilter).length === 0) {
       await plugin.preloadFilters();

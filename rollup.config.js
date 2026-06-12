@@ -5,7 +5,13 @@ import terser from '@rollup/plugin-terser';
 
 
 function onwarn(warning, warn) {
-  if (warning.code === 'CIRCULAR_DEPENDENCY' && /luxon/.test(warning.importer)) return;
+  const warningText = [
+    warning.importer,
+    warning.message,
+    ...(warning.ids || []),
+    ...(warning.cycle || [])
+  ].filter(Boolean).join(' ');
+  if (warning.code === 'CIRCULAR_DEPENDENCY' && /luxon/.test(warningText)) return;
   warn(warning);
 }
 

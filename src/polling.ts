@@ -2,7 +2,11 @@ import type { Label, Project, TodoistMetadata, TodoistTask } from "./types";
 
 export interface PollingPluginAdapter {
   settings: { apiKey: string };
-  fetchFilteredTasksFromREST(apiKey: string, filter: string): Promise<{ results?: TodoistTask[] }>;
+  fetchFilteredTasksFromREST(apiKey: string, filter: string): Promise<{
+    results?: TodoistTask[];
+    source?: "remote" | "cache" | "empty";
+    error?: unknown;
+  }>;
   fetchMetadataFromSync(apiKey: string): Promise<TodoistMetadata>;
   getViewTasks(filter: string): TodoistTask[];
   upsertTasks(filter: string, tasks: TodoistTask[]): void;
@@ -22,6 +26,7 @@ export interface PollingPluginAdapter {
 
 export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000): () => void {
   let lastActivity = Date.now();
+  let inFlight = false;
   const events: Array<keyof WindowEventMap> = ["mousemove", "keydown", "click", "scroll"];
   const handlers: { event: keyof WindowEventMap; fn: EventListener }[] = [];
   const updateActivity = () => {
@@ -35,9 +40,13 @@ export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000)
 
   const timer = window.setInterval(() => {
     void (async () => {
+    if (inFlight) return;
+    if (!plugin.settings.apiKey) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
     if (activeDocument.visibilityState !== "visible") return;
     if (Date.now() - lastActivity >= interval * 2) return;
 
+    inFlight = true;
     try {
       const filters = Array.from(
         new Set(
@@ -49,6 +58,7 @@ export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000)
 
       for (const filter of filters) {
         const response = await plugin.fetchFilteredTasksFromREST(plugin.settings.apiKey, filter);
+        if (response.source && response.source !== "remote") continue;
         const tasks = Array.isArray(response?.results) ? response.results : [];
         const existing = plugin.getViewTasks(filter);
         if (hasTaskChanges(existing, tasks)) {
@@ -60,13 +70,19 @@ export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000)
       if (!changedAny) return;
 
       const boards = Array.from(activeDocument.querySelectorAll<HTMLElement>(".todoist-board.plugin-view"));
-      for (const el of boards) {
-        const filter = el.getAttribute("data-current-filter") || "today";
+      const metadataFresh = Array.isArray(plugin.projectCache)
+        && plugin.projectCache.length > 0
+        && Date.now() - plugin.projectCacheTimestamp < 5 * 60 * 1000;
+      if (!metadataFresh) {
         const metadata = await plugin.fetchMetadataFromSync(plugin.settings.apiKey);
         plugin.projectCache = metadata.projects || [];
         plugin.labelCache = metadata.labels || [];
         plugin.projectCacheTimestamp = Date.now();
         plugin.labelCacheTimestamp = Date.now();
+      }
+
+      for (const el of boards) {
+        const filter = el.getAttribute("data-current-filter") || "today";
         plugin.renderTodoistBoard(el, `filter: ${filter}`, {}, plugin.settings.apiKey, {
           tasks: plugin.getViewTasks(filter),
           projects: plugin.projectCache,
@@ -76,6 +92,8 @@ export function startTaskPolling(plugin: PollingPluginAdapter, interval = 10000)
       plugin.refreshAllInlineBoards();
     } catch {
       // Polling should never break the plugin UI.
+    } finally {
+      inFlight = false;
     }
     })();
   }, interval);

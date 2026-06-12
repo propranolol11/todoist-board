@@ -25,7 +25,7 @@ import {
 } from "./src/storage";
 import { StorageRepository } from "./src/storage-repository";
 import { TaskStore } from "./src/task-store";
-import { TodoistService, type TodoistTaskFetchResult } from "./src/todoist-service";
+import { TodoistService, isTodoistRequestError, type TodoistTaskFetchResult } from "./src/todoist-service";
 import { TaskActions } from "./src/task-actions";
 import { TaskSheetModal } from "./src/modals/task-sheet-modal";
 import { openFilterSettingsModal } from "./src/modals/filter-settings-modal";
@@ -192,6 +192,8 @@ export default class TodoistBoardPlugin extends Plugin {
   private readonly taskPageSize = 100;
   private filterNextCursor: Record<string, string | null> = {};
   private taskHierarchy = new TaskHierarchy();
+  private globalEventListenersRegistered = false;
+  private lastTodoistErrorNotice = { key: "", at: 0 };
 
   private ensureRefactoredRuntime(apiKey: string = this.settings?.apiKey || "") {
     if (!this.storage) this.storage = new TodoistBoardStorage(this.app);
@@ -291,17 +293,48 @@ export default class TodoistBoardPlugin extends Plugin {
   ): Promise<TodoistTaskFetchResult> {
     const filterKey = args || "today";
     this.ensureRefactoredRuntime(apiKey);
-    const result = await this.todoistService.fetchFilteredTasks(filterKey, {
-      cursor: options.cursor,
-      limit: this.taskPageSize,
-    });
-    this.filterNextCursor[filterKey] = result.nextCursor || null;
-    return {
-      results: Array.isArray(result.results) ? result.results : [],
-      nextCursor: result.nextCursor || null,
-      hasMore: Boolean(result.nextCursor),
-      source: result.source,
-    };
+    try {
+      const result = await this.todoistService.fetchFilteredTasks(filterKey, {
+        cursor: options.cursor,
+        limit: this.taskPageSize,
+      });
+      this.filterNextCursor[filterKey] = result.nextCursor || null;
+      return {
+        results: Array.isArray(result.results) ? result.results : [],
+        nextCursor: result.nextCursor || null,
+        hasMore: Boolean(result.nextCursor),
+        source: result.source,
+      };
+    } catch (error) {
+      if (!isTodoistRequestError(error)) throw error;
+      this.filterNextCursor[filterKey] = null;
+      this.showTodoistRequestNotice(error.status, filterKey);
+      return {
+        results: [],
+        nextCursor: null,
+        hasMore: false,
+        source: "empty",
+        error,
+      };
+    }
+  }
+
+  private showTodoistRequestNotice(status: number, filterKey: string) {
+    const key = `${status}:${filterKey}`;
+    const now = Date.now();
+    if (this.lastTodoistErrorNotice.key === key && now - this.lastTodoistErrorNotice.at < 5000) return;
+    this.lastTodoistErrorNotice = { key, at: now };
+
+    const detail = status === 401
+      ? "Check your Todoist API token."
+      : status === 400
+        ? "Check the Todoist filter syntax."
+        : status === 403
+          ? "Todoist denied access to this resource."
+          : status === 404
+            ? "Todoist could not find the requested resource."
+            : "Todoist returned an API error.";
+    new Notice(`Todoist sync failed for "${filterKey}" (${status}). ${detail}`);
   }
 
   async fetchMetadataFromSync(apiKey: string): Promise<{
@@ -545,13 +578,14 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private async openTodoistBoardInRightSidebar() {
-    const existingLeaf = this.app.workspace
+    const getRightTodoistLeaf = () => this.app.workspace
       .getLeavesOfType(TODOIST_BOARD_VIEW_TYPE)
       .find((leaf) => {
         const root = leaf.getRoot() as unknown as RootWithContainer;
         return root.containerEl?.hasClass?.("mod-right-split") === true;
       });
 
+    const existingLeaf = getRightTodoistLeaf();
     const rightLeaf =
       existingLeaf ||
       this.app.workspace.getRightLeaf(false) ||
@@ -566,8 +600,9 @@ export default class TodoistBoardPlugin extends Plugin {
       });
     }
 
-    this.app.workspace.rightSplit.expand();
-    this.app.workspace.setActiveLeaf(rightLeaf, { focus: true });
+    const leafToReveal = getRightTodoistLeaf() || rightLeaf;
+    await leafToReveal.loadIfDeferred();
+    await this.app.workspace.revealLeaf(leafToReveal);
   }
 
   private async openTodoistBoardInNewTab() {
@@ -1118,6 +1153,7 @@ export default class TodoistBoardPlugin extends Plugin {
   onunload() {
     this.stopTaskPolling?.();
     this.stopTaskPolling = undefined;
+    this.globalEventListenersRegistered = false;
     // Remove global event listener
     activeDocument.removeEventListener("click", this._globalClickListener);
     // Failsafe: always clear drag/body locks
@@ -1138,12 +1174,6 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Remove UI injected elements (e.g., .todoist-board, .todoist-plugin-ui if any)
     activeDocument.querySelectorAll('.todoist-plugin-ui').forEach(el => el.remove());
-
-    // Remove menu dropdowns that might have been appended to body
-    activeDocument.querySelectorAll('.menu-dropdown-wrapper').forEach(el => el.remove());
-
-    // Remove all .todoist-board elements from DOM
-    activeDocument.querySelectorAll('.todoist-board').forEach(el => el.remove());
 
     this.closeModal();
   }
@@ -3047,7 +3077,7 @@ export default class TodoistBoardPlugin extends Plugin {
     }
 
     if (actions.setPriority) {
-      appendChinButton("priority-btn", "flag", "", (event) => {
+      const priorityButton = appendChinButton("priority-btn", "flag", "", (event) => {
         event.preventDefault();
         event.stopPropagation();
         const pMenu = new Menu();
@@ -3057,6 +3087,7 @@ export default class TodoistBoardPlugin extends Plugin {
         pMenu.addItem((sub) => sub.setTitle("P4 (low)").setIcon("flag").onClick(async () => this.updateTaskPriority(task.id, 1, apiKey)));
         pMenu.showAtPosition({ x: event.pageX, y: event.pageY });
       }, primaryActions, "Set priority");
+      this.applyChinPriorityState(priorityButton, Number(task.priority ?? 1) || 1);
     }
 
     if (actions.setDeadline) {
@@ -3122,6 +3153,47 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // ======================= 📆 Quick Actions (Today, Tmrw, Delete) =======================
+  private priorityLabel(priority: number): string {
+    return `P${5 - Math.min(Math.max(Number(priority) || 1, 1), 4)}`;
+  }
+
+  private applyChinPriorityState(button: HTMLElement | null | undefined, priority: number) {
+    if (!button) return;
+    const safePriority = Math.min(Math.max(Number(priority) || 1, 1), 4);
+    button.classList.remove("priority-1", "priority-2", "priority-3", "priority-4");
+    button.classList.add(`priority-${safePriority}`);
+    button.setAttribute("data-priority", String(safePriority));
+    button.setAttribute("aria-label", `Set priority (${this.priorityLabel(safePriority)})`);
+    button.title = `Set priority (${this.priorityLabel(safePriority)})`;
+
+    let text = button.querySelector<HTMLElement>(".chin-priority-label");
+    if (!text) {
+      text = activeDocument.createElement("span");
+      text.className = "chin-priority-label";
+      button.appendChild(text);
+    }
+    text.textContent = this.priorityLabel(safePriority);
+  }
+
+  private clearTaskFocusAfterAction(taskId: string) {
+    const row = activeDocument.querySelector<HTMLElement>(`.task[data-id="${taskId}"], [data-task-id="${taskId}"]`);
+    if (row) {
+      row.classList.remove("selected-task", "task-deselecting", "has-fixed-chin");
+      row.querySelector("#mini-toolbar-wrapper")?.remove();
+      row.querySelector(".task-title")?.classList.remove("task-title-selected");
+      row.querySelector("input[type='checkbox']")?.classList.remove("task-checkbox-selected");
+      row.querySelector(".task-metadata")?.classList.remove("task-meta-selected");
+      row.querySelector(".task-description")?.classList.remove("show-description");
+    } else {
+      activeDocument.getElementById("mini-toolbar-wrapper")?.remove();
+    }
+
+    activeDocument.querySelectorAll(".task.no-transition, .task.freeze-transition").forEach((element) => {
+      element.classList.remove("no-transition", "freeze-transition");
+    });
+    this.syncSelectedTaskState();
+  }
+
   private async setTaskToToday(taskId: string, apiKey: string, toolbar: HTMLElement, btn: HTMLElement) {
     const busyButton = btn as BusyHTMLElement;
     if (busyButton._busy) return;
@@ -3139,6 +3211,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "🎉";
+        this.clearTaskFocusAfterAction(taskId);
         window.setTimeout(() => {
           this.deleteTaskEverywhere(taskId);
           const taskRow = activeDocument.getElementById(taskId);
@@ -3178,6 +3251,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "🎉";
+        this.clearTaskFocusAfterAction(taskId);
         window.setTimeout(() => {
           this.deleteTaskEverywhere(taskId);
           // Remove the task element from the DOM manually
@@ -3209,7 +3283,13 @@ export default class TodoistBoardPlugin extends Plugin {
       if (checkbox) {
         checkbox.className = `todoist-checkbox priority-${priority}`;
       }
-      new Notice(`Priority updated to P${5 - priority}`); // Todoist API P4=1, P1=4. UI P1=High.
+      this.applyChinPriorityState(
+        activeDocument.querySelector<HTMLElement>(`.task[data-id="${taskId}"] .priority-btn`),
+        priority,
+      );
+      const task = this.taskStore[String(taskId)];
+      if (task) task.priority = priority;
+      new Notice(`Priority updated to ${this.priorityLabel(priority)}`); // Todoist API P4=1, P1=High.
     } catch (e) {
       console.error("Failed to update priority", e);
       new Notice("Failed to update priority");
@@ -3232,6 +3312,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "✅";
+        this.clearTaskFocusAfterAction(taskId);
         window.setTimeout(() => {
           this.deleteTaskEverywhere(taskId);
           // Remove the task element from the DOM manually
@@ -3542,6 +3623,9 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private setupGlobalEventListeners() {
+    if (this.globalEventListenersRegistered) return;
+    this.globalEventListenersRegistered = true;
+
     this.registerDomEvent(this.app.workspace.containerEl, "click", (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target) return;

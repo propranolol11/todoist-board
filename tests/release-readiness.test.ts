@@ -2,12 +2,20 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { __resetRequestUrl, __setRequestUrl } from "obsidian";
 import { resolveFilterFromSource, sourceOrDefault } from "../src/filters.ts";
+import { startTaskPolling } from "../src/polling.ts";
 import { sortTasksLikeTodoist } from "../src/sort.ts";
 import { TodoistBoardStorage, writeJSON } from "../src/storage.ts";
 import { TaskStore } from "../src/task-store.ts";
 import { getSubtasksForParent, TaskHierarchy } from "../src/task-hierarchy.ts";
-import { normalizeTask, toRestTaskPayload, toSyncTaskArgs } from "../src/todoist-service.ts";
+import {
+  isTodoistRequestError,
+  normalizeTask,
+  TodoistService,
+  toRestTaskPayload,
+  toSyncTaskArgs,
+} from "../src/todoist-service.ts";
 import type { TodoistBoardSettings, TodoistTask } from "../src/types.ts";
 
 class MemoryStorage {
@@ -49,9 +57,26 @@ const settings: TodoistBoardSettings = {
 };
 
 test.beforeEach(() => {
+  __resetRequestUrl();
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     value: new MemoryStorage(),
+  });
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: { onLine: true },
+  });
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: {
+      crypto: { randomUUID: () => "cmd-1" },
+      addEventListener() {},
+      removeEventListener() {},
+      setInterval,
+      clearInterval,
+      setTimeout,
+      clearTimeout,
+    },
   });
 });
 
@@ -148,6 +173,286 @@ test("todoist normalization and payload helpers preserve API field mappings", ()
     toSyncTaskArgs("42", { content: "Ship", dueString: "no date", deadlineDate: null }),
     { id: "42", content: "Ship", due: { string: "no date" }, deadline: null },
   );
+});
+
+test("todoist service throws structured errors for REST failures", async () => {
+  __setRequestUrl(async () => ({ status: 401, text: "bad token" }));
+  const service = new TodoistService("token");
+
+  await assert.rejects(
+    () => service.getProjects(),
+    (error: unknown) => isTodoistRequestError(error)
+      && error.status === 401
+      && error.endpoint === "/projects",
+  );
+});
+
+test("todoist service does not cache-fallback HTTP filter errors", async () => {
+  __setRequestUrl(async () => ({ status: 400, text: "bad filter" }));
+  const service = new TodoistService("token", {
+    getCachedTasks: () => [{ id: "cached", content: "Cached" }],
+  });
+
+  await assert.rejects(
+    () => service.fetchFilteredTasks("bad filter"),
+    (error: unknown) => isTodoistRequestError(error)
+      && error.status === 400
+      && error.endpoint === "/tasks/filter",
+  );
+});
+
+test("todoist service uses cache for offline filter fetches", async () => {
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: { onLine: false },
+  });
+  __setRequestUrl(async () => {
+    throw new Error("request should not run while offline");
+  });
+  const service = new TodoistService("token", {
+    getCachedTasks: () => [{ id: "cached", content: "Cached" }],
+  });
+
+  const result = await service.fetchFilteredTasks("today");
+
+  assert.equal(result.source, "cache");
+  assert.deepEqual(result.results.map((task) => task.id), ["cached"]);
+});
+
+test("todoist sync commands validate HTTP and command status", async () => {
+  const service = new TodoistService("token");
+
+  __setRequestUrl(async () => ({ status: 401, text: "bad token" }));
+  await assert.rejects(
+    () => service.scheduleTask("task", { due_string: "today" }),
+    (error: unknown) => isTodoistRequestError(error)
+      && error.status === 401
+      && error.endpoint === "/sync",
+  );
+
+  __setRequestUrl(async () => ({ status: 200, text: JSON.stringify({ sync_status: {} }) }));
+  await assert.rejects(
+    () => service.scheduleTask("task", { due_string: "today" }),
+    /missing command status/,
+  );
+
+  __setRequestUrl(async () => ({
+    status: 200,
+    text: JSON.stringify({ sync_status: { "cmd-1": { error: "invalid", error_code: 42 } } }),
+  }));
+  await assert.rejects(
+    () => service.updatePriority("task", 4),
+    /Todoist sync item_update failed/,
+  );
+});
+
+test("polling skips missing token, offline state, and overlapping runs", async () => {
+  let intervalCallback: (() => void) | null = null;
+  let fetchCalls = 0;
+
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: {
+      addEventListener() {},
+      removeEventListener() {},
+      setInterval(fn: () => void) {
+        intervalCallback = fn;
+        return 1;
+      },
+      clearInterval() {},
+    },
+  });
+  (globalThis as unknown as { activeDocument: unknown }).activeDocument = {
+    visibilityState: "visible",
+    querySelectorAll: () => [{ getAttribute: () => "today" }],
+  };
+
+  const missingTokenStop = startTaskPolling({
+    settings: { apiKey: "" },
+    fetchFilteredTasksFromREST: async () => {
+      fetchCalls += 1;
+      return { results: [], source: "remote" };
+    },
+    fetchMetadataFromSync: async () => ({ projects: [], sections: [], labels: [] }),
+    getViewTasks: () => [],
+    upsertTasks() {},
+    renderTodoistBoard() {},
+    refreshAllInlineBoards() {},
+    projectCache: [],
+    labelCache: [],
+    projectCacheTimestamp: 0,
+    labelCacheTimestamp: 0,
+  }, 1000);
+  intervalCallback?.();
+  await Promise.resolve();
+  assert.equal(fetchCalls, 0);
+  missingTokenStop();
+
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: { onLine: false },
+  });
+  const offlineStop = startTaskPolling({
+    settings: { apiKey: "token" },
+    fetchFilteredTasksFromREST: async () => {
+      fetchCalls += 1;
+      return { results: [], source: "remote" };
+    },
+    fetchMetadataFromSync: async () => ({ projects: [], sections: [], labels: [] }),
+    getViewTasks: () => [],
+    upsertTasks() {},
+    renderTodoistBoard() {},
+    refreshAllInlineBoards() {},
+    projectCache: [],
+    labelCache: [],
+    projectCacheTimestamp: 0,
+    labelCacheTimestamp: 0,
+  }, 1000);
+  intervalCallback?.();
+  await Promise.resolve();
+  assert.equal(fetchCalls, 0);
+  offlineStop();
+
+  Object.defineProperty(globalThis, "navigator", {
+    configurable: true,
+    value: { onLine: true },
+  });
+  let resolveFetch: ((value: { results: TodoistTask[]; source: "remote" }) => void) | null = null;
+  const overlappingStop = startTaskPolling({
+    settings: { apiKey: "token" },
+    fetchFilteredTasksFromREST: async () => {
+      fetchCalls += 1;
+      return new Promise((resolve) => {
+        resolveFetch = resolve;
+      });
+    },
+    fetchMetadataFromSync: async () => ({ projects: [], sections: [], labels: [] }),
+    getViewTasks: () => [],
+    upsertTasks() {},
+    renderTodoistBoard() {},
+    refreshAllInlineBoards() {},
+    projectCache: [],
+    labelCache: [],
+    projectCacheTimestamp: Date.now(),
+    labelCacheTimestamp: Date.now(),
+  }, 1000);
+  intervalCallback?.();
+  intervalCallback?.();
+  assert.equal(fetchCalls, 1);
+  resolveFetch?.({ results: [], source: "remote" });
+  await Promise.resolve();
+  overlappingStop();
+});
+
+test("polling fetches metadata once per changed cycle", async () => {
+  let intervalCallback: (() => void) | null = null;
+  let metadataCalls = 0;
+  let renderCalls = 0;
+  let inlineRefreshes = 0;
+  const tasksByFilter: Record<string, TodoistTask[]> = { today: [] };
+  const boards = [
+    { getAttribute: () => "today" },
+    { getAttribute: () => "today" },
+  ];
+
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: {
+      addEventListener() {},
+      removeEventListener() {},
+      setInterval(fn: () => void) {
+        intervalCallback = fn;
+        return 1;
+      },
+      clearInterval() {},
+    },
+  });
+  (globalThis as unknown as { activeDocument: unknown }).activeDocument = {
+    visibilityState: "visible",
+    querySelectorAll: (selector: string) => selector === ".todoist-board.plugin-view"
+      ? boards
+      : [{ getAttribute: () => "today" }],
+  };
+
+  const stop = startTaskPolling({
+    settings: { apiKey: "token" },
+    fetchFilteredTasksFromREST: async () => ({
+      results: [{ id: "1", content: "Fresh" }],
+      source: "remote",
+    }),
+    fetchMetadataFromSync: async () => {
+      metadataCalls += 1;
+      return { projects: [{ id: "p", name: "Project" }], sections: [], labels: [] };
+    },
+    getViewTasks: (filter) => tasksByFilter[filter] || [],
+    upsertTasks: (filter, tasks) => {
+      tasksByFilter[filter] = tasks;
+    },
+    renderTodoistBoard: () => {
+      renderCalls += 1;
+    },
+    refreshAllInlineBoards: () => {
+      inlineRefreshes += 1;
+    },
+    projectCache: [],
+    labelCache: [],
+    projectCacheTimestamp: 0,
+    labelCacheTimestamp: 0,
+  }, 1000);
+
+  intervalCallback?.();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(metadataCalls, 1);
+  assert.equal(renderCalls, 2);
+  assert.equal(inlineRefreshes, 1);
+  stop();
+});
+
+test("plugin lifecycle registers global listeners once and leaves board containers owned by Obsidian", async () => {
+  const { default: TodoistBoardPlugin } = await import("../main.ts");
+  const plugin = new TodoistBoardPlugin();
+  let registered = 0;
+  const removed: string[] = [];
+
+  (plugin as unknown as {
+    app: unknown;
+    registerDomEvent: () => void;
+  }).app = { workspace: { containerEl: {} } };
+  (plugin as unknown as { registerDomEvent: () => void }).registerDomEvent = () => {
+    registered += 1;
+  };
+  (globalThis as unknown as { activeDocument: unknown }).activeDocument = {
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    body: { classList: { remove() {}, toggle() {} } },
+    removeEventListener() {},
+  };
+
+  (plugin as unknown as { setupGlobalEventListeners: () => void }).setupGlobalEventListeners();
+  (plugin as unknown as { setupGlobalEventListeners: () => void }).setupGlobalEventListeners();
+  assert.equal(registered, 3);
+
+  const board = { remove: () => removed.push("board") };
+  const dropdown = { remove: () => removed.push("dropdown") };
+  const toolbar = { remove: () => removed.push("toolbar") };
+  const pluginUi = { remove: () => removed.push("plugin-ui") };
+  (globalThis as unknown as { activeDocument: unknown }).activeDocument = {
+    querySelector: () => null,
+    querySelectorAll: (selector: string) => {
+      if (selector === ".todoist-board") return [board];
+      if (selector === ".menu-dropdown-wrapper") return [dropdown];
+      if (selector === "#mini-toolbar-wrapper") return [toolbar];
+      if (selector === ".todoist-plugin-ui") return [pluginUi];
+      return [];
+    },
+    body: { classList: { remove() {}, toggle() {} } },
+    removeEventListener() {},
+  };
+
+  (plugin as unknown as { onunload: () => void }).onunload();
+  assert.deepEqual(removed.sort(), ["dropdown", "plugin-ui", "toolbar"]);
 });
 
 test("community release metadata is internally consistent", () => {
