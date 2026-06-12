@@ -4122,8 +4122,15 @@ body.tb-scroll-lock {
 }
 
 .todoist-board-settings-tab .todoist-settings-card .setting-item {
+  background: transparent;
   border-top: 0;
+  box-shadow: none;
   padding: 0;
+}
+
+.todoist-board-settings-tab .todoist-settings-card .setting-item-control {
+  background: transparent;
+  box-shadow: none;
 }
 
 .todoist-board-settings-tab .todoist-settings-card .setting-item-info {
@@ -4167,6 +4174,33 @@ body.tb-scroll-lock {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
+}
+
+.todoist-board-settings-tab .todoist-settings-security-note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  margin-top: 10px;
+}
+
+.todoist-board-settings-tab .todoist-settings-security-note summary {
+  cursor: pointer;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.todoist-board-settings-tab .todoist-settings-security-note p {
+  margin: 6px 0 0;
+  max-width: 58ch;
+}
+
+.todoist-board-settings-tab .todoist-settings-security-note a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.todoist-board-settings-tab .todoist-settings-security-note a:hover {
+  text-decoration: underline;
 }
 
 .todoist-board-settings-tab .todoist-settings-link,
@@ -4220,6 +4254,53 @@ body.tb-scroll-lock {
   font-size: 0.78rem;
   padding: 2px 5px;
   white-space: normal;
+}
+
+.todoist-board-settings-tab .todoist-settings-copy-code {
+  margin-top: 6px;
+  position: relative;
+}
+
+.todoist-board-settings-tab .todoist-settings-copy-code .todoist-settings-code-example {
+  background: var(--code-background, var(--background-secondary));
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--code-normal, var(--text-normal));
+  margin: 0;
+  padding-right: 72px;
+}
+
+.todoist-board-settings-tab .todoist-settings-copy-code .todoist-settings-code-example code {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  display: block;
+  font-size: inherit;
+  padding: 0;
+  white-space: pre;
+}
+
+.todoist-board-settings-tab .todoist-settings-copy-code-button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 600;
+  height: 26px;
+  padding: 0 8px;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+
+.todoist-board-settings-tab .todoist-settings-copy-code-button:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border);
+  color: var(--text-normal);
 }
 
 .todoist-board-settings-tab .todoist-settings-next-list .todoist-settings-link {
