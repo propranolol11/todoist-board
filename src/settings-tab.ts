@@ -80,7 +80,6 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     const authCard = container.createDiv({ cls: "todoist-settings-card todoist-settings-auth-card" });
     new Setting(authCard)
       .setName("API token")
-      .setDesc("Stored locally in this vault.")
       .addText((text) => {
         text
           .setPlaceholder("Paste API token")
@@ -100,7 +99,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
             const valid = await this.plugin.validateTodoistApiKey(text.inputEl.value);
             if (!valid) throw new Error("Invalid");
             pluginSettings.apiKey = text.inputEl.value;
-            indicator.textContent = "Saved";
+            indicator.textContent = "Saved securely";
             await this.plugin.savePluginData();
           } catch {
             indicator.textContent = "Invalid token";
@@ -125,13 +124,39 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       "help-circle",
     );
 
+    const securityNote = authCard.createEl("details", { cls: "todoist-settings-security-note" });
+    securityNote.createEl("summary", { text: "How is my token stored?" });
+    const securityCopy = securityNote.createEl("p");
+    securityCopy.appendText("Todoist Board stores your API token in Obsidian Secret Storage when available, with plugin data fallback for older Obsidian versions. ");
+    securityCopy.createEl("a", {
+      href: "https://docs.obsidian.md/plugins/guides/secret-storage",
+      text: "Obsidian docs",
+    }).setAttribute("target", "_blank");
+    securityCopy.querySelector("a")?.setAttribute("rel", "noopener noreferrer");
+
     const nextSection = container.createDiv({ cls: "todoist-settings-card todoist-settings-next" });
     this.renderHeading(nextSection, "Next", "todoist-settings-card-title");
     const nextList = nextSection.createEl("ul", { cls: "todoist-settings-next-list" });
     nextList.createEl("li", { text: "Command palette: Open Todoist Board" });
     const codeItem = nextList.createEl("li");
-    codeItem.appendText("Embed: ");
-    codeItem.createEl("code", { text: "Filter: today" });
+    codeItem.appendText("Inline board:");
+    const snippet = "```todoist-board\nfilter: today\n```";
+    const snippetWrapper = codeItem.createDiv({ cls: "todoist-settings-copy-code" });
+    const snippetPre = snippetWrapper.createEl("pre", { cls: "todoist-settings-code-example" });
+    snippetPre.createEl("code", { text: snippet });
+    const copyButton = snippetWrapper.createEl("button", {
+      cls: "todoist-settings-copy-code-button",
+      text: "Copy",
+      type: "button",
+    });
+    copyButton.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(snippet);
+        new Notice("Copied Todoist Board block", 1500);
+      } catch {
+        new Notice("Could not copy block", 1500);
+      }
+    };
     const repoItem = nextList.createEl("li");
     repoItem.appendText("Filters: ");
     this.createExternalLink(repoItem, "GitHub", "https://github.com/propranolol11/todoist-board", "github");
@@ -141,13 +166,12 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     this.renderPanelHeader(
       container,
       "Advanced",
-      "Tune logging and date handling for this vault.",
+      "",
     );
 
     const advancedCard = container.createDiv({ cls: "todoist-settings-card" });
     new Setting(advancedCard)
       .setName("Console logging")
-      .setDesc("Print debug output of Todoist Board to the developer console.")
       .addToggle((toggle) => {
         toggle
           .setValue(!!this.plugin.settings.enableLogs)
@@ -160,7 +184,6 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
 
     new Setting(advancedCard)
       .setName("Timezone mode")
-      .setDesc("Choose how timezone is determined for your tasks.")
       .addDropdown((dropdown) =>
         dropdown
           .addOption("auto", "Auto (use device timezone)")
@@ -176,7 +199,6 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     if (pluginSettings.timezoneMode === "manual") {
       new Setting(advancedCard)
         .setName("Manual timezone")
-        .setDesc("Overrides system timezone if 'manual' mode is selected above")
         .addDropdown((dropdown) => {
           for (const timezone of COMMON_TIMEZONES) dropdown.addOption(timezone, timezone);
           dropdown.setValue(this.plugin.settings.manualTimezone);
@@ -405,12 +427,27 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       cls: "todoist-settings-card-desc",
     });
     this.createExternalLink(repoCard, "Open GitHub repo", "https://github.com/propranolol11/todoist-board", "external-link");
+
+    const bugCard = container.createDiv({ cls: "todoist-settings-card" });
+    this.renderHeading(bugCard, "Submit a bug", "todoist-settings-card-title");
+    bugCard.createEl("p", {
+      text: "Found something broken? Open a GitHub issue so it can be tracked.",
+      cls: "todoist-settings-card-desc",
+    });
+    this.createExternalLink(
+      bugCard,
+      "Open new issue",
+      "https://github.com/propranolol11/todoist-board/issues/new",
+      "bug",
+    );
   }
 
   private renderPanelHeader(container: HTMLElement, title: string, description: string) {
     const header = container.createDiv({ cls: "todoist-settings-panel-header" });
     this.renderHeading(header, title, "todoist-settings-panel-title");
-    header.createEl("p", { text: description, cls: "todoist-settings-panel-desc" });
+    if (description) {
+      header.createEl("p", { text: description, cls: "todoist-settings-panel-desc" });
+    }
   }
 
   private renderHeading(container: HTMLElement, title: string, titleClass: string) {

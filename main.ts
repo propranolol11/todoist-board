@@ -25,6 +25,7 @@ import {
 } from "./src/storage";
 import { StorageRepository } from "./src/storage-repository";
 import { TaskStore } from "./src/task-store";
+import { TodoistTokenStorage } from "./src/token-storage";
 import { TodoistService, isTodoistRequestError, type TodoistTaskFetchResult } from "./src/todoist-service";
 import { TaskActions } from "./src/task-actions";
 import { TaskSheetModal } from "./src/modals/task-sheet-modal";
@@ -185,6 +186,7 @@ export default class TodoistBoardPlugin extends Plugin {
   private storage!: TodoistBoardStorage;
   private storageRepository!: StorageRepository;
   private taskStoreController!: TaskStore;
+  private tokenStorage?: TodoistTokenStorage;
   private todoistService!: TodoistService;
   private taskActions!: TaskActions;
   private stopTaskPolling?: () => void;
@@ -350,14 +352,30 @@ export default class TodoistBoardPlugin extends Plugin {
     }
     return this.storage.loadMetadata();
   }
+
+  private getTokenStorage() {
+    if (!this.tokenStorage) this.tokenStorage = new TodoistTokenStorage(this.app);
+    return this.tokenStorage;
+  }
+
+  private async saveStoredSettings() {
+    await this.saveData(this.getTokenStorage().prepareSettingsForSave(this.settings));
+  }
+
   async loadSettings() {
     const saved: unknown = await this.loadData();
-    this.settings = normalizeSettings(
+    const settings = normalizeSettings(
       saved && typeof saved === "object" ? saved : undefined
     );
+    const tokenLoad = this.getTokenStorage().loadToken(settings.apiKey);
+    this.settings = { ...settings, apiKey: tokenLoad.token };
+
+    if (tokenLoad.shouldRewriteSettings) {
+      await this.saveStoredSettings();
+    }
   }
   async saveSettings() {
-    await this.saveData(this.settings);
+    await this.saveStoredSettings();
     // refresh inline boards
     activeDocument.querySelectorAll(".todoist-inline-board").forEach((el) => {
       el.dispatchEvent(new CustomEvent("todoist-inline-refresh", { bubbles: true }));
@@ -1146,7 +1164,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
   // ======================= 🧹 Persistence & Cleanup =======================
   async savePluginData() {
-    await this.saveData(this.settings);
+    await this.saveStoredSettings();
     this.refreshAllInlineBoards();
   }
 

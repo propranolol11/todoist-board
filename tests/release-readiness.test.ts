@@ -9,6 +9,7 @@ import { sortTasksLikeTodoist } from "../src/sort.ts";
 import { TodoistBoardStorage, writeJSON } from "../src/storage.ts";
 import { TaskStore } from "../src/task-store.ts";
 import { getSubtasksForParent, TaskHierarchy } from "../src/task-hierarchy.ts";
+import { TODOIST_API_TOKEN_SECRET_ID, TodoistTokenStorage, type SecretStorageLike } from "../src/token-storage.ts";
 import {
   isTodoistRequestError,
   normalizeTask,
@@ -146,6 +147,61 @@ test("task store hydrates legacy cache and writes an authoritative snapshot", ()
   assert.deepEqual(store.getViewTasks("today"), []);
   assert.deepEqual(clearedSnapshot.filterIndex.today, undefined);
   assert.deepEqual(clearedSnapshot.taskCache.today, undefined);
+});
+
+function makeSecretStorage(): SecretStorageLike & { values: Map<string, string> } {
+  const values = new Map<string, string>();
+  return {
+    values,
+    getSecret: (id) => values.get(id) ?? null,
+    setSecret: (id, secret) => {
+      values.set(id, secret);
+    },
+    listSecrets: () => Array.from(values.keys()),
+  };
+}
+
+test("token storage migrates plugin-data tokens into Obsidian secrets and redacts saved settings", () => {
+  const secretStorage = makeSecretStorage();
+  const tokenStorage = new TodoistTokenStorage({ secretStorage });
+
+  const loaded = tokenStorage.loadToken('Bearer "legacy-token"');
+
+  assert.equal(loaded.token, "legacy-token");
+  assert.equal(loaded.migrated, true);
+  assert.equal(loaded.storage, "secrets");
+  assert.equal(loaded.shouldRewriteSettings, true);
+  assert.equal(secretStorage.values.get(TODOIST_API_TOKEN_SECRET_ID), "legacy-token");
+
+  const persisted = tokenStorage.prepareSettingsForSave({ ...settings, apiKey: "legacy-token" });
+  assert.equal(persisted.apiKey, "");
+  assert.equal(secretStorage.values.get(TODOIST_API_TOKEN_SECRET_ID), "legacy-token");
+});
+
+test("token storage prefers existing Obsidian secret over stale plugin-data token", () => {
+  const secretStorage = makeSecretStorage();
+  secretStorage.setSecret(TODOIST_API_TOKEN_SECRET_ID, "secret-token");
+  const tokenStorage = new TodoistTokenStorage({ secretStorage });
+
+  const loaded = tokenStorage.loadToken("old-token");
+
+  assert.equal(loaded.token, "secret-token");
+  assert.equal(loaded.migrated, false);
+  assert.equal(loaded.storage, "secrets");
+  assert.equal(loaded.shouldRewriteSettings, true);
+});
+
+test("token storage preserves plugin-data fallback when Obsidian secrets are unavailable", () => {
+  const tokenStorage = new TodoistTokenStorage();
+
+  const loaded = tokenStorage.loadToken("legacy-token");
+  const persisted = tokenStorage.prepareSettingsForSave({ ...settings, apiKey: "legacy-token" });
+
+  assert.equal(loaded.token, "legacy-token");
+  assert.equal(loaded.migrated, false);
+  assert.equal(loaded.storage, "plugin-data");
+  assert.equal(loaded.shouldRewriteSettings, false);
+  assert.equal(persisted.apiKey, "legacy-token");
 });
 
 test("todoist normalization and payload helpers preserve API field mappings", () => {
