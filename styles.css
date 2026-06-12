@@ -2337,6 +2337,48 @@ body.theme-dark .selected-task .chin-inner {
   padding-inline: 0;
 }
 
+.selected-task .priority-btn {
+  gap: 2px;
+  min-width: 38px;
+  padding-inline: 5px;
+}
+
+.selected-task .priority-btn svg {
+  fill: currentColor;
+  height: 15px;
+  stroke: currentColor;
+  width: 15px;
+}
+
+.selected-task .priority-btn.priority-4 svg {
+  color: #dc2626;
+}
+
+.selected-task .priority-btn.priority-3 svg {
+  color: #d97706;
+}
+
+.selected-task .priority-btn.priority-2 svg {
+  color: #2563eb;
+}
+
+.selected-task .priority-btn.priority-1 svg {
+  color: #6b7280;
+}
+
+.selected-task .priority-btn .chin-priority-label {
+  color: #4b5563;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  margin-left: 1px;
+}
+
+body.theme-dark .selected-task .priority-btn .chin-priority-label {
+  color: #d1d5db;
+}
+
 
 .chin-btn:hover {
   background: color-mix(in srgb, var(--selected-bg) 55%, white 45%);
@@ -5152,6 +5194,463 @@ body.tb-scroll-lock {
 
   .todoist-settings-modal .clear-cache-btn {
     flex: 1 1 auto;
+  }
+}
+
+/* ========== Settings Filter Editor v4 ========== */
+.modal-container.todoist-settings-modal > .modal {
+  background: var(--modal-background, var(--background-primary));
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  box-shadow: 0 22px 68px rgba(0, 0, 0, 0.22);
+  max-height: min(82vh, 760px);
+  padding: 20px 22px;
+  width: min(760px, calc(100vw - 64px));
+}
+
+.todoist-settings-modal .modal-title {
+  color: var(--text-normal);
+  font-size: 1.18rem;
+  font-weight: 750;
+  line-height: 1.2;
+  margin: 0 42px 16px 0;
+}
+
+.todoist-settings-modal .modal-close-button {
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  height: 32px;
+  right: 14px;
+  top: 14px;
+  width: 32px;
+}
+
+.todoist-settings-modal .modal-close-button:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.todoist-settings-modal .modal-content {
+  display: grid;
+  gap: 14px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  max-height: calc(min(82vh, 760px) - 74px);
+  overflow: hidden;
+  padding: 0;
+}
+
+.todoist-settings-modal .settings-filter-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  min-height: 0;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.todoist-settings-modal .settings-filter-table thead {
+  display: block;
+}
+
+.todoist-settings-modal .settings-filter-table thead tr,
+.todoist-settings-modal .settings-filter-table tbody tr {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 30px 48px minmax(130px, 0.78fr) minmax(260px, 1.22fr) 58px 40px;
+}
+
+.todoist-settings-modal .settings-filter-table thead tr {
+  padding: 0 12px;
+}
+
+.todoist-settings-modal .settings-filter-table th {
+  color: var(--text-muted);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+  padding: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.todoist-settings-modal .settings-filter-table th:nth-child(5) {
+  text-align: center;
+}
+
+.todoist-settings-modal .settings-filter-table tbody {
+  display: grid;
+  gap: 8px;
+  max-height: min(48vh, 420px);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.todoist-settings-modal .settings-filter-table tbody tr {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  min-height: 58px;
+  padding: 8px 10px;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.todoist-settings-modal .settings-filter-table tbody tr:hover {
+  background: var(--background-secondary-alt);
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+}
+
+.todoist-settings-modal .settings-filter-table tbody tr.is-dragging {
+  opacity: 0.68;
+}
+
+.todoist-settings-modal .settings-filter-table tbody tr.is-drag-over {
+  border-color: var(--interactive-accent);
+}
+
+.todoist-settings-modal .settings-filter-table td {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+  padding: 0;
+}
+
+.todoist-settings-modal .settings-filter-table td::before {
+  display: none;
+}
+
+.todoist-settings-modal .settings-filter-table input[type="text"] {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 7px;
+  box-shadow: none;
+  color: var(--text-normal);
+  font-size: 0.88rem;
+  height: 34px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.todoist-settings-modal .settings-filter-table input[type="text"]:focus {
+  border-color: rgba(228, 67, 50, 0.6);
+  box-shadow: 0 0 0 2px rgba(228, 67, 50, 0.12);
+}
+
+.todoist-settings-modal .settings-drag-cell {
+  justify-content: center;
+}
+
+.todoist-settings-modal .settings-drag-handle,
+.todoist-settings-modal .icon-trigger,
+.todoist-settings-modal .settings-default-toggle,
+.todoist-settings-modal .settings-filter-table .icon-button {
+  align-items: center;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 7px;
+  box-shadow: none;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 34px;
+  justify-content: center;
+  min-height: 0;
+  padding: 0;
+  width: 34px;
+}
+
+.todoist-settings-modal .icon-trigger {
+  color: var(--text-normal);
+  width: 40px;
+}
+
+.todoist-settings-modal .settings-drag-handle {
+  cursor: grab;
+  width: 26px;
+}
+
+.todoist-settings-modal .settings-drag-handle::before {
+  background-image: radial-gradient(circle, rgba(82, 82, 82, 0.92) 1.45px, transparent 1.55px);
+  background-position: 0 0;
+  background-repeat: repeat;
+  background-size: 6px 6px;
+  content: "";
+  display: block;
+  height: 18px;
+  opacity: 1;
+  width: 12px;
+}
+
+body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
+  background-image: radial-gradient(circle, rgba(222, 222, 222, 0.78) 1.45px, transparent 1.55px);
+}
+
+.todoist-settings-modal .settings-drag-handle:active {
+  cursor: grabbing;
+}
+
+.todoist-settings-modal .settings-drag-handle:hover,
+.todoist-settings-modal .icon-trigger:hover,
+.todoist-settings-modal .settings-default-toggle:hover,
+.todoist-settings-modal .settings-filter-table .icon-button:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+  color: var(--text-normal);
+}
+
+.todoist-settings-modal .settings-filter-table .icon-button:hover {
+  color: var(--todoist-red);
+}
+
+.todoist-settings-modal .icon-trigger svg,
+.todoist-settings-modal .settings-default-toggle svg,
+.todoist-settings-modal .settings-filter-table .icon-button svg {
+  height: 17px;
+  width: 17px;
+}
+
+.todoist-settings-modal .settings-drag-handle svg {
+  display: none;
+}
+
+.todoist-settings-modal .settings-default-cell {
+  justify-content: center;
+}
+
+.todoist-settings-modal .settings-default-toggle input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.todoist-settings-modal .settings-default-toggle svg {
+  opacity: 0.6;
+}
+
+.todoist-settings-modal .settings-default-toggle.is-checked {
+  background: var(--todoist-red);
+  border-color: var(--todoist-red);
+  color: #fff;
+}
+
+.todoist-settings-modal .settings-default-toggle.is-checked svg {
+  opacity: 1;
+}
+
+.todoist-settings-modal .settings-filter-footer {
+  align-items: center;
+  border-top: 1px solid var(--background-modifier-border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0;
+  padding: 14px 0 0;
+}
+
+.todoist-settings-modal .settings-action-row,
+.todoist-settings-modal .settings-save-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+
+.todoist-settings-modal .settings-save-row {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.todoist-settings-modal .settings-add-filter-btn,
+.todoist-settings-modal .settings-save-btn,
+.todoist-settings-modal .clear-cache-btn {
+  align-items: center;
+  border-radius: 8px;
+  box-shadow: none;
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 650;
+  gap: 7px;
+  height: 36px;
+  justify-content: center;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.todoist-settings-modal .settings-add-filter-btn,
+.todoist-settings-modal .settings-save-btn {
+  background: var(--todoist-red);
+  border: 1px solid var(--todoist-red);
+  color: #fff;
+}
+
+.todoist-settings-modal .settings-add-filter-btn:hover,
+.todoist-settings-modal .settings-save-btn:hover {
+  background: #d83b2c;
+  border-color: #d83b2c;
+}
+
+.todoist-settings-modal .clear-cache-btn {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.todoist-settings-modal .clear-cache-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.todoist-settings-modal .settings-add-filter-btn svg,
+.todoist-settings-modal .clear-cache-btn svg {
+  height: 16px;
+  width: 16px;
+}
+
+@media only screen and (max-width: 760px) {
+  .modal-container.todoist-settings-modal > .modal {
+    border-radius: 12px;
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+    width: calc(100vw - 32px);
+  }
+
+  .todoist-settings-modal .modal-title {
+    font-size: 1.05rem;
+    margin-bottom: 14px;
+  }
+
+  .todoist-settings-modal .modal-content {
+    max-height: calc(100dvh - 106px);
+  }
+
+  .todoist-settings-modal .settings-filter-table thead {
+    display: none;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody {
+    max-height: min(58vh, 470px);
+    padding-right: 3px;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody tr {
+    gap: 7px;
+    grid-template-columns: 28px 40px minmax(0, 1fr) 36px 36px;
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(3) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(4) {
+    grid-column: 2 / -1;
+    grid-row: 2;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(5) {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(6) {
+    grid-column: 5;
+    grid-row: 1;
+  }
+
+  .todoist-settings-modal .settings-filter-footer {
+    align-items: stretch;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr;
+  }
+
+  .todoist-settings-modal .settings-action-row,
+  .todoist-settings-modal .settings-save-row {
+    width: 100%;
+  }
+
+  .todoist-settings-modal .settings-add-filter-btn {
+    width: 100%;
+  }
+
+  .todoist-settings-modal .settings-save-row {
+    justify-content: stretch;
+    margin-left: 0;
+  }
+
+  .todoist-settings-modal .settings-save-btn {
+    flex: 0 0 88px;
+  }
+
+  .todoist-settings-modal .clear-cache-btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .modal-container.todoist-settings-modal > .modal {
+    max-height: calc(100dvh - 12px);
+    padding: 14px;
+    width: calc(100vw - 18px);
+  }
+
+  .todoist-settings-modal .modal-content {
+    max-height: calc(100dvh - 94px);
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody tr {
+    grid-template-columns: 40px minmax(0, 1fr) 36px 36px;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(1) {
+    display: none;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(2) {
+    grid-column: 1;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(3) {
+    grid-column: 2;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(5) {
+    grid-column: 3;
+  }
+
+  .todoist-settings-modal .settings-filter-table td:nth-child(6) {
+    grid-column: 4;
+  }
+
+  .todoist-settings-modal .settings-save-row {
+    flex-wrap: wrap;
   }
 }
 

@@ -15,9 +15,11 @@ export interface TodoistSettingsPlugin {
 export class TodoistBoardSettingTab extends PluginSettingTab {
   private activeTab: SettingsTabId = "getting-started";
   private pendingFocusTarget: SettingsFocusTarget | null = null;
+  readonly plugin: Plugin & TodoistSettingsPlugin;
 
-  constructor(app: App, readonly plugin: Plugin & TodoistSettingsPlugin) {
+  constructor(app: App, plugin: Plugin & TodoistSettingsPlugin) {
     super(app, plugin);
+    this.plugin = plugin;
   }
 
   display(): void {

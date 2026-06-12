@@ -15,6 +15,21 @@ export interface TodoistTaskFetchResult {
   source: "remote" | "cache" | "empty";
   nextCursor?: string | null;
   hasMore?: boolean;
+  error?: TodoistRequestError;
+}
+
+export class TodoistRequestError extends Error {
+  readonly status: number;
+  readonly endpoint: string;
+  readonly responseText: string;
+
+  constructor(endpoint: string, status: number, responseText = "") {
+    super(`[Todoist Board] Todoist request failed ${status} for ${endpoint}: ${responseText}`);
+    this.name = "TodoistRequestError";
+    this.status = status;
+    this.endpoint = endpoint;
+    this.responseText = responseText;
+  }
 }
 
 export interface AddTaskArgs {
@@ -139,6 +154,16 @@ function toTodoistUrl(path: string, query?: RequestOptions["query"]): string {
     url.searchParams.set(key, String(value));
   }
   return url.toString();
+}
+
+export function isTodoistRequestError(error: unknown): error is TodoistRequestError {
+  return error instanceof TodoistRequestError;
+}
+
+function assertSuccessfulResponse(endpoint: string, status: number, responseText = "") {
+  if (status < 200 || status >= 300) {
+    throw new TodoistRequestError(endpoint, status, responseText);
+  }
 }
 
 export function normalizeDue(due: unknown): TodoistDue | null {
@@ -380,7 +405,8 @@ export class TodoistService {
         nextCursor: response.nextCursor,
         hasMore: Boolean(response.nextCursor),
       };
-    } catch {
+    } catch (error) {
+      if (isTodoistRequestError(error)) throw error;
       const cached = this.getCachedTasks(key);
       return { results: cached, source: cached.length ? "cache" as const : "empty" as const };
     }
@@ -495,7 +521,7 @@ export class TodoistService {
       body: JSON.stringify(payload),
     });
     if (response.status < 200 || response.status >= 300) {
-      throw new Error(`[Todoist Board] moveTaskREST failed ${response.status}: ${response.text}`);
+      throw new TodoistRequestError(`/tasks/${String(taskId)}/move`, response.status, response.text);
     }
     const raw = response.text || "";
     return raw ? normalizeTask(JSON.parse(raw)) : null;
@@ -510,17 +536,19 @@ export class TodoistService {
   }
 
   async deleteTask(taskId: string) {
-    return requestUrl({
+    const response = await requestUrl({
       url: `${API_BASE}/tasks/${encodeURIComponent(String(taskId))}`,
       method: "DELETE",
       headers: {
         Authorization: this.authHeader(),
       },
     });
+    assertSuccessfulResponse(`/tasks/${String(taskId)}`, response.status, response.text);
+    return response;
   }
 
   async postRestTask(taskId: string, body: Record<string, unknown>) {
-    return requestUrl({
+    const response = await requestUrl({
       url: `${API_BASE}/tasks/${encodeURIComponent(String(taskId))}`,
       method: "POST",
       headers: {
@@ -529,6 +557,8 @@ export class TodoistService {
       },
       body: JSON.stringify(toRestTaskPayload(body)),
     });
+    assertSuccessfulResponse(`/tasks/${String(taskId)}`, response.status, response.text);
+    return response;
   }
 
   private async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -542,9 +572,7 @@ export class TodoistService {
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
-    if (response.status < 200 || response.status >= 300) {
-      throw new Error(`[Todoist Board] Todoist request failed ${response.status}: ${response.text}`);
-    }
+    assertSuccessfulResponse(path, response.status, response.text);
     const raw = response.text || "";
     return raw ? JSON.parse(raw) as T : undefined as T;
   }
@@ -596,7 +624,10 @@ export class TodoistService {
     });
     const syncStatus = asRecord(response.sync_status);
     const status = syncStatus[uuid];
-    if (status && status !== "ok") {
+    if (status === undefined) {
+      throw new Error("[Todoist Board] Todoist sync item_update missing command status");
+    }
+    if (status !== "ok") {
       throw new Error(`[Todoist Board] Todoist sync item_update failed: ${JSON.stringify(status)}`);
     }
     return { status: 200, text: JSON.stringify(response), json: response };
@@ -615,6 +646,7 @@ export class TodoistService {
         commands: JSON.stringify([command]),
       }).toString(),
     });
+    assertSuccessfulResponse("/sync", response.status, response.text);
     const raw = response.text || "";
     return raw ? asRecord(JSON.parse(raw)) : {};
   }
