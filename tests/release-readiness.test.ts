@@ -12,6 +12,7 @@ import { sortTasksLikeTodoist } from "../src/sort.ts";
 import { TodoistBoardStorage, writeJSON } from "../src/storage.ts";
 import { TaskStore } from "../src/task-store.ts";
 import { getSubtasksForParent, TaskHierarchy } from "../src/task-hierarchy.ts";
+import { escapeLeadingOrderedListMarkers } from "../src/task-rendering.ts";
 import { TODOIST_API_TOKEN_SECRET_ID, TodoistTokenStorage, type SecretStorageLike } from "../src/token-storage.ts";
 import {
   isTodoistRequestError,
@@ -115,6 +116,19 @@ test("add-task defaults inherit deterministic clauses from an inline-board filte
     getAddTaskDefaultsFromFilter("#MyProject | #Other", [], [], "UTC"),
     {},
   );
+});
+
+test("numbered task titles render as text instead of theme-styled Markdown lists", () => {
+  assert.equal(
+    escapeLeadingOrderedListMarkers("1. Capture everything still on my mind"),
+    "1\\. Capture everything still on my mind",
+  );
+  assert.equal(
+    escapeLeadingOrderedListMarkers("10) Review projects\n  2. Pick next actions"),
+    "10\\) Review projects\n  2\\. Pick next actions",
+  );
+  assert.equal(escapeLeadingOrderedListMarkers("Version 1. notes"), "Version 1. notes");
+  assert.equal(escapeLeadingOrderedListMarkers("1.5 hours"), "1.5 hours");
 });
 
 test("sorting keeps manual order and ranks due dates before undated tasks", () => {

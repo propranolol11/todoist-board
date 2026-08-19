@@ -29,6 +29,10 @@ export function getProjectHexColor(task: TodoistTask, projects: Project[]): stri
   return "#e5e7eb";
 }
 
+export function escapeLeadingOrderedListMarkers(content: string): string {
+  return content.replace(/^(\s{0,3}\d{1,9})([.)])(?=\s)/gm, "$1\\$2");
+}
+
 export function createTaskContent(options: TaskContentRenderOptions): HTMLElement {
   const {
     task,
@@ -47,7 +51,13 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
 
   const titleSpan = activeDocument.createElement("span");
   clearEl(titleSpan);
-  void MarkdownRenderer.render(app, task.content, titleSpan, "", owner);
+  void MarkdownRenderer.render(
+    app,
+    escapeLeadingOrderedListMarkers(task.content),
+    titleSpan,
+    "",
+    owner,
+  );
   titleSpan.className = "task-title";
 
   const metaSpan = activeDocument.createElement("small");

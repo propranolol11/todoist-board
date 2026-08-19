@@ -1989,7 +1989,6 @@ export default class TodoistBoardPlugin extends Plugin {
     const button = activeDocument.createElement("button");
     button.type = "button";
     button.classList.add("tb-toolbar-button", ...classNames);
-    button.title = label;
     button.setAttribute("aria-label", label);
     setIcon(button, icon);
     return button;
