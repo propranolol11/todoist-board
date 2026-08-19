@@ -212,29 +212,33 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
   }
 
   private renderPreferences(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
-    this.renderPanelHeader(
-      container,
-      "Preferences",
-      "Choose which task controls are shown throughout Todoist Board.",
-    );
+    container.addClass("todoist-settings-preferences-panel");
+
+    const displaySection = container.createDiv({ cls: "todoist-settings-card todoist-settings-preferences-display" });
+    new Setting(displaySection)
+      .setName("Tab badges")
+      .addToggle((toggle) => {
+        toggle
+          .setValue(pluginSettings.showTabBadges !== false)
+          .onChange(async (value) => {
+            pluginSettings.showTabBadges = value;
+            await this.plugin.saveSettings();
+          });
+      });
 
     const contextMenuSection = container.createDiv({ cls: "settings-context-preview-section" });
-    this.renderHeading(contextMenuSection, "Context menu actions", "settings-context-preview-title");
-    contextMenuSection.createEl("p", {
-      cls: "settings-context-preview-desc",
-      text: "Choose which actions appear in the task right-click menu.",
-    });
+    this.renderHeading(contextMenuSection, "Context menu", "settings-context-preview-title");
 
     const actions: Array<{ key: keyof ContextMenuSettings; label: string; icon: string }> = [
-      { key: "scheduleToday", label: "Schedule today", icon: "calendar" },
-      { key: "scheduleTomorrow", label: "Schedule tomorrow", icon: "calendar-clock" },
-      { key: "setPriority", label: "Set priority", icon: "flag" },
-      { key: "editTask", label: "Edit task", icon: "pencil" },
-      { key: "deleteTask", label: "Delete task", icon: "trash-2" },
-      { key: "openInTodoist", label: "Open in Todoist", icon: "external-link" },
+      { key: "scheduleToday", label: "Today", icon: "calendar" },
+      { key: "scheduleTomorrow", label: "Tomorrow", icon: "calendar-clock" },
+      { key: "setPriority", label: "Priority", icon: "flag" },
+      { key: "editTask", label: "Edit", icon: "pencil" },
+      { key: "deleteTask", label: "Delete", icon: "trash-2" },
+      { key: "openInTodoist", label: "Open", icon: "external-link" },
     ];
 
-    const previewMenu = contextMenuSection.createDiv({ cls: "settings-context-menu-preview" });
+    const previewMenu = contextMenuSection.createDiv({ cls: "settings-chin-preview settings-context-actions" });
     const ensureContextMenuActions = (): ContextMenuSettings => {
       if (!pluginSettings.contextMenuActions) {
         pluginSettings.contextMenuActions = {} as ContextMenuSettings;
@@ -245,46 +249,35 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       pluginSettings.contextMenuActions?.[key] ?? true;
 
     actions.forEach((action) => {
-      const menuItem = previewMenu.createDiv({ cls: "settings-context-menu-item" });
-      const menuItemMain = menuItem.createDiv({ cls: "settings-context-menu-item-main" });
-      const menuIcon = menuItemMain.createSpan({ cls: "settings-context-menu-icon" });
-      setIcon(menuIcon, action.icon);
-      menuItemMain.createSpan({ cls: "settings-context-menu-label", text: action.label });
-
-      const visibilityButton = menuItem.createEl("button", {
-        cls: "settings-context-menu-visibility",
+      const actionButton = previewMenu.createEl("button", {
+        cls: "settings-chin-action",
         type: "button",
       });
+      const menuIcon = actionButton.createSpan({ cls: "settings-chin-action-icon" });
+      setIcon(menuIcon, action.icon);
+      actionButton.createSpan({ text: action.label });
 
-      const syncVisibilityButton = () => {
+      const syncActionButton = () => {
         const enabled = actionIsEnabled(action.key);
-        menuItem.classList.toggle("is-disabled", !enabled);
-        while (visibilityButton.firstChild) {
-          visibilityButton.removeChild(visibilityButton.firstChild);
-        }
-        setIcon(visibilityButton, enabled ? "eye" : "eye-off");
-        visibilityButton.setAttribute("aria-pressed", String(enabled));
-        visibilityButton.setAttribute("aria-label", `${enabled ? "Hide" : "Show"} ${action.label}`);
-        visibilityButton.title = enabled ? "Shown in menu" : "Hidden from menu";
+        actionButton.classList.toggle("is-enabled", enabled);
+        actionButton.setAttribute("aria-pressed", String(enabled));
+        actionButton.setAttribute("aria-label", `${enabled ? "Hide" : "Show"} ${action.label}`);
+        actionButton.title = enabled ? "Shown in menu" : "Hidden from menu";
       };
 
-      syncVisibilityButton();
-      visibilityButton.addEventListener("click", () => {
+      syncActionButton();
+      actionButton.addEventListener("click", () => {
         void (async () => {
         const contextMenuActions = ensureContextMenuActions();
         contextMenuActions[action.key] = !actionIsEnabled(action.key);
-        syncVisibilityButton();
+        syncActionButton();
         await this.plugin.saveSettings();
         })();
       });
     });
 
     const chinBarSection = container.createDiv({ cls: "settings-chin-preview-section" });
-    this.renderHeading(chinBarSection, "Chin bar actions", "settings-context-preview-title");
-    chinBarSection.createEl("p", {
-      cls: "settings-context-preview-desc",
-      text: "Tap actions to show or hide them in the selected-task toolbar.",
-    });
+    this.renderHeading(chinBarSection, "Chin bar", "settings-context-preview-title");
 
     const chinActions: Array<{ key: keyof ChinBarSettings; label: string; icon: string }> = [
       { key: "scheduleToday", label: "Today", icon: "calendar" },
@@ -335,11 +328,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
 
     const addTaskSection = container.createDiv({ cls: "settings-chin-preview-section" });
     addTaskSection.dataset.settingsSection = "add-task-modal";
-    this.renderHeading(addTaskSection, "Add task modal", "settings-context-preview-title");
-    addTaskSection.createEl("p", {
-      cls: "settings-context-preview-desc",
-      text: "User friendly controls for showing or hiding optional fields in the Add Task modal.",
-    });
+    this.renderHeading(addTaskSection, "Add task fields", "settings-context-preview-title");
 
     const addTaskActions: Array<{ key: keyof AddTaskModalSettings; label: string; icon: string }> = [
       { key: "dueDate", label: "Date", icon: "calendar" },

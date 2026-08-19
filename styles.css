@@ -4355,7 +4355,7 @@ body.tb-scroll-lock {
 }
 
 .settings-chin-preview-section {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .settings-chin-preview-section.is-settings-focus-target {
@@ -4372,9 +4372,9 @@ body.tb-scroll-lock {
   border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px;
-  width: fit-content;
+  gap: 5px;
+  padding: 6px;
+  width: 100%;
 }
 
 .settings-chin-action {
@@ -4386,13 +4386,13 @@ body.tb-scroll-lock {
   color: var(--text-muted);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   gap: 5px;
-  height: 30px;
+  height: 28px;
   justify-content: center;
   opacity: 0.48;
-  padding: 0 9px;
+  padding: 0 8px;
 }
 
 .settings-chin-action:hover {
@@ -4412,8 +4412,32 @@ body.tb-scroll-lock {
 }
 
 .settings-chin-action-icon svg {
-  height: 15px;
-  width: 15px;
+  height: 14px;
+  width: 14px;
+}
+
+.todoist-board-settings-tab .todoist-settings-preferences-panel {
+  gap: 8px;
+}
+
+.todoist-board-settings-tab .todoist-settings-preferences-display {
+  padding: 7px 10px;
+}
+
+.todoist-board-settings-tab .todoist-settings-preferences-display .setting-item {
+  min-height: 28px;
+}
+
+.todoist-board-settings-tab .todoist-settings-preferences-display .setting-item-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.todoist-board-settings-tab .todoist-settings-preferences-panel .settings-context-preview-section,
+.todoist-board-settings-tab .todoist-settings-preferences-panel .settings-chin-preview-section {
+  display: grid;
+  gap: 5px;
+  margin: 0;
 }
 
 @media only screen and (max-width: 760px) {
@@ -4454,6 +4478,16 @@ body.tb-scroll-lock {
     width: 100%;
   }
 
+  .todoist-board-settings-tab .todoist-settings-preferences-display .setting-item {
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .todoist-board-settings-tab .todoist-settings-preferences-display .setting-item-control {
+    width: auto;
+  }
+
   .todoist-board-settings-tab .todoist-settings-submit-token {
     margin-left: 0;
     margin-top: 8px;
@@ -4483,119 +4517,16 @@ body.tb-scroll-lock {
 }
 
 .settings-context-preview-section {
-  margin: 22px 0 10px;
+  margin: 0;
 }
 
 .settings-context-preview-title {
   color: var(--text-normal);
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 0.86rem;
+  font-weight: 650;
   letter-spacing: 0;
   line-height: 1.2;
   margin: 0;
-}
-
-.settings-context-preview-desc {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  line-height: 1.35;
-  margin: 4px 0 14px;
-}
-
-.settings-context-menu-preview {
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  box-shadow:
-    0 2px 8px rgba(15, 23, 42, 0.08),
-    0 14px 34px rgba(15, 23, 42, 0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px;
-  width: min(360px, 100%);
-}
-
-.settings-context-menu-item {
-  align-items: center;
-  border-radius: 7px;
-  color: var(--text-normal);
-  display: grid;
-  gap: 8px;
-  grid-template-columns: minmax(0, 1fr) 32px;
-  min-height: 38px;
-  padding: 0 5px 0 10px;
-  transition:
-    background-color 120ms ease,
-    color 120ms ease,
-    opacity 120ms ease;
-}
-
-.settings-context-menu-item:hover {
-  background: var(--background-modifier-hover);
-}
-
-.settings-context-menu-item-main {
-  align-items: center;
-  display: flex;
-  gap: 11px;
-  min-width: 0;
-}
-
-.settings-context-menu-icon {
-  color: var(--text-muted);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 18px;
-  width: 18px;
-}
-
-.settings-context-menu-icon svg {
-  height: 18px;
-  width: 18px;
-}
-
-.settings-context-menu-label {
-  font-size: 0.95rem;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.settings-context-menu-visibility {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  box-shadow: none;
-  color: var(--interactive-accent);
-  cursor: pointer;
-  display: inline-flex;
-  height: 30px;
-  justify-content: center;
-  padding: 0;
-  width: 30px;
-}
-
-.settings-context-menu-visibility:hover,
-.settings-context-menu-visibility:focus-visible {
-  background: var(--background-modifier-hover);
-  color: var(--interactive-accent);
-}
-
-.settings-context-menu-visibility svg {
-  height: 17px;
-  width: 17px;
-}
-
-.settings-context-menu-item.is-disabled {
-  color: var(--text-muted);
-  opacity: 0.52;
-}
-
-.settings-context-menu-item.is-disabled .settings-context-menu-visibility {
-  color: var(--text-muted);
 }
 
 .todoist-settings-modal .icon-picker-wrapper.visible {
@@ -5276,6 +5207,175 @@ body.tb-scroll-lock {
   .todoist-settings-modal .clear-cache-btn {
     flex: 1 1 auto;
   }
+}
+
+/* ========== Theme-safe board toolbar controls ========== */
+.todoist-board .inline-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.todoist-board .list-toolbar {
+  border-color: var(--background-modifier-border);
+  box-shadow: none;
+}
+
+.todoist-board .list-toolbar .queue-wrapper {
+  border-left-color: var(--background-modifier-border);
+}
+
+.todoist-board .filter-row.selected .filter-icon > svg {
+  color: var(--text-normal);
+}
+
+.todoist-board button.filter-row {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  height: auto;
+  margin: 0;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+  transform: none;
+}
+
+.todoist-board button.filter-row:hover,
+.todoist-board button.filter-row:active {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+.todoist-board button.filter-row:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.todoist-board button.filter-row:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 3px;
+}
+
+.todoist-board button.tb-toolbar-button {
+  -webkit-appearance: none;
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  box-shadow: none;
+  box-sizing: border-box;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  filter: none;
+  flex: 0 0 32px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 5px;
+  height: 32px;
+  justify-content: center;
+  letter-spacing: normal;
+  line-height: 1;
+  margin: 0;
+  min-height: 32px;
+  min-width: 32px;
+  opacity: 1;
+  padding: 0 6px;
+  text-decoration: none;
+  text-shadow: none;
+  touch-action: manipulation;
+  transform: none;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+  user-select: none;
+  width: 32px;
+}
+
+.todoist-board button.tb-toolbar-button:hover {
+  background: var(--background-modifier-hover);
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  filter: none;
+  opacity: 1;
+  transform: none;
+}
+
+.todoist-board button.tb-toolbar-button:active {
+  background: var(--background-modifier-hover);
+  border-color: transparent;
+  box-shadow: none;
+  transform: scale(0.96);
+}
+
+.todoist-board button.tb-toolbar-button:focus {
+  box-shadow: none;
+}
+
+.todoist-board button.tb-toolbar-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.todoist-board button.tb-toolbar-button:focus-visible {
+  border-color: transparent;
+  box-shadow: none;
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+.todoist-board button.tb-toolbar-button[aria-pressed="true"],
+.todoist-board button.tb-toolbar-button[aria-expanded="true"] {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+  color: var(--text-normal);
+}
+
+.todoist-board button.tb-toolbar-button:disabled,
+.todoist-board button.tb-toolbar-button[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.todoist-board button.tb-toolbar-button.tb-toolbar-button--wide {
+  flex-basis: auto;
+  padding-inline: 8px;
+  white-space: nowrap;
+  width: auto;
+}
+
+.todoist-board button.tb-toolbar-button > svg {
+  flex: 0 0 18px;
+  height: 18px;
+  margin: 0;
+  stroke-width: 1.8;
+  width: 18px;
+}
+
+.todoist-board .tb-toolbar-button-label {
+  font-size: 0.8rem;
+  line-height: 1;
+  margin: 0;
+}
+
+.todoist-board button.tb-toolbar-button.refresh-btn.syncing > svg {
+  animation: spin 1s linear infinite;
+  transform-origin: center;
 }
 
 /* ========== Settings Filter Editor v4 ========== */

@@ -29,6 +29,7 @@ import { TodoistTokenStorage } from "./src/token-storage";
 import { TodoistService, isTodoistRequestError, type TodoistTaskFetchResult } from "./src/todoist-service";
 import { TaskActions } from "./src/task-actions";
 import { TaskSheetModal } from "./src/modals/task-sheet-modal";
+import { getAddTaskDefaultsFromFilter } from "./src/add-task-defaults";
 import { openFilterSettingsModal } from "./src/modals/filter-settings-modal";
 import { buildRenderInput as buildRenderInputCore } from "./src/sort";
 import { startTaskPolling } from "./src/polling";
@@ -376,6 +377,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
   async saveSettings() {
     await this.saveStoredSettings();
+    this.updateVisibleFilterBadges(activeDocument);
     // refresh inline boards
     activeDocument.querySelectorAll(".todoist-inline-board").forEach((el) => {
       el.dispatchEvent(new CustomEvent("todoist-inline-refresh", { bubbles: true }));
@@ -415,14 +417,22 @@ export default class TodoistBoardPlugin extends Plugin {
     const row = this.getFilterRow(container, filterKey) || activeDocument.querySelector<HTMLElement>(`.filter-row[data-filter="${filterKey}"]`);
     const badge = row?.querySelector<HTMLElement>(".filter-badge-count");
     const badgeShell = row?.querySelector<HTMLElement>(".filter-badge");
-    if (badgeShell) badgeShell.style.display = row?.classList.contains("selected") ? "" : "none";
+    if (badgeShell) {
+      badgeShell.style.display = this.settings.showTabBadges !== false && row?.classList.contains("selected")
+        ? ""
+        : "none";
+    }
     if (badge) badge.textContent = this.formatFilterCount(count, hasMore);
   }
 
-  private updateVisibleFilterBadges(container: HTMLElement) {
+  private updateVisibleFilterBadges(container: ParentNode) {
     container.querySelectorAll<HTMLElement>(".filter-row").forEach((row) => {
       const badge = row.querySelector<HTMLElement>(".filter-badge");
-      if (badge) badge.style.display = row.classList.contains("selected") ? "" : "none";
+      if (badge) {
+        badge.style.display = this.settings.showTabBadges !== false && row.classList.contains("selected")
+          ? ""
+          : "none";
+      }
     });
   }
 
@@ -784,22 +794,20 @@ export default class TodoistBoardPlugin extends Plugin {
             if (existing) existing.remove();
 
             const toolbar = createDiv({ cls: "inline-toolbar" });
-            toolbar.classList.add("tb-flex", "tb-gap-8", "tb-mb-8");
 
-            const sortButton = createDiv({ cls: "clickable-icon" });
-            sortButton.classList.add("tb-fs-08");
-            setIcon(sortButton, "arrow-up-down");
+            const sortButton = this.createToolbarButton(
+              "arrow-up-down",
+              "Sort tasks",
+              ["tb-toolbar-button--wide", "tb-toolbar-sort"],
+            );
             const sortLabel = activeDocument.createElement("span");
             // Persist sort mode per filter key
             let currentSortMode = this.getSortMode(filterKey);
             el.dataset.sortMode = currentSortMode;
             this.setSortMode(filterKey, currentSortMode);
             sortLabel.textContent = `Sort: ${currentSortMode}`;
-            sortLabel.classList.add("tb-ml-4", "tb-fs-08");
+            sortLabel.classList.add("tb-toolbar-button-label");
             sortButton.appendChild(sortLabel);
-            sortButton.setAttribute("aria-label", "Sort tasks");
-            sortButton.setAttribute("role", "button");
-            a11yButton(sortButton, "Sort tasks");
             const render = () => {
               // Apply per-inline persisted compact mode (isolated from sidebar setting)
               const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
@@ -938,31 +946,19 @@ export default class TodoistBoardPlugin extends Plugin {
             toolbar.appendChild(sortButton);
 
             // --- Capture (+) Button for inline board ---
-            const captureBtn = activeDocument.createElement("span");
-            captureBtn.className = "clickable-icon todoist-add-task-btn";
-            captureBtn.classList.add(
-              "tb-scale-125",
-              "tb-opacity-60",
-              "tb-flex",
-              "tb-ai-center",
-              "tb-justify-center",
-              "tb-cursor-pointer"
+            const captureBtn = this.createToolbarButton(
+              "plus-circle",
+              "Add task",
+              ["todoist-add-task-btn"],
             );
-            setIcon(captureBtn, "plus-circle");
-            captureBtn.title = "Add task";
             captureBtn.onclick = () => {
-              void this.openAddTaskModal();
+              const activeFilter = el.getAttribute("data-current-filter") || filterKey;
+              void this.openAddTaskModal(activeFilter);
             };
-            // Match hover style
-            // Hover/focus opacity now handled in CSS via .tb-opacity-60 default and hover rule
-            a11yButton(captureBtn, "Add task");
             toolbar.appendChild(captureBtn);
             // --- End Capture (+) Button ---
             // --- Manual Sync Button ---
-            const syncButton = activeDocument.createElement("span");
-            syncButton.className = "clickable-icon";
-            setIcon(syncButton, "refresh-cw");
-            syncButton.title = "Manual sync";
+            const syncButton = this.createToolbarButton("refresh-cw", "Manual sync");
             syncButton.onclick = async () => {
               const currentFilter = el.getAttribute("data-current-filter") || "today";
 
@@ -980,35 +976,30 @@ export default class TodoistBoardPlugin extends Plugin {
               this.upsertTasks(currentFilter, tasks);
               render();
             };
-            a11yButton(syncButton, "Manual sync");
             toolbar.appendChild(syncButton);
             // --- Queue Toggle Button ---
-            const queueButton = activeDocument.createElement("span");
-            queueButton.className = "clickable-icon";
-            setIcon(queueButton, "focus");
-            queueButton.title = "Toggle queue mode";
+            const queueButton = this.createToolbarButton("focus", "Toggle queue mode");
             let queueActive = false;
+            queueButton.setAttribute("aria-pressed", "false");
             queueButton.onclick = () => {
               queueActive = !queueActive;
+              queueButton.setAttribute("aria-pressed", String(queueActive));
               this.updateQueueView(queueActive, el.querySelector(".list-wrapper")!);
             };
-            a11yButton(queueButton, "Toggle queue mode");
             toolbar.appendChild(queueButton);
 
             // --- Compact Mode Toggle Button ---
-            const compactButton = activeDocument.createElement("span");
-            compactButton.className = "clickable-icon";
-            setIcon(compactButton, "list");
-            compactButton.title = "Toggle compact mode";
+            const compactButton = this.createToolbarButton("list", "Toggle compact mode");
+            compactButton.setAttribute("aria-pressed", String(el.classList.contains("compact-mode")));
             compactButton.onclick = () => {
               const currentFilterKey = el.getAttribute("data-current-filter") || filterKey;
               const next = !el.classList.contains("compact-mode");
               el.classList.toggle("compact-mode", next);
+              compactButton.setAttribute("aria-pressed", String(next));
               const lw = el.querySelector(".list-wrapper");
               if (lw) (lw as HTMLElement).classList.toggle("compact-mode", next);
               this.storageRepository.setInlineCompact(persistedCompactKeyPath, currentFilterKey, next);
             };
-            a11yButton(compactButton, "Toggle compact mode");
             toolbar.appendChild(compactButton);
 
             // Place toolbar at the top; inline boards hide it via CSS when needed
@@ -1147,8 +1138,12 @@ export default class TodoistBoardPlugin extends Plugin {
             labels: this.labelCache
           }
         );
-        activeDocument.querySelectorAll(".filter-row").forEach(el => el.classList.remove("selected"));
+        activeDocument.querySelectorAll(".filter-row").forEach((el) => {
+          el.classList.remove("selected");
+          el.setAttribute("aria-pressed", "false");
+        });
         defaultFilterRow.classList.add("selected");
+        defaultFilterRow.setAttribute("aria-pressed", "true");
         return true;
       }
       return false;
@@ -1490,6 +1485,8 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Ensure filterBar is created with the proper class
     const filterBar = createDiv({ cls: "filter-bar" });
+    filterBar.setAttribute("role", "group");
+    filterBar.setAttribute("aria-label", "Todoist filters");
 
     // Find the current selected filter index (from state or from source)
     let initialIndex = 0;
@@ -1504,8 +1501,11 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Render all .filter-row elements (buttons)
     filterOptions.forEach((opt, idx) => {
-      const filterRow = activeDocument.createElement("div");
+      const filterRow = activeDocument.createElement("button");
+      filterRow.type = "button";
       filterRow.className = "filter-row";
+      filterRow.setAttribute("aria-label", String(opt.title || opt.filter));
+      filterRow.setAttribute("aria-pressed", String(idx === selectedFilterIndex));
       clearEl(filterRow);
 
       const iconSpan = filterRow.createSpan({ cls: "filter-icon" });
@@ -1541,7 +1541,7 @@ export default class TodoistBoardPlugin extends Plugin {
       }
       if (iconEl) iconEl.appendChild(badge);
       // --- End badge code ---
-      badge.style.display = idx === selectedFilterIndex ? "" : "none";
+      badge.style.display = this.settings.showTabBadges !== false && idx === selectedFilterIndex ? "" : "none";
       if (idx === selectedFilterIndex) {
         filterRow.classList.add("selected");
       }
@@ -1551,10 +1551,14 @@ export default class TodoistBoardPlugin extends Plugin {
         e.stopPropagation();
 
         // Clear selected class from all
-        container.querySelectorAll(".filter-row").forEach(el => el.classList.remove("selected"));
+        container.querySelectorAll(".filter-row").forEach((el) => {
+          el.classList.remove("selected");
+          el.setAttribute("aria-pressed", "false");
+        });
 
         // Mark this one selected
         filterRow.classList.add("selected");
+        filterRow.setAttribute("aria-pressed", "true");
         this.updateVisibleFilterBadges(container);
 
         // Update data-current-filter attribute and always force a re-render, even if the same filter is clicked again
@@ -1578,11 +1582,11 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // --- Begin: Add Capture (+) Button before settings/refresh buttons ---
     // Create Capture (+) Button using Obsidian icon
-    const captureBtn = activeDocument.createElement("span");
-    captureBtn.className = "add-task-btn clickable-icon";
-    setIcon(captureBtn, "plus-circle");
-    captureBtn.title = "Add task";
-    captureBtn.addClass("capture-btn");
+    const captureBtn = this.createToolbarButton(
+      "plus-circle",
+      "Add task",
+      ["add-task-btn", "capture-btn"],
+    );
     captureBtn.onclick = () => {
       void this.openAddTaskModal();
     };
@@ -1842,21 +1846,30 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // --- Add Task Modal ---
-  async openAddTaskModal() {
+  async openAddTaskModal(filter?: string) {
     this.ensureRefactoredRuntime(this.settings.apiKey);
     const inboxId = this.projectCache?.find((p) => p.name === "Inbox")?.id;
+    const buildFields = (projects: Project[], labels: Label[]) => {
+      const filterDefaults = filter
+        ? getAddTaskDefaultsFromFilter(filter, projects, labels, getZone(this.settings))
+        : {};
+      const defaultInboxId = projects.find((project) =>
+        project.isInboxProject === true || project.name.trim().toLocaleLowerCase() === "inbox",
+      )?.id || inboxId;
+      return {
+        title: "",
+        description: "",
+        due: filterDefaults.due || "",
+        deadline: "",
+        priority: filterDefaults.priority ?? 1,
+        projectId: filterDefaults.projectId || defaultInboxId || undefined,
+        labels: filterDefaults.labels || [],
+      };
+    };
 
     const modal = new TaskSheetModal(this.app, {
       title: "Add task",
-      fields: {
-        title: "",
-        description: "",
-        due: "",
-        deadline: "",
-        priority: 1,
-        projectId: inboxId || undefined,
-        labels: [],
-      },
+      fields: buildFields(this.projectCache, this.labelCache),
       submitLabel: "Add task",
       projects: this.projectCache,
       labels: this.labelCache,
@@ -1902,15 +1915,7 @@ export default class TodoistBoardPlugin extends Plugin {
             projects: this.projectCache,
             labels: this.labelCache,
             visibleFields: this.settings.addTaskModal,
-            fields: {
-              title: "",
-              description: "",
-              due: "",
-              deadline: "",
-              priority: 1,
-              projectId: this.projectCache?.find((p) => p.name === "Inbox")?.id || inboxId || undefined,
-              labels: [],
-            },
+            fields: buildFields(this.projectCache, this.labelCache),
           });
         });
       }, 10);
@@ -1980,14 +1985,23 @@ export default class TodoistBoardPlugin extends Plugin {
     this.labelCacheTimestamp = now;
   }
 
+  private createToolbarButton(icon: string, label: string, classNames: string[] = []): HTMLButtonElement {
+    const button = activeDocument.createElement("button");
+    button.type = "button";
+    button.classList.add("tb-toolbar-button", ...classNames);
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    setIcon(button, icon);
+    return button;
+  }
+
   private createQueueButton(listWrapper: HTMLElement) {
     let queueActive = false;
-    // Use Obsidian's icon system for the queue button (use "list" as example)
-    const queueBtn = createSpan({ cls: "queue-btn clickable-icon" });
-    setIcon(queueBtn, "focus");
-    queueBtn.title = "Queue tasks";
+    const queueBtn = this.createToolbarButton("focus", "Queue tasks", ["queue-btn"]);
+    queueBtn.setAttribute("aria-pressed", "false");
     queueBtn.onclick = () => {
       queueActive = !queueActive;
+      queueBtn.setAttribute("aria-pressed", String(queueActive));
       this.updateQueueView(queueActive, listWrapper);
     };
 
@@ -2000,14 +2014,17 @@ export default class TodoistBoardPlugin extends Plugin {
 
   private createSettingsRefreshButtons(container: HTMLElement, source: string, ctx: RenderContext, apiKey: string) {
     // Create a hamburger menu button
-    const menuBtn = activeDocument.createElement("button");
-    setIcon(menuBtn, "menu");
-    menuBtn.title = "Menu";
-    menuBtn.classList.add("icon-button");
+    const menuBtn = this.createToolbarButton("menu", "Menu");
+    menuBtn.setAttribute("aria-haspopup", "menu");
+    menuBtn.setAttribute("aria-expanded", "false");
 
     // Create dropdown
     const menuDropdown = activeDocument.createElement("div");
     menuDropdown.className = "todoist-board-menu menu-dropdown hidden";
+    const closeMenu = () => {
+      menuDropdown.classList.add("hidden");
+      menuBtn.setAttribute("aria-expanded", "false");
+    };
 
     // Settings option
     const settingsOption = activeDocument.createElement("div");
@@ -2018,7 +2035,7 @@ export default class TodoistBoardPlugin extends Plugin {
     settingsOption.appendChild(settingsIcon);
     settingsOption.className = "menu-dropdown-item";
     settingsOption.onclick = () => {
-      menuDropdown.classList.add("hidden");
+      closeMenu();
       this.openSettingsModal();
     };
     // Use append() instead of textContent to avoid overwriting icon
@@ -2033,7 +2050,7 @@ export default class TodoistBoardPlugin extends Plugin {
     syncOption.appendChild(syncIcon);
     syncOption.className = "menu-dropdown-item";
     syncOption.onclick = async () => {
-      menuDropdown.classList.add("hidden");
+      closeMenu();
       // Manual Sync: Clear cache for the current filter, clear list view, trigger fresh render from API
       const currentFilter = container.getAttribute("data-current-filter") || "";
       // Remove cached tasks and timestamp for current filter
@@ -2152,7 +2169,7 @@ export default class TodoistBoardPlugin extends Plugin {
       // @ts-ignore
       const menu = {
         hideAtMouseEvent: (evt: MouseEvent) => {
-          menuDropdown.classList.add("hidden");
+          closeMenu();
         }
       };
       menu.hideAtMouseEvent(new MouseEvent("click"));
@@ -2180,6 +2197,7 @@ export default class TodoistBoardPlugin extends Plugin {
       menuDropdownWrapper.style.top = `${rect.bottom + window.scrollY}px`;
       menuDropdownWrapper.style.left = `${rect.left + window.scrollX}px`;
       menuDropdown.classList.toggle("hidden");
+      menuBtn.setAttribute("aria-expanded", String(!menuDropdown.classList.contains("hidden")));
     };
 
     // Hide dropdown on outside click
@@ -2190,7 +2208,7 @@ export default class TodoistBoardPlugin extends Plugin {
       // Ignore clicks in the file explorer area
       if (t && t.closest(".workspace-split.mod-left-split")) return;
       if (!menuDropdown.classList.contains("hidden")) {
-        menuDropdown.classList.add("hidden");
+        closeMenu();
       }
     });
 
@@ -2219,11 +2237,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private createRefreshButton(container: HTMLElement, source: string, ctx: RenderContext, apiKey: string) {
-    const refreshBtn = activeDocument.createElement("button");
-    refreshBtn.type = "button";
-    setIcon(refreshBtn, "refresh-cw");
-    refreshBtn.title = "Force refresh cache";
-    refreshBtn.classList.add("icon-button", "refresh-btn");
+    const refreshBtn = this.createToolbarButton("refresh-cw", "Force refresh cache", ["refresh-btn"]);
 
     refreshBtn.onclick = () => {
       window.requestAnimationFrame(() => {
@@ -2248,10 +2262,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private createSettingsButton() {
-    const settingsBtn = activeDocument.createElement("span");
-    setIcon(settingsBtn, "settings")
-    settingsBtn.title = "Edit toolbar filters";
-    settingsBtn.className = "icon-button";
+    const settingsBtn = this.createToolbarButton("settings", "Edit toolbar filters");
 
     settingsBtn.onclick = () => this.openSettingsModal();
 

@@ -145,6 +145,7 @@ export interface TodoistBoardSettings {
   apiKey: string;
   filters?: Filter[];
   compactMode?: boolean;
+  showTabBadges?: boolean;
   useOAuth?: boolean;
   defaultFilter?: string;
   currentFilter?: string;

@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { DateTime } from "luxon";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { __resetRequestUrl, __setRequestUrl } from "obsidian";
 import { resolveFilterFromSource, sourceOrDefault } from "../src/filters.ts";
+import { getAddTaskDefaultsFromFilter } from "../src/add-task-defaults.ts";
+import { normalizeSettings } from "../src/settings.ts";
 import { startTaskPolling } from "../src/polling.ts";
 import { sortTasksLikeTodoist } from "../src/sort.ts";
 import { TodoistBoardStorage, writeJSON } from "../src/storage.ts";
@@ -86,6 +89,32 @@ test("filter source parsing preserves explicit filters and falls back to default
   assert.equal(resolveFilterFromSource("", null, settings), "#work");
   assert.equal(resolveFilterFromSource("", "overdue", settings), "overdue");
   assert.equal(sourceOrDefault("filter: today\ntoolbar: false", settings.filters!), "filter: today");
+});
+
+test("settings enable tab badges by default and preserve an explicit opt-out", () => {
+  assert.equal(normalizeSettings(undefined).showTabBadges, true);
+  assert.equal(normalizeSettings({ showTabBadges: false }).showTabBadges, false);
+});
+
+test("add-task defaults inherit deterministic clauses from an inline-board filter", () => {
+  const defaults = getAddTaskDefaultsFromFilter(
+    "#myproject & @focus & tomorrow & p1",
+    [{ id: "project-1", name: "MyProject" }],
+    [{ id: "label-1", name: "Focus" }],
+    "UTC",
+    DateTime.utc(2026, 8, 19, 12),
+  );
+
+  assert.deepEqual(defaults, {
+    projectId: "project-1",
+    labels: ["Focus"],
+    due: "2026-08-20",
+    priority: 4,
+  });
+  assert.deepEqual(
+    getAddTaskDefaultsFromFilter("#MyProject | #Other", [], [], "UTC"),
+    {},
+  );
 });
 
 test("sorting keeps manual order and ranks due dates before undated tasks", () => {

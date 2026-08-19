@@ -107,6 +107,7 @@ export const DEFAULT_SETTINGS: TodoistBoardSettings = {
     { icon: "inbox", filter: "#inbox", title: "Inbox" },
   ],
   compactMode: false,
+  showTabBadges: true,
   defaultFilter: "today",
   timezoneMode: "auto",
   manualTimezone: "Europe/London",
