@@ -8,7 +8,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "test": "node --import ./tests/register-loader.mjs --test tests/*.test.ts",
+    "test": "node --experimental-strip-types --import ./tests/register-loader.mjs --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
     "lint:obsidian": "eslint main.ts src/**/*.ts",
     "lint:obsidian:errors": "eslint main.ts src/**/*.ts --quiet",
