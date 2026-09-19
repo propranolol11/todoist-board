@@ -79,8 +79,8 @@ export function openFilterSettingsModal(options: FilterSettingsModalOptions) {
 
     settings.filters!.forEach((filter, index) => renderFilterRow(filter, index));
 
-    const footer = container.createEl("div", { cls: "settings-filter-footer" });
-    const addRow = footer.createEl("div", { cls: "settings-action-row" });
+    const footer = container.createDiv({ cls: "settings-filter-footer" });
+    const addRow = footer.createDiv({ cls: "settings-action-row" });
     const addButton = addRow.createEl("button", { cls: "settings-add-filter-btn" });
     const addIcon = addButton.createSpan();
     setIcon(addIcon, "plus");
@@ -91,7 +91,7 @@ export function openFilterSettingsModal(options: FilterSettingsModalOptions) {
       renderSettingsUI();
     };
 
-    const saveRow = footer.createEl("div", { cls: "settings-save-row" });
+    const saveRow = footer.createDiv({ cls: "settings-save-row" });
     const saveButton = saveRow.createEl("button", { cls: "settings-save-btn", text: "Save" });
     saveButton.onclick = async () => {
       readFilterInputs(modal, settings);
@@ -178,30 +178,35 @@ function renderDragHandle(
 
 function renderIconPicker(row: HTMLTableRowElement, filter: ToolbarFilter, currentFilter: ToolbarFilter) {
   const iconCell = row.createEl("td");
+  if (filter.color) iconCell.style.setProperty("--filter-icon-color", filter.color);
   const iconTrigger = iconCell.createDiv({ cls: "icon-trigger" });
   clearEl(iconTrigger);
   setIcon(iconTrigger, filter.icon || "star");
 
   const iconPicker = iconCell.createDiv({ cls: "icon-picker-wrapper" });
   const colorRow = iconPicker.createDiv({ cls: "icon-color-row" });
+  const selectColor = (color: string) => {
+    currentFilter.color = color;
+    iconCell.style.setProperty("--filter-icon-color", color);
+    customColor.value = color;
+  };
 
   FILTER_ICON_COLORS.forEach((color) => {
     const swatch = colorRow.createDiv({ cls: "icon-color-swatch" });
     swatch.style.background = color;
-    swatch.onclick = () => {
-      iconTrigger.querySelector("svg")?.setAttribute("stroke", color);
-      currentFilter.color = color;
-    };
+    swatch.onclick = () => selectColor(color);
   });
 
-  const customColor = row.ownerDocument.createElement("input");
-  customColor.type = "color";
-  customColor.className = "icon-color-picker custom-color-swatch";
-  customColor.oninput = () => {
-    iconTrigger.querySelector("svg")?.setAttribute("stroke", customColor.value);
-    currentFilter.color = customColor.value;
-  };
-  colorRow.appendChild(customColor);
+  const customSwatch = colorRow.createEl("label", { cls: "custom-color-swatch" });
+  customSwatch.title = "Choose a custom icon color";
+  const customColor = customSwatch.createEl("input", {
+    type: "color",
+    cls: "icon-color-picker",
+    attr: { "aria-label": "Choose a custom icon color" },
+  });
+  customColor.value = filter.color || "#e44332";
+  customColor.oninput = () => selectColor(customColor.value);
+  customColor.onchange = () => selectColor(customColor.value);
 
   OBSIDIAN_ICONS.forEach((iconName) => {
     const iconButton = iconPicker.createSpan({ cls: "icon-grid-btn" });

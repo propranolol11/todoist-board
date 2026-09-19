@@ -1,6 +1,6 @@
 {
   "name": "todoist-board",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "Obsidian plugin for visualizing Todoist tasks",
   "repository": "https://github.com/propranolol11/todoist-board",
   "main": "main.js",
@@ -10,8 +10,8 @@
     "dev": "rollup -c -w",
     "test": "node --import ./tests/register-loader.mjs --test tests/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "lint:obsidian": "eslint main.ts src/**/*.ts",
-    "lint:obsidian:errors": "eslint main.ts src/**/*.ts --quiet",
+    "lint:obsidian": "eslint main.ts \"src/**/*.ts\" --max-warnings 0",
+    "lint:obsidian:errors": "eslint main.ts \"src/**/*.ts\" --quiet",
     "verify": "npm run typecheck && npm run lint:obsidian && npm test && npm run build && npm audit"
   },
   "devDependencies": {
@@ -23,8 +23,8 @@
     "@types/node": "^22.15.21",
     "@typescript-eslint/parser": "^8.59.4",
     "eslint": "^9.39.4",
-    "eslint-plugin-obsidianmd": "^0.3.0",
-    "obsidian": "^1.8.7",
+    "eslint-plugin-obsidianmd": "^0.4.2",
+    "obsidian": "^1.13.1",
     "rollup": "^4.41.1",
     "rollup-plugin-css-only": "^4.5.2",
     "rollup-plugin-postcss": "^4.0.2",

@@ -247,6 +247,18 @@ test("token storage preserves plugin-data fallback when Obsidian secrets are una
   assert.equal(persisted.apiKey, "legacy-token");
 });
 
+test("token storage ignores malformed non-string tokens without migrating them", () => {
+  const secretStorage = makeSecretStorage();
+  const tokenStorage = new TodoistTokenStorage({ secretStorage });
+
+  for (const value of [null, undefined, false, 123, {}, ["token"]]) {
+    const loaded = tokenStorage.loadToken(value);
+    assert.equal(loaded.token, "");
+    assert.equal(loaded.migrated, false);
+  }
+  assert.equal(secretStorage.values.size, 0);
+});
+
 test("todoist normalization and payload helpers preserve API field mappings", () => {
   const normalized = normalizeTask({
     id: 42,
@@ -323,7 +335,7 @@ test("todoist sync commands validate HTTP and command status", async () => {
 
   __setRequestUrl(async () => ({ status: 401, text: "bad token" }));
   await assert.rejects(
-    () => service.scheduleTask("task", { due_string: "today" }),
+    () => service.scheduleTask("task", { due_string: "today" }, { id: "task", content: "Task" }),
     (error: unknown) => isTodoistRequestError(error)
       && error.status === 401
       && error.endpoint === "/sync",
@@ -331,7 +343,7 @@ test("todoist sync commands validate HTTP and command status", async () => {
 
   __setRequestUrl(async () => ({ status: 200, text: JSON.stringify({ sync_status: {} }) }));
   await assert.rejects(
-    () => service.scheduleTask("task", { due_string: "today" }),
+    () => service.scheduleTask("task", { due_string: "today" }, { id: "task", content: "Task" }),
     /missing command status/,
   );
 
@@ -555,16 +567,18 @@ test("plugin lifecycle registers global listeners once and leaves board containe
 });
 
 test("community release metadata is internally consistent", () => {
-  for (const file of ["README.md", "LICENSE", "manifest.json", "package.json"]) {
+  for (const file of ["README.md", "LICENSE", "manifest.json", "package.json", "versions.json"]) {
     assert.equal(existsSync(file), true, `${file} must exist at the repo root`);
   }
 
   const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
   const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+  const versions = JSON.parse(readFileSync("versions.json", "utf8"));
 
   assert.equal(manifest.id, "todoist-board");
   assert.equal(manifest.name, "Todoist Board");
   assert.equal(manifest.version, pkg.version);
+  assert.equal(versions[manifest.version], manifest.minAppVersion);
   assert.equal(manifest.isDesktopOnly, false);
 
   const trackedFiles = execFileSync("git", ["ls-files"], { encoding: "utf8" })

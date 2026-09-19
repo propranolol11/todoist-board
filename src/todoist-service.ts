@@ -1,4 +1,6 @@
 import { requestUrl } from "obsidian";
+import { DateTime } from "luxon";
+import { rescheduleTaskDue, toSyncTaskDue } from "./task-dates";
 import type { ActionResult, Label, Project, Task, TodoistDue, TodoistMetadata, TodoistSection, TodoistTask } from "./types";
 
 export interface TodoistServiceOptions {
@@ -319,6 +321,7 @@ export function toRestTaskPayload(args: Partial<AddTaskArgs> | Record<string, un
 }
 
 export function toSyncTaskArgs(taskId: string, args: Partial<AddTaskArgs> | Record<string, unknown>): Record<string, unknown> {
+  const source = asRecord(args);
   const payload = toRestTaskPayload(args);
   const syncArgs: Record<string, unknown> = { id: String(taskId) };
 
@@ -336,12 +339,16 @@ export function toSyncTaskArgs(taskId: string, args: Partial<AddTaskArgs> | Reco
   copy("is_collapsed");
   copy("day_order");
 
-  if (payload.due_string !== undefined) {
-    syncArgs.due = payload.due_string === null ? null : { string: payload.due_string };
-  } else if (payload.due_date !== undefined) {
-    syncArgs.due = payload.due_date === null ? null : { date: payload.due_date };
-  } else if (payload.due_datetime !== undefined) {
-    syncArgs.due = payload.due_datetime === null ? null : { date: payload.due_datetime };
+  if (source.due !== undefined) {
+    syncArgs.due = source.due === null ? null : toSyncTaskDue(asRecord(source.due));
+  } else if (payload.due_string === null || payload.due_date === null || payload.due_datetime === null) {
+    syncArgs.due = null;
+  } else {
+    const due: Record<string, unknown> = {};
+    if (payload.due_string !== undefined) due.string = payload.due_string;
+    if (payload.due_date !== undefined) due.date = payload.due_date;
+    if (payload.due_datetime !== undefined) due.date = payload.due_datetime;
+    if (Object.keys(due).length) syncArgs.due = due;
   }
   if (payload.due_lang !== undefined && syncArgs.due && typeof syncArgs.due === "object") {
     (syncArgs.due as Record<string, unknown>).lang = payload.due_lang;
@@ -477,6 +484,11 @@ export class TodoistService {
   }
 
   async updateTask(taskId: string, args: Record<string, unknown>): Promise<ActionResult<TodoistTask | null>> {
+    // REST's scalar date fields cannot carry all recurrence/timezone metadata.
+    if (args.due !== undefined) {
+      await this.syncUpdateTask(taskId, args);
+      return { ok: true, data: null };
+    }
     try {
       const response = await this.request<unknown>(`/tasks/${encodeURIComponent(String(taskId))}`, {
         method: "POST",
@@ -527,8 +539,22 @@ export class TodoistService {
     return raw ? normalizeTask(JSON.parse(raw)) : null;
   }
 
-  async scheduleTask(taskId: string, dueStringOrDate: { due_string?: string; due_date?: string }) {
-    return this.syncUpdateTask(taskId, dueStringOrDate);
+  async scheduleTask(
+    taskId: string,
+    dueStringOrDate: { due_string?: string; due_date?: string },
+    task?: Task,
+    timezone = "local",
+  ) {
+    const current = task ?? await this.getTask(taskId);
+    let date = dueStringOrDate.due_date;
+    const relative = dueStringOrDate.due_string?.trim().toLowerCase();
+    if (!date && (relative === "today" || relative === "tomorrow")) {
+      const now = DateTime.now().setZone(timezone);
+      if (!now.isValid) throw new Error("Invalid scheduling timezone");
+      date = (relative === "tomorrow" ? now.plus({ days: 1 }) : now).toISODate() || undefined;
+    }
+    if (!date && relative && /^\d{4}-\d{2}-\d{2}$/.test(relative)) date = relative;
+    return this.syncUpdateTask(taskId, date ? { due: rescheduleTaskDue(current.due, date, timezone) } : dueStringOrDate);
   }
 
   async updatePriority(taskId: string, priority: number) {

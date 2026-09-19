@@ -20,8 +20,8 @@ export class TaskActions {
     return this.todoistService.deleteTask(taskId);
   }
 
-  deferTaskToTomorrow(taskId: string) {
-    return this.todoistService.scheduleTask(taskId, { due_string: "tomorrow" });
+  deferTaskToTomorrow(taskId: string, task?: Task, timezone?: string) {
+    return this.todoistService.scheduleTask(taskId, { due_string: "tomorrow" }, task, timezone);
   }
 
   getProject(projectId: string): Promise<Project> {
@@ -43,12 +43,12 @@ export class TaskActions {
     return this.todoistService.moveTaskREST(taskId, payload);
   }
 
-  scheduleTask(taskId: string, dueStringOrDate: { due_string?: string; due_date?: string }) {
-    return this.todoistService.scheduleTask(taskId, dueStringOrDate);
+  scheduleTask(taskId: string, dueStringOrDate: { due_string?: string; due_date?: string }, task?: Task, timezone?: string) {
+    return this.todoistService.scheduleTask(taskId, dueStringOrDate, task, timezone);
   }
 
-  scheduleTaskToday(taskId: string) {
-    return this.scheduleTask(taskId, { due_string: "today" });
+  scheduleTaskToday(taskId: string, task?: Task, timezone?: string) {
+    return this.scheduleTask(taskId, { due_string: "today" }, task, timezone);
   }
 
   updatePriority(taskId: string, priority: number) {

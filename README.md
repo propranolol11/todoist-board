@@ -8,6 +8,7 @@ Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive b
 - Inline `todoist-board` code blocks for embedding filtered task lists in notes.
 - Todoist filter support, including project, priority, date, and custom filter queries.
 - Task actions for adding, editing, completing, deleting, scheduling, deferring, moving, and changing priority.
+- Command palette capture with `Todoist Board: Add Task` and recurring schedules in the task sheet's **Repeats** field.
 - Parent and subtask display with collapse controls.
 - Sorting, compact mode, hidden tasks, manual order, polling refresh, and cached offline display.
 - Mobile support is enabled with `isDesktopOnly: false`.
@@ -26,6 +27,8 @@ Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive b
 
 Todoist Board requires Obsidian 1.8.7 or newer. Obsidian 1.11.4 or newer is recommended for Secret Storage support.
 
+On Obsidian 1.13.0 or newer, plugin settings are also available in Obsidian's settings search.
+
 1. Install the plugin in Obsidian.
 2. Open Obsidian settings and go to Todoist Board.
 3. Paste a Todoist personal API token.
@@ -34,6 +37,8 @@ Todoist Board requires Obsidian 1.8.7 or newer. Obsidian 1.11.4 or newer is reco
 
 You can create a Todoist personal API token from Todoist account settings.
 Existing plugin-data tokens are migrated to Obsidian Secret Storage automatically when Secret Storage is available.
+
+Use **Repeats** when adding or editing a task for schedules such as `every day`, `every Monday at 9am`, or `every! 2 weeks`. A selected date starts a new repeat schedule from that date; an explicit start date in the repeat text takes precedence. Changing only the date of an existing repeating task moves its next occurrence while preserving the schedule. Clear **Repeats** to make the task a one-time task.
 
 ## Inline Boards
 
@@ -98,5 +103,7 @@ npm run verify
 - Caches task snapshots, project metadata, label metadata, hidden-task state, sort mode, compact mode, and manual order locally for responsiveness and offline display.
 - Does not collect analytics, use telemetry, or send data to any service other than Todoist.
 - Includes an optional funding link in the plugin settings and manifest.
+- External links to Todoist help, Obsidian documentation, GitHub, and Ko-fi open only when clicked.
+- The settings Copy button writes the example `todoist-board` block to the clipboard when clicked. The plugin does not read clipboard contents.
 
 This plugin is not affiliated with, endorsed by, or sponsored by Todoist.

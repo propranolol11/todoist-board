@@ -46,10 +46,10 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
     owner,
   } = options;
 
-  const left = activeDocument.createElement("div");
+  const left = activeDocument.adoptNode(createDiv());
   left.className = "task-content";
 
-  const titleSpan = activeDocument.createElement("span");
+  const titleSpan = activeDocument.adoptNode(createSpan());
   clearEl(titleSpan);
   void MarkdownRenderer.render(
     app,
@@ -60,7 +60,7 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   );
   titleSpan.className = "task-title";
 
-  const metaSpan = activeDocument.createElement("small");
+  const metaSpan = activeDocument.adoptNode(createEl("small"));
   metaSpan.className = "task-metadata";
 
   const pills = createTaskPills({
@@ -74,12 +74,12 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   });
   pills.forEach((pill) => metaSpan.appendChild(pill));
 
-  const descEl = activeDocument.createElement("div");
+  const descEl = activeDocument.adoptNode(createDiv());
   descEl.className = "task-description";
   if (typeof task.description === "string" && task.description.trim()) {
     descEl.textContent = task.description;
     descEl.classList.add("has-description", "desc-collapsed");
-    const toggleDescription = activeDocument.createElement("button");
+    const toggleDescription = activeDocument.adoptNode(createEl("button"));
     toggleDescription.className = "task-description-toggle";
     toggleDescription.type = "button";
     toggleDescription.setAttribute("aria-label", "Expand description");
@@ -124,12 +124,12 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
     descEl.classList.add("desc-empty");
   }
 
-  const contentWrapper = activeDocument.createElement("div");
+  const contentWrapper = activeDocument.adoptNode(createDiv());
   contentWrapper.className = "task-content-wrapper";
   contentWrapper.appendChild(titleSpan);
   contentWrapper.appendChild(descEl);
 
-  const whenRow = activeDocument.createElement("div");
+  const whenRow = activeDocument.adoptNode(createDiv());
   whenRow.className = "task-when";
 
   const dueInline = createDueInline(task, settings);
@@ -144,7 +144,7 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   }
   contentWrapper.appendChild(whenRow);
 
-  const metaRow = activeDocument.createElement("div");
+  const metaRow = activeDocument.adoptNode(createDiv());
   metaRow.className = "task-meta-compact";
 
   const projectInline = createProjectPill(task.projectId, projectMap, projects);
@@ -249,12 +249,12 @@ function createDueInline(task: TodoistTask, settings: TodoistBoardSettings): HTM
       : days === 1 ? "Tomorrow"
         : dt.toFormat("ccc, LLL d");
 
-  const span = activeDocument.createElement("span");
+  const span = activeDocument.adoptNode(createSpan());
   span.className = "due-inline";
   span.textContent = hasTime ? `${dateLabel} @ ${dt.toFormat(useHour12() ? "h:mm a" : "HH:mm")}` : dateLabel;
 
   if (isTaskRecurring(task)) {
-    const recurring = activeDocument.createElement("span");
+    const recurring = activeDocument.adoptNode(createSpan());
     recurring.className = "repeat-indicator";
     recurring.setAttribute("aria-label", "Repeats");
     recurring.title = "Repeats";
@@ -285,7 +285,7 @@ function createDeadlineInline(task: TodoistTask, settings: TodoistBoardSettings)
   const target = dt.startOf("day");
   const days = Math.round(target.diff(today, "days").days);
 
-  const span = activeDocument.createElement("span");
+  const span = activeDocument.adoptNode(createSpan());
   span.className = "deadline-inline";
   span.textContent =
     days === 0 ? "🎯 today"
@@ -323,7 +323,7 @@ function createDuePill(
     hasTime = false;
   }
 
-  const pill = activeDocument.createElement("span");
+  const pill = activeDocument.adoptNode(createSpan());
   pill.className = "due-pill";
 
   const day = getDayLabel(dt);
@@ -355,7 +355,7 @@ function createProjectPill(
 ): HTMLElement | null {
   if (!projectId) return null;
 
-  const projectPill = activeDocument.createElement("span");
+  const projectPill = activeDocument.adoptNode(createSpan());
   projectPill.className = "pill project-pill";
   projectPill.setAttribute("data-type", "project");
 
@@ -380,13 +380,13 @@ function createProjectPill(
   const name = String(projectName || "Unknown");
   if (name.toLowerCase() === "inbox") projectPill.classList.add("project-pill-inbox");
 
-  const hash = activeDocument.createElement("span");
+  const hash = activeDocument.adoptNode(createSpan());
   hash.className = "project-hash";
   hash.textContent = "#";
   if (projectHex) hash.style.color = projectHex;
   projectPill.appendChild(hash);
 
-  const nameSpan = activeDocument.createElement("span");
+  const nameSpan = activeDocument.adoptNode(createSpan());
   nameSpan.className = "project-name";
   nameSpan.textContent = name.toLowerCase() === "inbox" ? "📥 Inbox" : name;
   projectPill.appendChild(nameSpan);
@@ -403,7 +403,7 @@ function createLabelPill(
 ): HTMLElement | null {
   if (!Array.isArray(labels) || labels.length === 0) return null;
 
-  const labelPill = activeDocument.createElement("span");
+  const labelPill = activeDocument.adoptNode(createSpan());
   labelPill.className = "pill label-pill";
   labelPill.setAttribute("data-type", "label");
 
@@ -444,10 +444,10 @@ function createLabelPill(
       color = (rawHex.startsWith("#") || rawHex.startsWith("rgb")) ? rawHex : (TODOIST_COLORS[rawHex] || rawHex);
     }
 
-    const part = activeDocument.createElement("span");
+    const part = activeDocument.adoptNode(createSpan());
     part.className = "label-part";
 
-    const at = activeDocument.createElement("span");
+    const at = activeDocument.adoptNode(createSpan());
     at.className = "label-at";
     at.textContent = "@ ";
 
@@ -464,7 +464,7 @@ function createLabelPill(
     labelPill.appendChild(part);
 
     if (index < labels.length - 1) {
-      const separator = activeDocument.createElement("span");
+      const separator = activeDocument.adoptNode(createSpan());
       separator.className = "label-separator";
       separator.textContent = ",";
       labelPill.appendChild(separator);
@@ -475,7 +475,7 @@ function createLabelPill(
 }
 
 function createMidSeparator(): HTMLElement {
-  const separator = activeDocument.createElement("span");
+  const separator = activeDocument.adoptNode(createSpan());
   separator.className = "mid-sep";
   separator.textContent = " | ";
   return separator;

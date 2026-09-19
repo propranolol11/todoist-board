@@ -28,8 +28,9 @@ import { TaskStore } from "./src/task-store";
 import { TodoistTokenStorage } from "./src/token-storage";
 import { TodoistService, isTodoistRequestError, type TodoistTaskFetchResult } from "./src/todoist-service";
 import { TaskActions } from "./src/task-actions";
-import { TaskSheetModal } from "./src/modals/task-sheet-modal";
+import { TaskModalFieldError, TaskSheetModal } from "./src/modals/task-sheet-modal";
 import { getAddTaskDefaultsFromFilter } from "./src/add-task-defaults";
+import { buildAddTaskDue, buildTaskDueUpdate, getTaskDateFields } from "./src/task-dates";
 import { openFilterSettingsModal } from "./src/modals/filter-settings-modal";
 import { buildRenderInput as buildRenderInputCore } from "./src/sort";
 import { startTaskPolling } from "./src/polling";
@@ -52,6 +53,11 @@ import type {
 
 type TodoistBoardSettings = CoreTodoistBoardSettings;
 type LogArg = unknown;
+
+function isTodoistInputRejection(error: unknown): boolean {
+  if (isTodoistRequestError(error)) return error.status === 400 || error.status === 422;
+  return error instanceof Error && error.message.includes("Todoist sync item_update failed");
+}
 type RenderContext = MarkdownPostProcessorContext | Record<string, unknown>;
 type RenderData = {
   tasks?: Task[];
@@ -59,7 +65,6 @@ type RenderData = {
   projects?: Project[];
   labels?: Label[];
 };
-type DivOptions = { cls?: string };
 type MenuWithMouseEvent = Menu & { showAtMouseEvent?: (event: MouseEvent) => void };
 type BusyHTMLElement = HTMLElement & { _busy?: boolean };
 type RootWithContainer = { containerEl?: { hasClass?: (className: string) => boolean } };
@@ -468,7 +473,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private createTaskLoadingState(message: string): HTMLElement {
-    const state = activeDocument.createElement("div");
+    const state = activeDocument.adoptNode(createDiv());
     state.className = "task-loading-state";
     const spinner = state.createSpan({ cls: "task-loading-spinner" });
     spinner.setAttribute("aria-hidden", "true");
@@ -481,9 +486,9 @@ export default class TodoistBoardPlugin extends Plugin {
     const cursor = this.filterNextCursor[key];
     if (!key || !cursor || listWrapper.querySelector(".todoist-load-more-wrapper")) return;
 
-    const wrapper = activeDocument.createElement("div");
+    const wrapper = activeDocument.adoptNode(createDiv());
     wrapper.className = "todoist-load-more-wrapper";
-    const button = activeDocument.createElement("button");
+    const button = activeDocument.adoptNode(createEl("button"));
     button.className = "todoist-load-more";
     button.textContent = "Load more";
     button.onclick = async (event) => {
@@ -661,6 +666,12 @@ export default class TodoistBoardPlugin extends Plugin {
         name: "Open in new tab",
         callback: () => this.openTodoistBoardInNewTab(),
       });
+      this.addCommand({
+        id: "add-task",
+        name: "Add Task",
+        icon: "plus",
+        callback: () => this.openAddTaskModal(),
+      });
       await this.loadSettings();
 
       const initialToken = this.settings.apiKey;
@@ -741,9 +752,9 @@ export default class TodoistBoardPlugin extends Plugin {
         }
       }
 
-      this.loadingOverlay = activeDocument.createElement("div");
+      this.loadingOverlay = activeDocument.adoptNode(createDiv());
       this.loadingOverlay.className = "loading-overlay";
-      const spinner = activeDocument.createElement("div");
+      const spinner = activeDocument.adoptNode(createDiv());
       spinner.className = "spinner";
       this.loadingOverlay.appendChild(spinner);
       this.registerDomEvent(this.loadingOverlay, "click", (e) => e.stopPropagation());
@@ -778,29 +789,24 @@ export default class TodoistBoardPlugin extends Plugin {
             // Clear container
             clearEl(el);
             // Create a wrapper for the filter row and task list, as in createLayout
-            const filterRowWrapper = activeDocument.createElement("div");
+            const filterRowWrapper = activeDocument.adoptNode(createDiv());
             filterRowWrapper.className = "filter-row-wrapper";
             filterRowWrapper.classList.add("tb-hidden"); // Hide filter bar for inline boards
             el.appendChild(filterRowWrapper);
             // Insert sort toolbar immediately after filterRowWrapper
             // --- Begin Inline Sort Toolbar ---
-            const createDiv = (opts: DivOptions = {}) => {
-              const div = activeDocument.createElement("div");
-              if (opts.cls) div.className = opts.cls;
-              return div;
-            };
             // Prevent duplicate toolbar if render() is called twice by parent
             const existing = el.querySelector(".inline-toolbar");
             if (existing) existing.remove();
 
-            const toolbar = createDiv({ cls: "inline-toolbar" });
+            const toolbar = activeDocument.adoptNode(createDiv({ cls: "inline-toolbar" }));
 
             const sortButton = this.createToolbarButton(
               "arrow-up-down",
               "Sort tasks",
               ["tb-toolbar-button--wide", "tb-toolbar-sort"],
             );
-            const sortLabel = activeDocument.createElement("span");
+            const sortLabel = activeDocument.adoptNode(createSpan());
             // Persist sort mode per filter key
             let currentSortMode = this.getSortMode(filterKey);
             el.dataset.sortMode = currentSortMode;
@@ -824,7 +830,7 @@ export default class TodoistBoardPlugin extends Plugin {
               const { mode, viewTasks, projects, labels } = this.buildRenderInput(base, el, currentFilterKey);
 
               // Render tasks
-              const listWrapper = activeDocument.createElement("div");
+              const listWrapper = activeDocument.adoptNode(createDiv());
               listWrapper.className = "list-wrapper";
               el.appendChild(listWrapper);
               // Ensure the newly created list reflects the inline board's own compact mode
@@ -1432,17 +1438,17 @@ export default class TodoistBoardPlugin extends Plugin {
   private createLayout(container: HTMLElement) {
     container.empty();
 
-    const listToolbar = activeDocument.createElement("div");
+    const listToolbar = activeDocument.adoptNode(createDiv());
     listToolbar.className = "list-toolbar";
     container.appendChild(listToolbar);
     if (container.classList.contains("block-language-todoist-board") || container.closest(".markdown-reading-view")) {
       listToolbar.classList.add("tb-hidden");
     }
 
-    const listView = activeDocument.createElement("div");
+    const listView = activeDocument.adoptNode(createDiv());
     listView.classList.add("list-view");
 
-    const listWrapper = activeDocument.createElement("div");
+    const listWrapper = activeDocument.adoptNode(createDiv());
     listWrapper.className = "list-wrapper";
     listWrapper.classList.toggle("compact-mode", this.compactMode);
     listView.appendChild(listWrapper);
@@ -1473,18 +1479,11 @@ export default class TodoistBoardPlugin extends Plugin {
     apiKey: string,
     listWrapper: HTMLElement
   ) {
-    // Utility for div creation
-    const createDiv = (opts: DivOptions = {}) => {
-      const el = activeDocument.createElement("div");
-      if (opts.cls) el.className = opts.cls;
-      return el;
-    };
-
     // Outer wrapper for the filter row
-    const filterWrapper = createDiv({ cls: "filter-row-wrapper" });
+    const filterWrapper = activeDocument.adoptNode(createDiv({ cls: "filter-row-wrapper" }));
 
     // Ensure filterBar is created with the proper class
-    const filterBar = createDiv({ cls: "filter-bar" });
+    const filterBar = activeDocument.adoptNode(createDiv({ cls: "filter-bar" }));
     filterBar.setAttribute("role", "group");
     filterBar.setAttribute("aria-label", "Todoist filters");
 
@@ -1501,7 +1500,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
     // Render all .filter-row elements (buttons)
     filterOptions.forEach((opt, idx) => {
-      const filterRow = activeDocument.createElement("button");
+      const filterRow = activeDocument.adoptNode(createEl("button"));
       filterRow.type = "button";
       filterRow.className = "filter-row";
       filterRow.setAttribute("aria-label", String(opt.title || opt.filter));
@@ -1521,13 +1520,13 @@ export default class TodoistBoardPlugin extends Plugin {
       const iconEl = filterRow.querySelector(".filter-icon") as HTMLElement;
       setIcon(iconEl, opt.icon || "star");
       // --- Begin updated badge code with background and count layering ---
-      const badge = activeDocument.createElement("span");
+      const badge = activeDocument.adoptNode(createSpan());
       badge.className = "filter-badge";
 
-      const badgeBg = activeDocument.createElement("span");
+      const badgeBg = activeDocument.adoptNode(createSpan());
       badgeBg.className = "filter-badge-bg";
 
-	      const badgeCount = activeDocument.createElement("span");
+	      const badgeCount = activeDocument.adoptNode(createSpan());
 	      badgeCount.className = "filter-badge-count";
 		      const filterCount = this.taskStoreController.getCount(String(opt.filter));
 	      badgeCount.textContent = this.formatFilterCount(filterCount, Boolean(this.filterNextCursor[String(opt.filter)]));
@@ -1536,7 +1535,7 @@ export default class TodoistBoardPlugin extends Plugin {
       badge.appendChild(badgeCount);
       // Assign the background color to the icon container instead
       if (opt.color) {
-        filterRow?.setCssProps({ "--badge-bg": opt.color });
+        filterRow.setCssProps({ "--badge-bg": opt.color, "--filter-icon-color": opt.color });
         badge.setCssProps({ "--badge-color": "white" });
       }
       if (iconEl) iconEl.appendChild(badge);
@@ -1681,6 +1680,7 @@ export default class TodoistBoardPlugin extends Plugin {
       submitLabel: "Save",
       projects: [],
       labels: [],
+      submitInBackground: true,
       onSubmit: async () => { },
     });
     this.activeTaskModal = modal;
@@ -1705,17 +1705,19 @@ export default class TodoistBoardPlugin extends Plugin {
         }
       })();
 
+      if (!task) {
+        await refresh;
+        if (!task) {
+          new Notice("Could not load task");
+          modal.close();
+          return;
+        }
+      }
+
       const fields = {
         title: String(task?.content ?? ""),
         description: String(task?.description ?? ""),
-        due: (() => {
-          const d = task?.due;
-          if (!d) return "";
-          // Prefer date; if only datetime exists, use YYYY-MM-DD for the <input type="date">
-          if (d?.date) return String(d.date);
-          if (d?.datetime) return String(d.datetime).slice(0, 10);
-          return "";
-        })(),
+        ...getTaskDateFields(task, getZone(this.settings)),
         deadline: String(task?.deadline?.date ?? ""),
         priority: Number(task?.priority ?? 1) || 1,
         projectId: String(task?.projectId ?? ""),
@@ -1809,7 +1811,7 @@ export default class TodoistBoardPlugin extends Plugin {
             await this.taskActions.updateTask(id, {
               content: data.title,
               description: data.description,
-              ...(data.due ? { dueDate: data.due } : { dueString: "no date" }),
+              ...buildTaskDueUpdate(task, fields, data, getZone(this.settings)),
               deadlineDate: data.deadline || null,
               priority: Number(data.priority) || 1,
               // SDK expects label NAMES
@@ -1833,8 +1835,13 @@ export default class TodoistBoardPlugin extends Plugin {
                 labels: this.labelCache
               });
             });
-          } catch {
+          } catch (error) {
+            const repeatChanged = Boolean(data.repeats.trim()) && data.repeats.trim() !== fields.repeats.trim();
+            if (repeatChanged && isTodoistInputRejection(error)) {
+              throw new TaskModalFieldError("repeats", "Todoist couldn’t understand that repeat.");
+            }
             new Notice("Update failed");
+            throw error;
           }
         },
       });
@@ -1860,6 +1867,7 @@ export default class TodoistBoardPlugin extends Plugin {
         title: "",
         description: "",
         due: filterDefaults.due || "",
+        repeats: "",
         deadline: "",
         priority: filterDefaults.priority ?? 1,
         projectId: filterDefaults.projectId || defaultInboxId || undefined,
@@ -1873,23 +1881,32 @@ export default class TodoistBoardPlugin extends Plugin {
       submitLabel: "Add task",
       projects: this.projectCache,
       labels: this.labelCache,
+      submitInBackground: true,
       visibleFields: this.settings.addTaskModal,
       onOpenSettings: () => this.openAddTaskModalPreferences(),
-      onSubmit: async ({ title, description, due, deadline, priority, projectId, labels }) => {
+      onSubmit: async ({ title, description, due, repeats, deadline, priority, projectId, labels }) => {
         try {
           await this.taskActions.addTask({
             content: title,
             description,
             projectId: projectId || inboxId,
-            ...(due ? { dueString: due } : {}),
+            ...buildAddTaskDue(due, repeats),
             ...(deadline ? { deadlineDate: deadline } : {}),
             priority: Number(priority) || 1,
             ...(labels && labels.length > 0 ? { labels } : {})
           });
+        } catch (error) {
+          if (repeats.trim() && isTodoistInputRejection(error)) {
+            throw new TaskModalFieldError("repeats", "Todoist couldn’t understand that repeat.");
+          }
+          new Notice("Could not add task");
+          throw error;
+        }
+        try {
           await this.preloadFilters();
           this.app.workspace.trigger("markdown-preview-rendered");
         } catch {
-          new Notice("Could not add task");
+          new Notice("Task added. Refresh the board to see it.");
         }
       },
     });
@@ -1916,7 +1933,9 @@ export default class TodoistBoardPlugin extends Plugin {
             labels: this.labelCache,
             visibleFields: this.settings.addTaskModal,
             fields: buildFields(this.projectCache, this.labelCache),
-          });
+          }, { preserveInput: true });
+        }).catch(() => {
+          new Notice("Could not load projects and labels");
         });
       }, 10);
     }
@@ -1986,7 +2005,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private createToolbarButton(icon: string, label: string, classNames: string[] = []): HTMLButtonElement {
-    const button = activeDocument.createElement("button");
+    const button = activeDocument.adoptNode(createEl("button"));
     button.type = "button";
     button.classList.add("tb-toolbar-button", ...classNames);
     button.setAttribute("aria-label", label);
@@ -2004,7 +2023,7 @@ export default class TodoistBoardPlugin extends Plugin {
       this.updateQueueView(queueActive, listWrapper);
     };
 
-    const queueWrapper = activeDocument.createElement("div");
+    const queueWrapper = activeDocument.adoptNode(createDiv());
     queueWrapper.className = "queue-wrapper";
     queueWrapper.appendChild(queueBtn);
 
@@ -2018,7 +2037,7 @@ export default class TodoistBoardPlugin extends Plugin {
     menuBtn.setAttribute("aria-expanded", "false");
 
     // Create dropdown
-    const menuDropdown = activeDocument.createElement("div");
+    const menuDropdown = activeDocument.adoptNode(createDiv());
     menuDropdown.className = "todoist-board-menu menu-dropdown hidden";
     const closeMenu = () => {
       menuDropdown.classList.add("hidden");
@@ -2026,9 +2045,9 @@ export default class TodoistBoardPlugin extends Plugin {
     };
 
     // Settings option
-    const settingsOption = activeDocument.createElement("div");
+    const settingsOption = activeDocument.adoptNode(createDiv());
     // Insert icon span before text
-    const settingsIcon = activeDocument.createElement("span");
+    const settingsIcon = activeDocument.adoptNode(createSpan());
     setIcon(settingsIcon, "settings");
     settingsIcon.addClass("toolbar-icon");
     settingsOption.appendChild(settingsIcon);
@@ -2041,9 +2060,9 @@ export default class TodoistBoardPlugin extends Plugin {
     settingsOption.append("Settings");
 
     // Manual Sync option
-    const syncOption = activeDocument.createElement("div");
+    const syncOption = activeDocument.adoptNode(createDiv());
     // Insert icon span before text
-    const syncIcon = activeDocument.createElement("span");
+    const syncIcon = activeDocument.adoptNode(createSpan());
     setIcon(syncIcon, "refresh-cw");
     syncIcon.addClass("toolbar-icon");
     syncOption.appendChild(syncIcon);
@@ -2102,13 +2121,13 @@ export default class TodoistBoardPlugin extends Plugin {
     menuDropdown.appendChild(settingsOption);
     menuDropdown.appendChild(syncOption);
 
-    const divider = activeDocument.createElement("div");
+    const divider = activeDocument.adoptNode(createDiv());
     divider.className = "menu-divider";
     menuDropdown.appendChild(divider);
 
-    const compactOption = activeDocument.createElement("div");
+    const compactOption = activeDocument.adoptNode(createDiv());
     compactOption.className = "menu-dropdown-item";
-    const compactIcon = activeDocument.createElement("span");
+    const compactIcon = activeDocument.adoptNode(createSpan());
     setIcon(compactIcon, "align-justify");
     compactIcon.addClass("toolbar-icon");
     compactOption.appendChild(compactIcon);
@@ -2177,7 +2196,7 @@ export default class TodoistBoardPlugin extends Plugin {
     menuDropdown.appendChild(compactOption);
 
     // Wrap menuDropdown in a menu-dropdown-wrapper to prevent clipping ---
-    const menuDropdownWrapper = activeDocument.createElement("div");
+    const menuDropdownWrapper = activeDocument.adoptNode(createDiv());
     menuDropdownWrapper.className = "todoist-board-menu-wrapper menu-dropdown-wrapper";
     menuDropdownWrapper.appendChild(menuDropdown);
 
@@ -2217,7 +2236,7 @@ export default class TodoistBoardPlugin extends Plugin {
     });
 
     // --- Only the menuBtn is inside the wrapper now ---
-    const settingsRefreshWrapper = activeDocument.createElement("div");
+    const settingsRefreshWrapper = activeDocument.adoptNode(createDiv());
     settingsRefreshWrapper.className = "settings-refresh-wrapper";
     settingsRefreshWrapper.appendChild(menuBtn);
     // menuDropdownWrapper is now outside, not appended here
@@ -2295,7 +2314,7 @@ export default class TodoistBoardPlugin extends Plugin {
         markdownElements.forEach((element) => {
           const pre = element.parentElement;
           if (!pre) return;
-          const container = activeDocument.createElement("div");
+          const container = activeDocument.adoptNode(createDiv());
           pre.replaceWith(container);
           const source = element.textContent?.trim() || "";
           this.renderTodoistBoard(container, source, {}, this.settings.apiKey);
@@ -2329,7 +2348,7 @@ export default class TodoistBoardPlugin extends Plugin {
     if (chin) chin.remove();
 
     if (task && !row.querySelector(".subtask-inline-edit-btn")) {
-      const editButton = activeDocument.createElement("button");
+      const editButton = activeDocument.adoptNode(createEl("button"));
       editButton.type = "button";
       editButton.className = "subtask-inline-edit-btn";
       editButton.setAttribute("aria-label", "Edit subtask");
@@ -2365,7 +2384,7 @@ export default class TodoistBoardPlugin extends Plugin {
     parentRow.classList.toggle("subtasks-collapsed", collapsed);
     subtaskWrapper.classList.toggle("tb-hidden", collapsed);
 
-    const button = activeDocument.createElement("button");
+    const button = activeDocument.adoptNode(createEl("button"));
     button.type = "button";
     button.className = "subtask-toggle";
     button.setAttribute("data-subtask-count", String(subtaskCount));
@@ -2407,7 +2426,7 @@ export default class TodoistBoardPlugin extends Plugin {
     parentRow.classList.add("has-children", "parent-task");
     parentRow.setAttribute("data-subtask-count", String(subtasks.length));
 
-    const subtaskWrapper = activeDocument.createElement("div");
+    const subtaskWrapper = activeDocument.adoptNode(createDiv());
     subtaskWrapper.className = "subtask-wrapper";
 
     for (const sub of subtasks) {
@@ -2542,7 +2561,7 @@ export default class TodoistBoardPlugin extends Plugin {
       }
       // --- Insert empty quote if no tasks ---
 	      if (taskList.length === 0) {
-	        const quoteDiv = activeDocument.createElement("div");
+	        const quoteDiv = activeDocument.adoptNode(createDiv());
 	        quoteDiv.className = "empty-filter";
 	        quoteDiv.textContent = "No tasks found for this filter.";
 	        listWrapper.appendChild(quoteDiv);
@@ -2647,7 +2666,7 @@ export default class TodoistBoardPlugin extends Plugin {
     }
     // --- Insert empty quote if no tasks ---
 	    if (taskList.length === 0) {
-	      const quoteDiv = activeDocument.createElement("div");
+	      const quoteDiv = activeDocument.adoptNode(createDiv());
 	      quoteDiv.className = "empty-filter";
 	      quoteDiv.textContent = "No tasks found for this filter.";
 	      listWrapper.appendChild(quoteDiv);
@@ -2674,7 +2693,7 @@ export default class TodoistBoardPlugin extends Plugin {
     listWrapper: HTMLElement,
     filters: string[]
   ): HTMLElement {
-    const row = activeDocument.createElement("div");
+    const row = activeDocument.adoptNode(createDiv());
     // Apply .non-task-note class if original content starts with "* " ---
     if (task.content?.trim().startsWith("* ")) {
       row.classList.add("non-task-note");
@@ -2707,7 +2726,7 @@ export default class TodoistBoardPlugin extends Plugin {
             .setIcon("calendar")
             .onClick(async () => {
               this.ensureRefactoredRuntime(apiKey);
-              await this.taskActions.scheduleTaskToday(task.id);
+              await this.taskActions.scheduleTaskToday(task.id, this.taskStore[task.id] ?? task, getZone(this.settings));
               // Optimistic update
               const dueSpan = row.querySelector(".due-inline");
               if (dueSpan) dueSpan.textContent = "Today";
@@ -2722,7 +2741,7 @@ export default class TodoistBoardPlugin extends Plugin {
             .setIcon("calendar-clock")
             .onClick(async () => {
               this.ensureRefactoredRuntime(apiKey);
-              await this.taskActions.deferTaskToTomorrow(task.id);
+              await this.taskActions.deferTaskToTomorrow(task.id, this.taskStore[task.id] ?? task, getZone(this.settings));
               // Optimistic update
               const dueSpan = row.querySelector(".due-inline");
               if (dueSpan) dueSpan.textContent = "Tomorrow";
@@ -2789,13 +2808,13 @@ export default class TodoistBoardPlugin extends Plugin {
     });
 
     // Replace task-inner with scroll wrapper and fixed chin ---
-    const scrollWrapper = activeDocument.createElement("div");
+    const scrollWrapper = activeDocument.adoptNode(createDiv());
     scrollWrapper.className = "task-scroll-wrapper";
 
-    const taskInner = activeDocument.createElement("div");
+    const taskInner = activeDocument.adoptNode(createDiv());
     taskInner.className = "task-inner";
 
-    const fixedChin = activeDocument.createElement("div");
+    const fixedChin = activeDocument.adoptNode(createDiv());
     fixedChin.className = "fixed-chin";
 
     scrollWrapper.appendChild(taskInner);
@@ -2805,9 +2824,9 @@ export default class TodoistBoardPlugin extends Plugin {
     const isNote = task.content?.trim().startsWith("* ");
 
     if (isNote) {
-      const noteContent = activeDocument.createElement("div");
+      const noteContent = activeDocument.adoptNode(createDiv());
       noteContent.className = "task-content";
-      const titleSpan = activeDocument.createElement("span");
+      const titleSpan = activeDocument.adoptNode(createSpan());
       titleSpan.className = "task-title";
       titleSpan.textContent = task.content.trim().substring(2);
       noteContent.appendChild(titleSpan);
@@ -3035,15 +3054,15 @@ export default class TodoistBoardPlugin extends Plugin {
     if (oldWrapper) oldWrapper.remove();
     row.classList.add("has-fixed-chin");
 
-    const wrapper = activeDocument.createElement("div");
+    const wrapper = activeDocument.adoptNode(createDiv());
     wrapper.id = "mini-toolbar-wrapper";
     wrapper.className = "mini-toolbar-wrapper fixed-chin";
 
-    const chinContainer = activeDocument.createElement("div");
+    const chinContainer = activeDocument.adoptNode(createDiv());
     chinContainer.className = "chin-inner";
-    const primaryActions = activeDocument.createElement("div");
+    const primaryActions = activeDocument.adoptNode(createDiv());
     primaryActions.className = "chin-actions chin-actions-primary";
-    const secondaryActions = activeDocument.createElement("div");
+    const secondaryActions = activeDocument.adoptNode(createDiv());
     secondaryActions.className = "chin-actions chin-actions-secondary";
     chinContainer.appendChild(primaryActions);
     chinContainer.appendChild(secondaryActions);
@@ -3066,7 +3085,7 @@ export default class TodoistBoardPlugin extends Plugin {
       container: HTMLElement = primaryActions,
       accessibleLabel: string = label,
     ) => {
-      const button = activeDocument.createElement("button");
+      const button = activeDocument.adoptNode(createEl("button"));
       button.className = `chin-btn ${className}`;
       setIcon(button, iconName);
       if (label) button.append(label);
@@ -3086,7 +3105,7 @@ export default class TodoistBoardPlugin extends Plugin {
       const todayBtn = appendChinButton("today-btn", "calendar", "Today", (_, button) => {
         void this.setTaskToToday(task.id, apiKey, chinContainer, button);
       });
-      const subtitle = activeDocument.createElement("p");
+      const subtitle = activeDocument.adoptNode(createEl("p"));
       subtitle.className = "date-subtitle";
       subtitle.textContent = String(new Date().getDate());
       todayBtn.appendChild(subtitle);
@@ -3196,7 +3215,7 @@ export default class TodoistBoardPlugin extends Plugin {
 
     let text = button.querySelector<HTMLElement>(".chin-priority-label");
     if (!text) {
-      text = activeDocument.createElement("span");
+      text = activeDocument.adoptNode(createSpan());
       text.className = "chin-priority-label";
       button.appendChild(text);
     }
@@ -3231,11 +3250,8 @@ export default class TodoistBoardPlugin extends Plugin {
     btn.innerText = "⏳";
 
     try {
-      const today = new Date();
-      const iso = today.toISOString().split("T")[0];
-
       this.ensureRefactoredRuntime(apiKey);
-      const resp = await this.taskActions.scheduleTask(taskId, { due_date: iso });
+      const resp = await this.taskActions.scheduleTaskToday(taskId, this.taskStore[taskId], getZone(this.settings));
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "🎉";
@@ -3270,12 +3286,8 @@ export default class TodoistBoardPlugin extends Plugin {
     btn.innerText = "⏳";
 
     try {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const iso = tomorrow.toISOString().split("T")[0];
-
       this.ensureRefactoredRuntime(apiKey);
-      const resp = await this.taskActions.scheduleTask(taskId, { due_date: iso });
+      const resp = await this.taskActions.deferTaskToTomorrow(taskId, this.taskStore[taskId], getZone(this.settings));
 
       if (resp.status >= 200 && resp.status < 300) {
         btn.innerText = "🎉";
@@ -3387,20 +3399,20 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   private createTaskDeadline(task: Task): HTMLElement {
-    const right = activeDocument.createElement("div");
+    const right = activeDocument.adoptNode(createDiv());
     right.className = "task-deadline";
 
     const deadline = task.deadline?.date;
     if (!deadline) return right;
 
-    const deadlineWrapper = activeDocument.createElement("div");
+    const deadlineWrapper = activeDocument.adoptNode(createDiv());
     deadlineWrapper.className = "deadline-wrapper";
 
-    const deadlineLabel = activeDocument.createElement("div");
+    const deadlineLabel = activeDocument.adoptNode(createDiv());
     deadlineLabel.textContent = "🎯 Deadline";
     deadlineLabel.className = "deadline-label";
 
-    const deadlinePill = activeDocument.createElement("div");
+    const deadlinePill = activeDocument.adoptNode(createDiv());
     deadlinePill.className = "pill deadline-date";
 
     const today = new Date();
@@ -3508,7 +3520,7 @@ export default class TodoistBoardPlugin extends Plugin {
         }
 
         const ownerDocument = listWrapper.ownerDocument;
-        const dragLayer = ownerDocument.createElement("div");
+        const dragLayer = ownerDocument.adoptNode(createDiv());
         dragLayer.className = "todoist-board task-drag-layer";
         dragLayer.setCssProps({
           "--task-drag-width": `${startRect.width}px`,
@@ -3724,7 +3736,7 @@ export default class TodoistBoardPlugin extends Plugin {
       1: "#808080",  // P4 - grey
     };
 
-    const checkbox = activeDocument.createElement("input");
+    const checkbox = activeDocument.adoptNode(createEl("input"));
     checkbox.type = "checkbox";
     checkbox.className = "todoist-checkbox";
 

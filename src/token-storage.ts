@@ -20,7 +20,7 @@ export interface TokenLoadResult {
 }
 
 function normalizeToken(value: unknown): string {
-  return String(value || "")
+  return (typeof value === "string" ? value : "")
     .trim()
     .replace(/^Bearer\s+/i, "")
     .replace(/^["']|["']$/g, "")

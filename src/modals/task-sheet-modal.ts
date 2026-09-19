@@ -7,6 +7,7 @@ export interface TaskModalFields {
   title?: string;
   description?: string;
   due?: string;
+  repeats?: string;
   deadline?: string;
   priority?: number;
   projectId?: string;
@@ -17,10 +18,21 @@ export interface TaskModalSubmitData {
   title: string;
   description: string;
   due: string;
+  repeats: string;
   deadline: string;
   priority: number;
   projectId: string;
   labels: string[];
+}
+
+export class TaskModalFieldError extends Error {
+  readonly field: keyof TaskModalSubmitData;
+
+  constructor(field: keyof TaskModalSubmitData, message: string) {
+    super(message);
+    this.name = "TaskModalFieldError";
+    this.field = field;
+  }
 }
 
 export interface TaskSheetModalOptions {
@@ -32,6 +44,7 @@ export interface TaskSheetModalOptions {
   visibleFields?: Partial<AddTaskModalSettings>;
   onOpenSettings?: () => void;
   onSubmit: (data: TaskModalSubmitData) => Promise<void> | void;
+  submitInBackground?: boolean;
 }
 
 export class TaskSheetModal extends Modal {
@@ -40,6 +53,11 @@ export class TaskSheetModal extends Modal {
   private titleInput: HTMLInputElement | null = null;
   private lastTextInput: HTMLInputElement | HTMLTextAreaElement | null = null;
   private viewportCleanup: (() => void) | null = null;
+  private readFormData: (() => TaskModalSubmitData) | null = null;
+  private initialFormData: TaskModalSubmitData | null = null;
+  private submitting = false;
+  private pendingFormRender = false;
+  private fieldErrors: Partial<Record<keyof TaskModalSubmitData, string>> = {};
 
   constructor(app: App, options: TaskSheetModalOptions) {
     super(app);
@@ -51,7 +69,11 @@ export class TaskSheetModal extends Modal {
     this.containerEl.classList.add("todoist-edit-task-modal", "todoist-task-sheet-modal");
     this.installViewportTracking();
     this.renderForm();
-    window.setTimeout(() => this.focusTitle(), 10);
+    window.setTimeout(() => {
+      const invalidInput = this.contentEl.querySelector<HTMLInputElement>("[aria-invalid='true']");
+      if (invalidInput) this.focusTextInput(invalidInput);
+      else this.focusTitle();
+    }, 10);
   }
 
   onClose() {
@@ -64,6 +86,10 @@ export class TaskSheetModal extends Modal {
     clearEl(this.contentEl);
     this.titleInput = null;
     this.lastTextInput = null;
+    this.readFormData = null;
+    this.initialFormData = null;
+    this.pendingFormRender = false;
+    this.fieldErrors = {};
   }
 
   setLoading(title = this.options.title) {
@@ -71,13 +97,48 @@ export class TaskSheetModal extends Modal {
     if (!this.opened) return;
     this.setTitle(title);
     clearEl(this.contentEl);
+    this.readFormData = null;
+    this.initialFormData = null;
     this.contentEl.appendChild(this.createSkeleton());
   }
 
-  setForm(options: Partial<TaskSheetModalOptions>) {
-    this.options = { ...this.options, ...options };
+  setForm(options: Partial<TaskSheetModalOptions>, { preserveInput = false } = {}) {
+    const current = preserveInput ? this.readFormData?.() : null;
+    const focused = preserveInput ? this.getActiveTextInput() : null;
+    const focusedClass = [
+      "taskmodal-title-input", "taskmodal-description-input", "taskmodal-repeats-input", "taskmodal-label-search",
+    ].find((className) => focused?.classList.contains(className));
+    const selection = focused ? [focused.selectionStart, focused.selectionEnd] as const : null;
+    const changedFields = current && this.initialFormData
+      ? Object.fromEntries(Object.entries(current).filter(([key, value]) =>
+        JSON.stringify(value) !== JSON.stringify(this.initialFormData?.[key as keyof TaskModalSubmitData]),
+      ))
+      : {};
+    this.options = {
+      ...this.options,
+      ...options,
+      fields: { ...(options.fields ?? this.options.fields), ...changedFields },
+    };
     if (this.opened) {
-      this.renderForm();
+      if (this.submitting) this.pendingFormRender = true;
+      else {
+        this.renderForm();
+        const target = focusedClass
+          ? this.contentEl.querySelector<HTMLInputElement | HTMLTextAreaElement>(`.${focusedClass}`)
+          : null;
+        if (target) {
+          const datePopover = target.closest(".taskmodal-date-popover");
+          if (datePopover) {
+            datePopover.classList.add("is-open");
+            const anchor = datePopover.closest(".taskmodal-date-anchor");
+            anchor?.classList.add("is-open");
+            anchor?.querySelector(".taskmodal-chip[aria-expanded]")?.setAttribute("aria-expanded", "true");
+          }
+          target.closest(".taskmodal-label-anchor")?.classList.add("is-open");
+          this.focusTextInput(target);
+          if (selection) target.setSelectionRange(selection[0], selection[1]);
+        }
+      }
     }
   }
 
@@ -211,7 +272,9 @@ export class TaskSheetModal extends Modal {
     this.contentEl.querySelectorAll<HTMLElement>(".taskmodal-date-popover.is-open").forEach((popover) => {
       if (popover === except) return;
       popover.classList.remove("is-open");
-      popover.closest(".taskmodal-date-anchor")?.classList.remove("is-open");
+      const anchor = popover.closest(".taskmodal-date-anchor");
+      anchor?.classList.remove("is-open");
+      anchor?.querySelector(".taskmodal-chip[aria-expanded]")?.setAttribute("aria-expanded", "false");
     });
   }
 
@@ -410,19 +473,17 @@ export class TaskSheetModal extends Modal {
   }
 
   private createSkeleton(): HTMLElement {
-    const ownerDocument = this.containerEl.ownerDocument;
-    const wrapper = ownerDocument.createElement("div");
-    wrapper.className = "taskmodal-wrapper taskmodal-skeleton";
+    const wrapper = this.containerEl.ownerDocument.adoptNode(createDiv({ cls: "taskmodal-wrapper taskmodal-skeleton" }));
 
     const title = wrapper.createDiv({ cls: "taskmodal-title-field" });
-    title.createEl("div", { cls: "taskmodal-skeleton-line taskmodal-skeleton-title" });
+    title.createDiv({ cls: "taskmodal-skeleton-line taskmodal-skeleton-title" });
 
     const description = wrapper.createDiv({ cls: "taskmodal-description-field" });
-    description.createEl("div", { cls: "taskmodal-skeleton-line taskmodal-skeleton-description" });
+    description.createDiv({ cls: "taskmodal-skeleton-line taskmodal-skeleton-description" });
 
     const row = wrapper.createDiv({ cls: "taskmodal-row" });
-    row.createEl("div", { cls: "taskmodal-skeleton-line" });
-    row.createEl("div", { cls: "taskmodal-skeleton-line" });
+    row.createDiv({ cls: "taskmodal-skeleton-line" });
+    row.createDiv({ cls: "taskmodal-skeleton-line" });
 
     wrapper.createDiv({ cls: "taskmodal-skeleton-line taskmodal-skeleton-labels" });
     return wrapper;
@@ -432,6 +493,7 @@ export class TaskSheetModal extends Modal {
     const { fields, submitLabel, projects, labels } = this.options;
     const visibleFields: AddTaskModalSettings = {
       dueDate: true,
+      repeats: true,
       deadline: true,
       priority: true,
       project: true,
@@ -439,8 +501,7 @@ export class TaskSheetModal extends Modal {
       ...(this.options.visibleFields || {}),
     };
     const ownerDocument = this.containerEl.ownerDocument;
-    const wrapper = ownerDocument.createElement("div");
-    wrapper.className = "taskmodal-wrapper";
+    const wrapper = ownerDocument.adoptNode(createDiv({ cls: "taskmodal-wrapper" }));
 
     const formatDueText = (value: string) => {
       if (!value) return "Date";
@@ -494,7 +555,7 @@ export class TaskSheetModal extends Modal {
 
     const dueAnchor = visibleFields.dueDate
       ? chipRow.createDiv({ cls: "taskmodal-date-anchor" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     const dueInput = dueAnchor.createEl("input", {
       cls: "taskmodal-date-input taskmodal-date-chip-native",
       type: "date",
@@ -502,7 +563,7 @@ export class TaskSheetModal extends Modal {
     });
     const duePopover = visibleFields.dueDate
       ? dueAnchor.createDiv({ cls: "taskmodal-date-popover" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     const dueMonthState = { value: this.initialCalendarMonth(fields.due ?? "") };
 
     if (visibleFields.dueDate) {
@@ -538,9 +599,124 @@ export class TaskSheetModal extends Modal {
       syncDueChip();
     }
 
+    const repeatsAnchor = visibleFields.repeats
+      ? chipRow.createDiv({ cls: "taskmodal-date-anchor taskmodal-repeats-anchor" })
+      : ownerDocument.adoptNode(createDiv());
+    const repeatsPopover = repeatsAnchor.createDiv({ cls: "taskmodal-date-popover taskmodal-repeats-popover" });
+    const repeatsLabel = repeatsPopover.createEl("label", { cls: "taskmodal-repeats-label" });
+    repeatsLabel.createSpan({ text: "Repeats" });
+    const repeatsErrorMessage = this.fieldErrors.repeats;
+    const repeatsError = repeatsErrorMessage
+      ? repeatsLabel.createDiv({ cls: "taskmodal-repeats-error", text: repeatsErrorMessage })
+      : null;
+    const repeatsInput = repeatsLabel.createEl("input", {
+      cls: "taskmodal-label-search taskmodal-repeats-input",
+      type: "text",
+      value: fields.repeats ?? "",
+      placeholder: "every Monday at 9am",
+    });
+    repeatsInput.autocomplete = "off";
+    if (repeatsError) {
+      repeatsError.id = "taskmodal-repeats-error";
+      repeatsInput.setAttribute("aria-invalid", "true");
+      repeatsInput.setAttribute("aria-describedby", repeatsError.id);
+    }
+    repeatsPopover.createEl("p", {
+      cls: "taskmodal-repeats-help",
+      text: "Uses Todoist’s natural-language scheduling.",
+    });
+
+    if (visibleFields.repeats) {
+      this.rememberTextInput(repeatsInput);
+      const repeatsChip = repeatsAnchor.createEl("button", {
+        cls: "taskmodal-chip taskmodal-repeats-chip",
+        type: "button",
+      });
+      repeatsChip.setAttribute("aria-expanded", "false");
+      const repeatsIcon = repeatsChip.createSpan({ cls: "taskmodal-chip-icon" });
+      setIcon(repeatsIcon, "repeat");
+      const repeatsText = repeatsChip.createSpan({ cls: "taskmodal-chip-text" });
+      const repeatsClear = repeatsChip.createSpan({ cls: "taskmodal-chip-clear" });
+      repeatsClear.setAttribute("aria-label", "Clear repeats");
+      setIcon(repeatsClear, "x");
+
+      const syncRepeatsChip = () => {
+        const value = repeatsInput.value.trim();
+        repeatsText.textContent = value || "Repeats";
+        repeatsChip.classList.toggle("has-value", !!value);
+        repeatsChip.setAttribute("aria-label", value ? `Repeats: ${value}` : "Set repeats");
+        repeatsChip.title = value || "Set repeats";
+      };
+      const closeRepeatsPopover = () => {
+        repeatsInput.value = repeatsInput.value.trim();
+        syncRepeatsChip();
+        repeatsPopover.classList.remove("is-open");
+        repeatsAnchor.classList.remove("is-open");
+        repeatsChip.setAttribute("aria-expanded", "false");
+        this.restoreTextFocus();
+      };
+
+      this.keepKeyboardOnPointerDown(repeatsChip);
+      repeatsChip.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const willOpen = !repeatsPopover.classList.contains("is-open");
+        this.closeDatePopovers();
+        repeatsAnchor.classList.toggle("is-open", willOpen);
+        repeatsPopover.classList.toggle("is-open", willOpen);
+        repeatsChip.setAttribute("aria-expanded", String(willOpen));
+        if (willOpen) this.focusTextInput(repeatsInput);
+        else this.restoreTextFocus();
+      };
+      this.keepKeyboardOnPointerDown(repeatsClear);
+      repeatsClear.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        repeatsInput.value = "";
+        closeRepeatsPopover();
+      };
+      repeatsInput.addEventListener("input", syncRepeatsChip);
+      repeatsInput.addEventListener("input", () => {
+        if (!this.fieldErrors.repeats) return;
+        delete this.fieldErrors.repeats;
+        repeatsError?.remove();
+        repeatsInput.removeAttribute("aria-invalid");
+        repeatsInput.removeAttribute("aria-describedby");
+        repeatsAnchor.classList.remove("has-error");
+      });
+      repeatsInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.metaKey && !event.ctrlKey) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeRepeatsPopover();
+        }
+      });
+      ["pointerdown", "mousedown", "touchstart", "click"].forEach((eventName) => {
+        repeatsPopover.addEventListener(eventName, (event) => event.stopPropagation());
+      });
+      const repeatsFooter = repeatsPopover.createDiv({ cls: "taskmodal-date-popover-footer" });
+      const repeatsDone = repeatsFooter.createEl("button", {
+        cls: "taskmodal-date-today",
+        text: "Done",
+        type: "button",
+      });
+      this.keepKeyboardOnPointerDown(repeatsDone);
+      repeatsDone.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeRepeatsPopover();
+      };
+      syncRepeatsChip();
+      if (repeatsError) {
+        repeatsAnchor.classList.add("has-error", "is-open");
+        repeatsPopover.classList.add("is-open");
+        repeatsChip.setAttribute("aria-expanded", "true");
+      }
+    }
+
     const deadlineAnchor = visibleFields.deadline
       ? chipRow.createDiv({ cls: "taskmodal-date-anchor" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     const deadlineInput = deadlineAnchor.createEl("input", {
       cls: "taskmodal-date-input taskmodal-deadline-chip-native",
       type: "date",
@@ -548,7 +724,7 @@ export class TaskSheetModal extends Modal {
     });
     const deadlinePopover = visibleFields.deadline
       ? deadlineAnchor.createDiv({ cls: "taskmodal-date-popover taskmodal-date-popover-right" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     const deadlineMonthState = { value: this.initialCalendarMonth(fields.deadline ?? "") };
 
     if (visibleFields.deadline) {
@@ -586,19 +762,19 @@ export class TaskSheetModal extends Modal {
 
     const priorityField = visibleFields.priority
       ? chipRow.createDiv({ cls: "taskmodal-priority-field" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     if (visibleFields.priority) {
       const priorityIcon = priorityField.createSpan({ cls: "taskmodal-chip-icon taskmodal-priority-icon" });
       setIcon(priorityIcon, "flag");
     }
     const priorityButton = visibleFields.priority
       ? priorityField.createEl("button", { cls: "taskmodal-priority-button" })
-      : ownerDocument.createElement("button");
+      : ownerDocument.adoptNode(createEl("button"));
     priorityButton.type = "button";
     const prioritySelect = priorityField.createEl("input", { cls: "taskmodal-priority-value", type: "hidden" });
     const priorityMenu = visibleFields.priority
       ? priorityField.createDiv({ cls: "taskmodal-priority-menu" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     [
       { value: "1", label: "Priority" },
       { value: "4", label: "P1" },
@@ -636,10 +812,10 @@ export class TaskSheetModal extends Modal {
 
     const labelAnchor = visibleFields.labels
       ? chipRow.createDiv({ cls: "taskmodal-label-anchor" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     const labelButton = visibleFields.labels
       ? labelAnchor.createEl("button", { cls: "taskmodal-chip taskmodal-label-chip" })
-      : ownerDocument.createElement("button");
+      : ownerDocument.adoptNode(createEl("button"));
     labelButton.type = "button";
     if (visibleFields.labels) {
       this.keepKeyboardOnPointerDown(labelButton);
@@ -653,17 +829,17 @@ export class TaskSheetModal extends Modal {
 
     const labelPopover = visibleFields.labels
       ? labelAnchor.createDiv({ cls: "taskmodal-label-popover" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     const labelSearch = visibleFields.labels
       ? labelPopover.createEl("input", {
         cls: "taskmodal-label-search",
         type: "text",
         placeholder: "Type a label",
       })
-      : ownerDocument.createElement("input");
+      : ownerDocument.adoptNode(createEl("input"));
     const labelList = visibleFields.labels
       ? labelPopover.createDiv({ cls: "taskmodal-label-list" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     if (visibleFields.labels) {
       this.rememberTextInput(labelSearch);
     }
@@ -766,7 +942,7 @@ export class TaskSheetModal extends Modal {
     const footerRow = wrapper.createDiv({ cls: "taskmodal-footer-row" });
     const projectField = visibleFields.project
       ? footerRow.createDiv({ cls: "taskmodal-project-field" })
-      : ownerDocument.createElement("div");
+      : ownerDocument.adoptNode(createDiv());
     let projectIcon: HTMLElement | null = null;
     let projectName: HTMLElement | null = null;
     if (visibleFields.project) {
@@ -779,13 +955,13 @@ export class TaskSheetModal extends Modal {
     }
     const projectSelect = projectField.createEl("select", { cls: "taskmodal-project-select" });
     for (const project of Array.isArray(projects) ? projects : []) {
-      const option = ownerDocument.createElement("option");
-      option.value = String(project.id);
-      option.textContent = project.name;
+      const option = projectSelect.createEl("option", {
+        value: String(project.id),
+        text: project.name,
+      });
       if (fields.projectId && String(project.id) === String(fields.projectId)) {
         option.selected = true;
       }
-      projectSelect.appendChild(option);
     }
     const syncProjectChrome = () => {
       const selectedName = projectSelect.selectedOptions[0]?.textContent || "";
@@ -802,28 +978,71 @@ export class TaskSheetModal extends Modal {
 
     const submitButton = buttonRow.createEl("button", { cls: "taskmodal-button-save", text: submitLabel });
     submitButton.type = "button";
+    const readFormData = (): TaskModalSubmitData => ({
+      title: titleInput.value,
+      description: descriptionInput.value,
+      due: dueInput.value,
+      repeats: repeatsInput.value,
+      deadline: deadlineInput.value,
+      priority: Number(prioritySelect.value) || 1,
+      projectId: projectSelect.value || fields.projectId || "",
+      labels: [
+        ...(fields.labels ?? []).filter((name) => !labels.some((label) => label.name === name)),
+        ...Array.from(labelList.querySelectorAll<HTMLInputElement>("input[type='checkbox']:checked"))
+          .map((input) => input.value),
+      ],
+    });
+    this.readFormData = readFormData;
+    this.initialFormData = readFormData();
     submitButton.onclick = () => {
+      if (this.submitting || submitButton.disabled) return;
       const title = titleInput.value.trim();
       if (!title) {
         titleInput.focus();
         return;
       }
 
-      const data: TaskModalSubmitData = {
-        title,
-        description: descriptionInput.value.trim(),
-        due: dueInput.value,
-        deadline: deadlineInput.value,
-        priority: Number(prioritySelect.value) || 1,
-        projectId: projectSelect.value,
-        labels: Array.from(labelList.querySelectorAll<HTMLInputElement>("input[type='checkbox']:checked"))
-          .map((input) => input.value),
-      };
+      const data = readFormData();
+      data.title = title;
+      data.description = data.description.trim();
+      data.repeats = data.repeats.trim();
 
-      this.close();
-      window.setTimeout(() => {
-        void this.options.onSubmit(data);
-      }, 10);
+      const submitInBackground = this.options.submitInBackground === true;
+      this.submitting = true;
+      if (submitInBackground) {
+        this.options = { ...this.options, fields: data };
+        this.close();
+      } else {
+        submitButton.disabled = true;
+        cancelButton.disabled = true;
+        submitButton.textContent = "Saving…";
+      }
+      void (async () => {
+        try {
+          await this.options.onSubmit(data);
+          if (!submitInBackground) this.close();
+        } catch (error) {
+          if (error instanceof TaskModalFieldError) {
+            this.fieldErrors[error.field] = error.message;
+          }
+          if (submitInBackground && !this.opened) {
+            this.options = { ...this.options, fields: data };
+            this.open();
+          } else if (error instanceof TaskModalFieldError && this.opened) {
+            this.setForm({ fields: data }, { preserveInput: true });
+          }
+        } finally {
+          this.submitting = false;
+          submitButton.disabled = false;
+          cancelButton.disabled = false;
+          submitButton.textContent = submitLabel;
+          if (this.pendingFormRender && this.opened) {
+            this.pendingFormRender = false;
+            this.setForm({}, { preserveInput: true });
+          }
+          if (this.opened) this.restoreTextFocus();
+        }
+      })();
     };
 
     wrapper.addEventListener("keydown", (event: KeyboardEvent) => {

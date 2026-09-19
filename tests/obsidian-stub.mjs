@@ -1,6 +1,15 @@
 let requestUrlImpl = async function requestUrlDefault() {
   throw new Error("requestUrl is not available in pure unit tests");
 };
+let requiredApiVersionAvailable = false;
+
+export function requireApiVersion() {
+  return requiredApiVersionAvailable;
+}
+
+export function __setRequireApiVersion(available) {
+  requiredApiVersionAvailable = available;
+}
 
 export async function requestUrl(...args) {
   return requestUrlImpl(...args);
@@ -11,6 +20,7 @@ export function __setRequestUrl(fn) {
 }
 
 export function __resetRequestUrl() {
+  requiredApiVersionAvailable = false;
   requestUrlImpl = async function requestUrlDefault() {
     throw new Error("requestUrl is not available in pure unit tests");
   };

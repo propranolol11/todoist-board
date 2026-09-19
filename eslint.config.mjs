@@ -32,6 +32,8 @@ export default defineConfig([
       "no-empty": ["error", { allowEmptyCatch: true }],
       "no-restricted-globals": "warn",
       "obsidianmd/sample-names": "off",
+      "obsidianmd/prefer-create-el": "error",
+      "obsidianmd/settings-tab/prefer-setting-definitions": "error",
       "obsidianmd/ui/sentence-case": [
         "error",
         {
@@ -57,6 +59,8 @@ export default defineConfig([
         "warn",
         {
           brands: ["API", "Ko-fi", "Obsidian", "Todoist", "Todoist Board"],
+          // Preserve the explicitly requested command palette label.
+          ignoreRegex: ["^Add Task$"],
         },
       ],
     },

@@ -1,4 +1,5 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting, setIcon } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, Setting, requireApiVersion, setIcon } from "obsidian";
+import type { SettingDefinitionItem } from "obsidian";
 import { COMMON_TIMEZONES } from "./settings";
 import type { AddTaskModalSettings, ChinBarSettings, ContextMenuSettings, TodoistBoardSettings } from "./types";
 
@@ -15,15 +16,47 @@ export interface TodoistSettingsPlugin {
 export class TodoistBoardSettingTab extends PluginSettingTab {
   private activeTab: SettingsTabId = "getting-started";
   private pendingFocusTarget: SettingsFocusTarget | null = null;
-  readonly plugin: Plugin & TodoistSettingsPlugin;
+  private settingsHostEl: HTMLElement | null = null;
+  readonly plugin: TodoistSettingsPlugin;
 
   constructor(app: App, plugin: Plugin & TodoistSettingsPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
+  // A non-empty definition list replaces display() on Obsidian 1.13+. Keep one
+  // searchable host definition so the existing tabbed UI remains the renderer.
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [
+      {
+        name: "Todoist Board settings",
+        desc: "Connect Todoist and configure the board, menus, task fields, and display.",
+        aliases: [
+          "API token", "Connect Todoist", "Authentication", "Getting started", "Tab badges",
+          "Context menu", "Schedule today", "Schedule tomorrow", "Set priority", "Edit task",
+          "Delete task", "Open in Todoist", "Chin bar", "Hide task", "Set deadline",
+          "Add task fields", "Due date", "Repeats", "Deadline", "Priority", "Project", "Labels",
+          "Advanced", "Console logging", "Timezone mode", "Manual timezone", "Support",
+        ],
+        render: (setting) => {
+          this.containerEl.addClass("todoist-board-settings-tab");
+          setting.settingEl.empty();
+          setting.settingEl.addClass("todoist-settings-tabbed-host");
+          this.renderLegacySettings(setting.settingEl);
+          return () => {
+            if (this.settingsHostEl === setting.settingEl) this.settingsHostEl = null;
+          };
+        },
+      },
+    ];
+  }
+
   display(): void {
-    const { containerEl } = this;
+    this.renderLegacySettings();
+  }
+
+  private renderLegacySettings(containerEl = this.settingsHostEl ?? this.containerEl): void {
+    this.settingsHostEl = containerEl;
     containerEl.empty();
     containerEl.addClass("todoist-board-settings-tab");
 
@@ -49,12 +82,12 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
       button.setAttribute("aria-selected", String(selected));
       button.onclick = () => {
         this.activeTab = tab.id;
-        this.display();
+        this.renderLegacySettings(containerEl);
       };
     });
 
     if (this.activeTab === "getting-started") {
-      this.renderGettingStarted(content, pluginSettings);
+      this.renderGettingStarted(content);
     } else if (this.activeTab === "preferences") {
       this.renderPreferences(content, pluginSettings);
     } else if (this.activeTab === "advanced") {
@@ -67,10 +100,14 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
   public openPreferencesAddTaskModalSection() {
     this.activeTab = "preferences";
     this.pendingFocusTarget = "add-task-modal";
-    this.display();
+    if (requireApiVersion("1.13.0")) {
+      this.update();
+    } else {
+      this.renderLegacySettings();
+    }
   }
 
-  private renderGettingStarted(container: HTMLElement, pluginSettings: TodoistBoardSettings) {
+  private renderGettingStarted(container: HTMLElement) {
     this.renderPanelHeader(
       container,
       "Start",
@@ -78,38 +115,40 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
     );
 
     const authCard = container.createDiv({ cls: "todoist-settings-card todoist-settings-auth-card" });
-    new Setting(authCard)
-      .setName("API token")
-      .addText((text) => {
-        text
-          .setPlaceholder("Paste API token")
-          .setValue(pluginSettings.apiKey);
-        text.inputEl.type = "password";
+    this.renderApiTokenSetting(new Setting(authCard).setName("API token"));
+    this.renderGettingStartedHelp(authCard, container);
+  }
 
-        const submitBtn = authCard.ownerDocument.createElement("button");
-        submitBtn.textContent = "Submit";
-        submitBtn.classList.add("todoist-settings-submit-token");
+  private renderApiTokenSetting(setting: Setting) {
+    setting.addText((text) => {
+      text
+        .setPlaceholder("Paste API token")
+        .setValue(this.plugin.settings.apiKey);
+      text.inputEl.type = "password";
 
-        const indicator = authCard.ownerDocument.createElement("span");
-        indicator.classList.add("todoist-settings-token-status");
-
-        submitBtn.onclick = async () => {
-          indicator.textContent = "Checking...";
-          try {
-            const valid = await this.plugin.validateTodoistApiKey(text.inputEl.value);
-            if (!valid) throw new Error("Invalid");
-            pluginSettings.apiKey = text.inputEl.value;
-            indicator.textContent = "Saved securely";
-            await this.plugin.savePluginData();
-          } catch {
-            indicator.textContent = "Invalid token";
-          }
-        };
-
-        text.inputEl.parentElement?.appendChild(submitBtn);
-        text.inputEl.parentElement?.appendChild(indicator);
+      const submitBtn = setting.controlEl.createEl("button", {
+        text: "Submit",
+        cls: "todoist-settings-submit-token",
+        type: "button",
       });
+      const indicator = setting.controlEl.createSpan({ cls: "todoist-settings-token-status" });
 
+      submitBtn.onclick = async () => {
+        indicator.textContent = "Checking...";
+        try {
+          const valid = await this.plugin.validateTodoistApiKey(text.inputEl.value);
+          if (!valid) throw new Error("Invalid");
+          this.plugin.settings.apiKey = text.inputEl.value;
+          await this.plugin.savePluginData();
+          indicator.textContent = "Saved securely";
+        } catch {
+          indicator.textContent = "Invalid token";
+        }
+      };
+    });
+  }
+
+  private renderGettingStartedHelp(authCard: HTMLElement, container = authCard) {
     const authLinks = authCard.createDiv({ cls: "todoist-settings-link-row" });
     this.createExternalLink(
       authLinks,
@@ -192,7 +231,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
           .onChange(async (value: string) => {
             pluginSettings.timezoneMode = value as "auto" | "manual";
             await this.plugin.saveSettings();
-            this.display();
+            this.renderLegacySettings();
           }),
       );
 
@@ -332,6 +371,7 @@ export class TodoistBoardSettingTab extends PluginSettingTab {
 
     const addTaskActions: Array<{ key: keyof AddTaskModalSettings; label: string; icon: string }> = [
       { key: "dueDate", label: "Date", icon: "calendar" },
+      { key: "repeats", label: "Repeats", icon: "repeat" },
       { key: "deadline", label: "Deadline", icon: "target" },
       { key: "priority", label: "Priority", icon: "flag" },
       { key: "project", label: "Project", icon: "inbox" },

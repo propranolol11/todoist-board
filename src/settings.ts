@@ -131,6 +131,7 @@ export const DEFAULT_SETTINGS: TodoistBoardSettings = {
   },
   addTaskModal: {
     dueDate: true,
+    repeats: true,
     deadline: true,
     priority: true,
     project: true,

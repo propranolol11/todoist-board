@@ -3,6 +3,7 @@
 
 # But track these explicitly
 !manifest.json
+!versions.json
 !styles.css
 !main.ts
 !package.json

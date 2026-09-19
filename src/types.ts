@@ -135,6 +135,7 @@ export interface ChinBarSettings {
 
 export interface AddTaskModalSettings {
   dueDate: boolean;
+  repeats: boolean;
   deadline: boolean;
   priority: boolean;
   project: boolean;

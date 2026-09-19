@@ -16,12 +16,14 @@ Open a GitHub issue with:
 ```bash
 npm install
 npm run typecheck
-npm run lint:obsidian:errors
+npm run lint:obsidian
 npm test
 npm run build
 ```
 
 Keep changes focused and include tests for task sorting, storage, Todoist payloads, or hierarchy behavior when those areas change.
+
+Run `npm run verify` before a release. It checks types, all plugin source files with zero lint warnings, tests, the production build, and dependency advisories.
 
 ## Releases
 
