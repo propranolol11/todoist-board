@@ -1124,6 +1124,24 @@ input.todoist-checkbox::after {
   white-space: pre-line;
 }
 
+.todoist-board .task-description-markdown {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.todoist-board .task-description-markdown p {
+  white-space: pre-line;
+}
+
+.todoist-board .task-description-markdown > :first-child {
+  margin-top: 0;
+}
+
+.todoist-board .task-description-markdown > :last-child {
+  margin-bottom: 0;
+}
+
 .todoist-board .task-description-toggle {
   align-items: center;
   background: transparent;
@@ -4007,12 +4025,6 @@ body.tb-scroll-lock {
   width: 13px;
 }
 
-.todoist-settings-modal .settings-filter-table td:nth-child(4),
-.todoist-settings-modal .settings-filter-table td:nth-child(5),
-.todoist-settings-modal .settings-filter-table td:nth-child(6) {
-  padding-top: 17px;
-}
-
 .todoist-settings-modal .settings-action-row,
 .todoist-settings-modal .settings-save-row {
   display: flex;
@@ -4049,6 +4061,10 @@ body.tb-scroll-lock {
   --todoist-red: #e44332;
   --todoist-red-hover: #d83b2c;
   --todoist-red-soft: rgba(228, 67, 50, 0.1);
+}
+
+.todoist-board-settings-tab .setting-group .setting-items:has(> .todoist-settings-tabbed-host) {
+  background: transparent;
 }
 
 .todoist-board-settings-tab .setting-item.todoist-settings-tabbed-host,
@@ -5630,22 +5646,6 @@ body .todoist-board .list-toolbar .filter-row-wrapper button.filter-row:focus-vi
   width: 26px;
 }
 
-.todoist-settings-modal .settings-drag-handle::before {
-  background-image: radial-gradient(circle, rgba(82, 82, 82, 0.92) 1.45px, transparent 1.55px);
-  background-position: 0 0;
-  background-repeat: repeat;
-  background-size: 6px 6px;
-  content: "";
-  display: block;
-  height: 18px;
-  opacity: 1;
-  width: 12px;
-}
-
-body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
-  background-image: radial-gradient(circle, rgba(222, 222, 222, 0.78) 1.45px, transparent 1.55px);
-}
-
 .todoist-settings-modal .settings-drag-handle:active {
   cursor: grabbing;
 }
@@ -5671,33 +5671,44 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
 }
 
 .todoist-settings-modal .settings-drag-handle svg {
-  display: none;
+  display: block;
+  flex: 0 0 auto;
+  height: 18px;
+  width: 18px;
 }
 
 .todoist-settings-modal .settings-default-cell {
   justify-content: center;
 }
 
-.todoist-settings-modal .settings-default-toggle input {
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  width: 1px;
+.todoist-settings-modal .settings-default-toggle,
+.todoist-settings-modal .settings-default-toggle:hover {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
-.todoist-settings-modal .settings-default-toggle svg {
-  opacity: 0.6;
-}
-
-.todoist-settings-modal .settings-default-toggle.is-checked {
-  background: var(--todoist-red);
-  border-color: var(--todoist-red);
-  color: #fff;
-}
-
-.todoist-settings-modal .settings-default-toggle.is-checked svg {
+.todoist-settings-modal .settings-default-toggle input[type="radio"] {
+  accent-color: var(--todoist-red);
+  appearance: auto;
+  cursor: pointer;
+  height: 18px;
+  margin: 0;
   opacity: 1;
+  pointer-events: auto;
+  position: static;
+  transform: none;
+  width: 18px;
+}
+
+.todoist-settings-modal .settings-default-toggle input[type="radio"]::before,
+.todoist-settings-modal .settings-default-toggle input[type="radio"]::after {
+  content: none;
+  display: none;
+}
+
+.todoist-settings-modal .settings-field-label {
+  display: none;
 }
 
 .todoist-settings-modal .settings-filter-footer {
@@ -5736,6 +5747,7 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
   gap: 7px;
   height: 36px;
   justify-content: center;
+  margin: 0;
   padding: 0 14px;
   white-space: nowrap;
 }
@@ -5798,7 +5810,7 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
 
   .todoist-settings-modal .settings-filter-table tbody tr {
     gap: 7px;
-    grid-template-columns: 28px 40px minmax(0, 1fr) 36px 36px;
+    grid-template-columns: 28px 40px minmax(0, 1fr) 48px 44px;
     min-height: 0;
     padding: 8px;
   }
@@ -5875,7 +5887,7 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
   }
 
   .todoist-settings-modal .settings-filter-table tbody tr {
-    grid-template-columns: 40px minmax(0, 1fr) 36px 36px;
+    grid-template-columns: 40px minmax(0, 1fr) 48px 44px;
   }
 
   .todoist-settings-modal .settings-filter-table td:nth-child(1) {
@@ -5904,6 +5916,46 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
 
   .todoist-settings-modal .settings-save-row {
     flex-wrap: wrap;
+  }
+}
+
+@media only screen and (max-width: 760px), (pointer: coarse) {
+  .todoist-settings-modal .settings-filter-table thead {
+    display: none;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody {
+    grid-auto-rows: max-content;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody tr {
+    align-items: start;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody td:not(:first-child) {
+    align-items: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: flex-start;
+  }
+
+  .todoist-settings-modal .settings-filter-table tbody td:nth-child(2),
+  .todoist-settings-modal .settings-filter-table tbody td:nth-child(5),
+  .todoist-settings-modal .settings-filter-table tbody td:nth-child(6) {
+    align-items: center;
+  }
+
+  .todoist-settings-modal .settings-field-label {
+    color: var(--text-muted);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    white-space: nowrap;
   }
 }
 
@@ -6098,6 +6150,47 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
 .todoist-task-sheet-modal .taskmodal-project-field,
 .todoist-task-sheet-modal .taskmodal-labels-field {
   gap: 7px;
+}
+
+.todoist-task-sheet-modal .todoist-wikilink-suggestions {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-s);
+  inset: auto;
+  left: var(--todoist-suggest-left, 0px);
+  margin: 0;
+  max-height: var(--todoist-suggest-height, 240px);
+  max-width: none;
+  overflow-y: auto;
+  padding: 4px;
+  position: fixed;
+  top: var(--todoist-suggest-top, 0px);
+  width: var(--todoist-suggest-width, 0px);
+  z-index: 2;
+}
+
+.todoist-task-sheet-modal .todoist-wikilink-suggestions .suggestion-item {
+  border-radius: 4px;
+  cursor: pointer;
+  display: block;
+  padding: 7px 10px;
+}
+
+.todoist-task-sheet-modal .todoist-wikilink-suggestions .suggestion-item.is-selected {
+  background: var(--background-modifier-hover);
+}
+
+.todoist-task-sheet-modal .todoist-wikilink-suggestions .suggestion-title {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.todoist-task-sheet-modal .todoist-wikilink-suggestions .suggestion-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  overflow-wrap: anywhere;
 }
 
 .todoist-task-sheet-modal .taskmodal-title-input {
@@ -7686,4 +7779,83 @@ body.theme-dark .todoist-settings-modal .settings-drag-handle::before {
 }
 .setting-item.todoist-settings-information {
   display: block;
+}
+
+/* Editable task links retain native input behaviour beneath a text mirror. */
+.todoist-task-sheet-modal .taskmodal-link-field {
+  position: relative;
+}
+
+.todoist-task-sheet-modal .taskmodal-link-mirror {
+  height: var(--mirror-height, 0px);
+  left: var(--mirror-left, 0px);
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  top: var(--mirror-top, 0px);
+  visibility: hidden;
+  width: var(--mirror-width, 0px);
+  z-index: 1;
+}
+
+.todoist-task-sheet-modal .taskmodal-link-ready .taskmodal-link-mirror {
+  visibility: visible;
+}
+
+.todoist-task-sheet-modal .taskmodal-link-mirror-content {
+  box-sizing: border-box;
+  color: var(--text-normal);
+  direction: var(--mirror-direction);
+  font-family: var(--mirror-font-family);
+  font-size: var(--mirror-font-size);
+  font-style: var(--mirror-font-style);
+  font-weight: var(--mirror-font-weight);
+  letter-spacing: var(--mirror-letter-spacing);
+  line-height: var(--mirror-line-height);
+  min-height: 100%;
+  overflow-wrap: var(--mirror-overflow-wrap);
+  padding: var(--mirror-padding);
+  tab-size: var(--mirror-tab-size);
+  text-align: var(--mirror-text-align);
+  text-indent: var(--mirror-text-indent);
+  text-transform: var(--mirror-text-transform);
+  transform: var(--mirror-scroll);
+  white-space: var(--mirror-white-space);
+  width: 100%;
+  word-spacing: var(--mirror-word-spacing);
+}
+
+.todoist-task-sheet-modal .taskmodal-link-field.taskmodal-link-ready > input,
+.todoist-task-sheet-modal .taskmodal-link-field.taskmodal-link-ready > textarea {
+  caret-color: var(--text-normal);
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.todoist-task-sheet-modal .taskmodal-link-field.taskmodal-link-ready > input::placeholder,
+.todoist-task-sheet-modal .taskmodal-link-field.taskmodal-link-ready > textarea::placeholder {
+  color: var(--text-faint);
+  -webkit-text-fill-color: var(--text-faint);
+}
+
+.todoist-task-sheet-modal .taskmodal-note-link.is-resolved {
+  color: var(--link-color, var(--text-accent));
+  text-decoration: underline;
+}
+
+.todoist-task-sheet-modal .taskmodal-note-link.is-unresolved {
+  color: var(--text-muted);
+  text-decoration-color: var(--text-error);
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+}
+
+.todoist-task-sheet-modal .taskmodal-link-status {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }

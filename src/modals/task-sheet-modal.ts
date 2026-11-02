@@ -1,6 +1,9 @@
 import { App, Modal, setIcon } from "obsidian";
 import { TODOIST_COLORS, TODOIST_COLORS_NUM } from "../constants";
 import { clearEl } from "../dom";
+import { obsidianUrisToWikilinks } from "../obsidian-links";
+import { WikilinkSuggest } from "./wikilink-suggest";
+import { WikilinkHighlight } from "./wikilink-highlight";
 import type { AddTaskModalSettings, Label, Project } from "../types";
 
 export interface TaskModalFields {
@@ -58,6 +61,8 @@ export class TaskSheetModal extends Modal {
   private submitting = false;
   private pendingFormRender = false;
   private fieldErrors: Partial<Record<keyof TaskModalSubmitData, string>> = {};
+  private wikilinkSuggest: WikilinkSuggest | null = null;
+  private wikilinkHighlights: WikilinkHighlight[] = [];
 
   constructor(app: App, options: TaskSheetModalOptions) {
     super(app);
@@ -78,6 +83,7 @@ export class TaskSheetModal extends Modal {
 
   onClose() {
     this.opened = false;
+    this.clearWikilinkSuggest();
     this.viewportCleanup?.();
     this.viewportCleanup = null;
     this.containerEl.classList.remove("is-keyboard-open");
@@ -96,6 +102,7 @@ export class TaskSheetModal extends Modal {
     this.options = { ...this.options, title };
     if (!this.opened) return;
     this.setTitle(title);
+    this.clearWikilinkSuggest();
     clearEl(this.contentEl);
     this.readFormData = null;
     this.initialFormData = null;
@@ -387,9 +394,17 @@ export class TaskSheetModal extends Modal {
 
   private renderForm() {
     this.setTitle(this.options.title);
+    this.clearWikilinkSuggest();
     clearEl(this.contentEl);
     this.contentEl.appendChild(this.createForm());
     this.syncViewportSize();
+  }
+
+  private clearWikilinkSuggest() {
+    this.wikilinkSuggest?.unload();
+    this.wikilinkSuggest = null;
+    this.wikilinkHighlights.forEach((highlight) => highlight.unload());
+    this.wikilinkHighlights = [];
   }
 
   private installViewportTracking() {
@@ -501,6 +516,13 @@ export class TaskSheetModal extends Modal {
       ...(this.options.visibleFields || {}),
     };
     const ownerDocument = this.containerEl.ownerDocument;
+    const editableLinks = (text: string) => obsidianUrisToWikilinks(text, this.app.vault.getName(), (target) => {
+      const hash = target.indexOf("#");
+      const path = hash < 0 ? target : target.slice(0, hash);
+      const subpath = hash < 0 ? "" : target.slice(hash);
+      const file = this.app.metadataCache.getFirstLinkpathDest(path, "");
+      return (file ? this.app.metadataCache.fileToLinktext(file, "", true) : path.replace(/\.md$/, "")) + subpath;
+    });
     const wrapper = ownerDocument.adoptNode(createDiv({ cls: "taskmodal-wrapper" }));
 
     const formatDueText = (value: string) => {
@@ -537,7 +559,7 @@ export class TaskSheetModal extends Modal {
     const titleInput = titleField.createEl("input", {
       cls: "taskmodal-title-input",
       type: "text",
-      value: fields.title ?? "",
+      value: editableLinks(fields.title ?? ""),
     });
     titleInput.placeholder = "Task name";
     this.titleInput = titleInput;
@@ -548,8 +570,15 @@ export class TaskSheetModal extends Modal {
       cls: "taskmodal-description-input",
     });
     descriptionInput.placeholder = "Description";
-    descriptionInput.value = fields.description ?? "";
+    descriptionInput.value = editableLinks(fields.description ?? "");
     this.rememberTextInput(descriptionInput);
+    this.wikilinkHighlights = [titleInput, descriptionInput].map((input) => {
+      const highlight = new WikilinkHighlight(this.app, input);
+      highlight.load();
+      return highlight;
+    });
+    this.wikilinkSuggest = new WikilinkSuggest(this.app, this.scope, [titleInput, descriptionInput], this.containerEl);
+    this.wikilinkSuggest.load();
 
     const chipRow = wrapper.createDiv({ cls: "taskmodal-chip-row" });
 

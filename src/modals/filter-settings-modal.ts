@@ -27,6 +27,17 @@ const FILTER_ICON_COLORS = [
   "#748FFC", "#9775FA", "#DA77F2", "#F783AC", "#FF8787", "#FF9F40",
 ];
 
+let nextFilterFieldId = 0;
+
+function addFieldLabel(cell: HTMLElement, text: string, control?: HTMLElement) {
+  const label = cell.createEl(control ? "label" : "span", { cls: "settings-field-label", text });
+  if (control) {
+    control.id = `todoist-filter-field-${++nextFilterFieldId}`;
+    label.setAttribute("for", control.id);
+  }
+  cell.prepend(label);
+}
+
 const OBSIDIAN_ICONS = [
   "check", "calendar", "star", "heart", "search", "plus", "trash", "pencil", "folder", "document",
   "file-plus", "anchor", "zap", "settings", "book-open", "box", "bug", "camera", "cast", "cloud",
@@ -180,6 +191,7 @@ function renderIconPicker(row: HTMLTableRowElement, filter: ToolbarFilter, curre
   const iconCell = row.createEl("td");
   if (filter.color) iconCell.style.setProperty("--filter-icon-color", filter.color);
   const iconTrigger = iconCell.createDiv({ cls: "icon-trigger" });
+  addFieldLabel(iconCell, "Icon");
   clearEl(iconTrigger);
   setIcon(iconTrigger, filter.icon || "star");
 
@@ -260,6 +272,7 @@ function positionIconPicker(trigger: HTMLElement, picker: HTMLElement) {
 function renderTitleInput(row: HTMLTableRowElement, filter: ToolbarFilter) {
   const titleCell = row.createEl("td");
   const titleInput = titleCell.createEl("input", { type: "text" });
+  addFieldLabel(titleCell, "Title", titleInput);
   titleInput.value = filter.title || "";
   titleInput.oninput = () => {
     filter.title = titleInput.value;
@@ -269,6 +282,7 @@ function renderTitleInput(row: HTMLTableRowElement, filter: ToolbarFilter) {
 function renderFilterInput(row: HTMLTableRowElement, filter: ToolbarFilter) {
   const filterCell = row.createEl("td");
   const filterInput = filterCell.createEl("input", { type: "text" });
+  addFieldLabel(filterCell, "Todoist filter", filterInput);
   filterInput.value = typeof filter.filter === "string" ? filter.filter : JSON.stringify(filter.filter ?? {});
 }
 
@@ -284,16 +298,14 @@ function renderDefaultToggle(
   const defaultInput = defaultLabel.createEl("input", { type: "radio" });
   defaultInput.name = "default-filter";
   defaultInput.checked = !!filter.isDefault;
-  defaultLabel.classList.toggle("is-checked", defaultInput.checked);
+  defaultInput.setAttribute("aria-label", `Use ${filter.title || "this filter"} as default`);
+  addFieldLabel(defaultCell, "Default", defaultInput);
   defaultInput.onchange = () => {
     settings.filters!.forEach((_, filterIndex) => {
       settings.filters![filterIndex].isDefault = filterIndex === index;
     });
-    defaultLabel.classList.toggle("is-checked", defaultInput.checked);
     rerender();
   };
-  const defaultIcon = defaultLabel.createSpan();
-  setIcon(defaultIcon, "check");
 }
 
 function renderDeleteButton(
@@ -304,6 +316,7 @@ function renderDeleteButton(
 ) {
   const deleteCell = row.createEl("td");
   const deleteButton = deleteCell.createEl("button");
+  addFieldLabel(deleteCell, "Delete");
   setIcon(deleteButton, "trash-2");
   deleteButton.querySelector("svg")?.removeAttribute("fill");
   deleteButton.className = "icon-button";

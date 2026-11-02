@@ -1,10 +1,13 @@
 import { requestUrl } from "obsidian";
 import { DateTime } from "luxon";
 import { rescheduleTaskDue, toSyncTaskDue } from "./task-dates";
+import { wikilinksToObsidianUris } from "./obsidian-links";
+import type { ObsidianLinkContext } from "./obsidian-links";
 import type { ActionResult, Label, Project, Task, TodoistDue, TodoistMetadata, TodoistSection, TodoistTask } from "./types";
 
 export interface TodoistServiceOptions {
   getCachedTasks?: (filterKey: string) => TodoistTask[];
+  getObsidianLinkContext?: () => ObsidianLinkContext;
 }
 
 export interface TodoistPageOptions {
@@ -278,7 +281,7 @@ export function normalizeSection(section: unknown): TodoistSection {
   };
 }
 
-export function toRestTaskPayload(args: Partial<AddTaskArgs> | Record<string, unknown>): Record<string, unknown> {
+export function toRestTaskPayload(args: Partial<AddTaskArgs> | Record<string, unknown>, linkContext?: ObsidianLinkContext): Record<string, unknown> {
   const source = asRecord(args);
   const payload: Record<string, unknown> = {};
   const copy = (from: string, to: string = from) => {
@@ -287,6 +290,11 @@ export function toRestTaskPayload(args: Partial<AddTaskArgs> | Record<string, un
 
   copy("content");
   copy("description");
+  for (const field of ["content", "description"]) {
+    if (typeof payload[field] === "string") {
+      payload[field] = wikilinksToObsidianUris(payload[field], linkContext);
+    }
+  }
   copy("labels");
   copy("priority");
   copy("projectId", "project_id");
@@ -320,9 +328,9 @@ export function toRestTaskPayload(args: Partial<AddTaskArgs> | Record<string, un
   return payload;
 }
 
-export function toSyncTaskArgs(taskId: string, args: Partial<AddTaskArgs> | Record<string, unknown>): Record<string, unknown> {
+export function toSyncTaskArgs(taskId: string, args: Partial<AddTaskArgs> | Record<string, unknown>, linkContext?: ObsidianLinkContext): Record<string, unknown> {
   const source = asRecord(args);
-  const payload = toRestTaskPayload(args);
+  const payload = toRestTaskPayload(args, linkContext);
   const syncArgs: Record<string, unknown> = { id: String(taskId) };
 
   const copy = (from: string, to: string = from) => {
@@ -479,7 +487,7 @@ export class TodoistService {
   }
 
   async addTask(args: AddTaskArgs): Promise<TodoistTask> {
-    const task = await this.request<unknown>("/tasks", { method: "POST", body: toRestTaskPayload(args) });
+    const task = await this.request<unknown>("/tasks", { method: "POST", body: toRestTaskPayload(args, this.options.getObsidianLinkContext?.()) });
     return normalizeTask(task);
   }
 
@@ -492,7 +500,7 @@ export class TodoistService {
     try {
       const response = await this.request<unknown>(`/tasks/${encodeURIComponent(String(taskId))}`, {
         method: "POST",
-        body: toRestTaskPayload(args),
+        body: toRestTaskPayload(args, this.options.getObsidianLinkContext?.()),
       });
       return { ok: true, data: response ? normalizeTask(response) : null };
     } catch (error) {
@@ -646,7 +654,7 @@ export class TodoistService {
     const response = await this.syncCommand({
       type: "item_update",
       uuid,
-      args: toSyncTaskArgs(taskId, args),
+      args: toSyncTaskArgs(taskId, args, this.options.getObsidianLinkContext?.()),
     });
     const syncStatus = asRecord(response.sync_status);
     const status = syncStatus[uuid];

@@ -1,8 +1,9 @@
-import { MarkdownRenderer, setIcon } from "obsidian";
+import { Keymap, MarkdownRenderer, setIcon } from "obsidian";
 import { DateTime } from "luxon";
 import { TODOIST_COLORS, TODOIST_COLORS_NUM } from "./constants";
 import { clearEl } from "./dom";
 import { getZone, safeZone, useHour12 } from "./time";
+import { obsidianUriToLinktext } from "./obsidian-links";
 import type { App, Component } from "obsidian";
 import type { Label, Project, TodoistBoardSettings, TodoistTask } from "./types";
 
@@ -33,6 +34,45 @@ export function escapeLeadingOrderedListMarkers(content: string): string {
   return content.replace(/^(\s{0,3}\d{1,9})([.)])(?=\s)/gm, "$1\\$2");
 }
 
+export async function renderTaskMarkdown(app: App, markdown: string, element: HTMLElement, owner: Component): Promise<void> {
+  // Keep links out of the row's selection and long-press drag handlers. Capture
+  // clicks so native link navigation runs once, including in inline boards.
+  const linkFromEvent = (event: Event) => {
+    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>("a");
+    return link && element.contains(link) ? link : null;
+  };
+  for (const eventName of ["pointerdown", "pointerup"]) {
+    element.addEventListener(eventName, (event) => {
+      if (linkFromEvent(event)) event.stopPropagation();
+    }, true);
+  }
+  const openLink = (event: MouseEvent) => {
+    if (event.type === "auxclick" && event.button !== 1) return;
+    const link = linkFromEvent(event);
+    if (!link) return;
+    event.stopPropagation();
+    if (!link.classList.contains("internal-link")) return;
+    const target = link.getAttribute("data-href") || link.getAttribute("href");
+    if (!target) return;
+    event.preventDefault();
+    void app.workspace.openLinkText(target, "", Keymap.isModEvent(event));
+  };
+  element.addEventListener("click", openLink, true);
+  element.addEventListener("auxclick", openLink, true);
+  await MarkdownRenderer.render(app, markdown, element, "", owner);
+  // Descriptions fetched back from Todoist contain Markdown URI links. Restore
+  // native navigation and hover styling when they point into the current vault.
+  element.querySelectorAll<HTMLAnchorElement>('a[href^="obsidian://open?"]').forEach((link) => {
+    const target = obsidianUriToLinktext(link.getAttribute("href") || "", app.vault.getName());
+    if (!target) return;
+    link.classList.remove("external-link");
+    link.classList.add("internal-link");
+    link.setAttribute("data-href", target);
+    link.setAttribute("href", target);
+    link.removeAttribute("target");
+  });
+}
+
 export function createTaskContent(options: TaskContentRenderOptions): HTMLElement {
   const {
     task,
@@ -51,11 +91,10 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
 
   const titleSpan = activeDocument.adoptNode(createSpan());
   clearEl(titleSpan);
-  void MarkdownRenderer.render(
+  void renderTaskMarkdown(
     app,
     escapeLeadingOrderedListMarkers(task.content),
     titleSpan,
-    "",
     owner,
   );
   titleSpan.className = "task-title";
@@ -77,7 +116,9 @@ export function createTaskContent(options: TaskContentRenderOptions): HTMLElemen
   const descEl = activeDocument.adoptNode(createDiv());
   descEl.className = "task-description";
   if (typeof task.description === "string" && task.description.trim()) {
-    descEl.textContent = task.description;
+    const descriptionContent = descEl.createDiv({ cls: "task-description-markdown" });
+    void renderTaskMarkdown(app, task.description, descriptionContent, owner)
+      .then(() => scheduleDescriptionOverflowSync(descEl));
     descEl.classList.add("has-description", "desc-collapsed");
     const toggleDescription = activeDocument.adoptNode(createEl("button"));
     toggleDescription.className = "task-description-toggle";

@@ -8,7 +8,9 @@ Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive b
 - Inline `todoist-board` code blocks for embedding filtered task lists in notes.
 - Todoist filter support, including project, priority, date, and custom filter queries.
 - Task actions for adding, editing, completing, deleting, scheduling, deferring, moving, and changing priority.
+- Clickable Obsidian wikilinks in task titles and descriptions, with automatic Obsidian URI conversion when saving either field to Todoist.
 - Command palette capture with `Todoist Board: Add Task` and recurring schedules in the task sheet's **Repeats** field.
+- `Todoist Board: Add task linked to active note` opens a new task with a wikilink to the current note in its description.
 - Parent and subtask display with collapse controls.
 - Sorting, compact mode, hidden tasks, manual order, polling refresh, and cached offline display.
 - Mobile support is enabled with `isDesktopOnly: false`.
@@ -39,6 +41,12 @@ You can create a Todoist personal API token from Todoist account settings.
 Existing plugin-data tokens are migrated to Obsidian Secret Storage automatically when Secret Storage is available.
 
 Use **Repeats** when adding or editing a task for schedules such as `every day`, `every Monday at 9am`, or `every! 2 weeks`. A selected date starts a new repeat schedule from that date; an explicit start date in the repeat text takes precedence. Changing only the date of an existing repeating task moves its next occurrence while preserving the schedule. Clear **Repeats** to make the task a one-time task.
+
+Use `[[Note Name]]` or `[[Note Name|display text]]` in task titles and descriptions to open notes from the board. Heading and block links work too. When you create or edit a task, wikilinks in its title and description are sent to Todoist as Markdown links such as `[Note Name](obsidian://open?vault=My%20vault&file=Notes%2FNote%20Name.md)`. These links include the current vault name and the resolved note path; use the same vault name on your other devices. The task sheet displays these links as readable wikilinks when you reopen it. Code examples, escaped wikilinks, embeds, and existing Markdown links are preserved. Existing tasks are converted when saved; fetching tasks does not rewrite them in Todoist.
+
+In the task sheet, type `[[` in the task name or description to search vault notes by name, folder path, or frontmatter alias. Use the arrow keys and Enter or Tab to insert a link, or click/tap a result. Escape dismisses suggestions while keeping the task sheet open. Folder paths distinguish notes with the same name, and selecting an alias inserts `[[Note|Alias]]`.
+
+Completed wikilinks to existing notes use your theme's link colour in the task sheet. Links to missing notes use muted text with a dotted underline; the field's tooltip and screen-reader description identify the missing notes. This updates as you type and when notes are created, renamed, or deleted.
 
 ## Inline Boards
 

@@ -42,6 +42,7 @@ import { resolveFilterFromSource, sourceOrDefault } from "./src/filters";
 import { getZone } from "./src/time";
 import { createTaskContent, getProjectHexColor } from "./src/task-rendering";
 import { getTaskId, getTaskParentId, TaskHierarchy } from "./src/task-hierarchy";
+import { isTaskDragStart, trackTaskDrag } from "./src/task-drag";
 import type {
 	  GetSectionsResponse,
   Filter,
@@ -201,6 +202,7 @@ export default class TodoistBoardPlugin extends Plugin {
   private filterNextCursor: Record<string, string | null> = {};
   private taskHierarchy = new TaskHierarchy();
   private globalEventListenersRegistered = false;
+  private activeTaskDragCancel: (() => void) | null = null;
   private lastTodoistErrorNotice = { key: "", at: 0 };
 
   private ensureRefactoredRuntime(apiKey: string = this.settings?.apiKey || "") {
@@ -216,6 +218,10 @@ export default class TodoistBoardPlugin extends Plugin {
     if (!this.todoistService) {
       this.todoistService = new TodoistService(apiKey, {
         getCachedTasks: (filterKey) => this.getViewTasks(filterKey),
+        getObsidianLinkContext: () => ({
+          vaultName: this.app.vault.getName(),
+          resolveFile: (linkpath) => this.app.metadataCache.getFirstLinkpathDest(linkpath, "")?.path,
+        }),
       });
       this.taskActions = new TaskActions(this.todoistService);
       this.todoistApi = this.todoistService.getApi();
@@ -671,6 +677,20 @@ export default class TodoistBoardPlugin extends Plugin {
         name: "Add Task",
         icon: "plus",
         callback: () => this.openAddTaskModal(),
+      });
+      this.addCommand({
+        id: "add-task-from-active-note",
+        name: "Add task linked to active note",
+        icon: "file-plus",
+        checkCallback: (checking) => {
+          const file = this.app.workspace.getActiveFile();
+          if (!file || file.extension !== "md") return false;
+          if (!checking) {
+            const linktext = this.app.metadataCache.fileToLinktext(file, "", true);
+            void this.openAddTaskModal(undefined, `[[${linktext}]]`);
+          }
+          return true;
+        },
       });
       await this.loadSettings();
 
@@ -1170,6 +1190,8 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   onunload() {
+    this.activeTaskDragCancel?.();
+    this.activeTaskDragCancel = null;
     this.stopTaskPolling?.();
     this.stopTaskPolling = undefined;
     this.globalEventListenersRegistered = false;
@@ -1853,7 +1875,7 @@ export default class TodoistBoardPlugin extends Plugin {
   }
 
   // --- Add Task Modal ---
-  async openAddTaskModal(filter?: string) {
+  async openAddTaskModal(filter?: string, description = "") {
     this.ensureRefactoredRuntime(this.settings.apiKey);
     const inboxId = this.projectCache?.find((p) => p.name === "Inbox")?.id;
     const buildFields = (projects: Project[], labels: Label[]) => {
@@ -1865,7 +1887,7 @@ export default class TodoistBoardPlugin extends Plugin {
       )?.id || inboxId;
       return {
         title: "",
-        description: "",
+        description,
         due: filterDefaults.due || "",
         repeats: "",
         deadline: "",
@@ -2715,6 +2737,8 @@ export default class TodoistBoardPlugin extends Plugin {
     // Context Menu ---
     row.addEventListener("contextmenu", (event) => {
       event.preventDefault();
+      event.stopPropagation();
+      this.prepareTaskContextMenu(row, task, apiKey);
       const menu = new Menu();
 
       const actions = this.settings.contextMenuActions;
@@ -2879,8 +2903,15 @@ export default class TodoistBoardPlugin extends Plugin {
   ) {
     let tapStartX = 0;
     let tapStartY = 0;
+    let pressedPointer: number | null = null;
+    let contextMenuPointer: number | null = null;
+
+    row.addEventListener("contextmenu", () => { contextMenuPointer = pressedPointer; });
 
     row.addEventListener("pointerdown", (e: PointerEvent) => {
+      if (e.button !== 0 || (e.pointerType === "mouse" && e.ctrlKey)) return;
+      pressedPointer = e.pointerId;
+      contextMenuPointer = null;
       if ((e.target as HTMLElement).closest(".fixed-chin")) return;
       if (row.classList.contains("subtask-row")) return;
       tapStartX = e.clientX;
@@ -2888,6 +2919,10 @@ export default class TodoistBoardPlugin extends Plugin {
     });
 
     row.addEventListener("pointerup", (e: PointerEvent) => {
+      if (e.pointerId === contextMenuPointer) { contextMenuPointer = null; return; }
+      // Context-menu selection happens in contextmenu, whose order relative to
+      // pointerup differs between desktop and mobile platforms.
+      if (e.button !== 0 || (e.pointerType === "mouse" && e.ctrlKey)) return;
       if ((e.target as HTMLElement).closest(".fixed-chin")) return;
       const isCheckbox = (e.target as HTMLElement).closest('input[type="checkbox"]');
       if (isCheckbox) return;
@@ -2897,13 +2932,6 @@ export default class TodoistBoardPlugin extends Plugin {
       if (dx > 5 || dy > 5) return;
 
       e.stopPropagation();
-
-      // Prevent deselection on right-click (context menu) ---
-      // If right-click (button 2) and already selected, ignore to keep selection & show menu.
-      // If unselected, we allow it to proceed so it gets selected (user preference).
-      if (e.button === 2 && row.classList.contains("selected-task")) {
-        return;
-      }
 
       // --- Subtask expand/collapse logic ---
       if (row.classList.contains("subtask-row")) {
@@ -2925,6 +2953,19 @@ export default class TodoistBoardPlugin extends Plugin {
     });
 
     this.setupTaskDragAndDrop(row, listWrapper, filters);
+  }
+
+  private prepareTaskContextMenu(row: HTMLElement, task: Task, apiKey: string) {
+    this.activeTaskDragCancel?.();
+    if (row.classList.contains("non-task-note")) return;
+    if (row.classList.contains("subtask-row")) {
+      row.ownerDocument.querySelectorAll(".subtask-row.expanded-subtask").forEach((other) => {
+        if (other !== row) other.classList.remove("expanded-subtask");
+      });
+      row.classList.add("expanded-subtask");
+    } else if (!row.classList.contains("selected-task")) {
+      this.handleTaskSelection(row, task, apiKey);
+    }
   }
 
   private handleTaskSelection(row: HTMLElement, task: Task, apiKey: string, event?: Event) {
@@ -3481,185 +3522,79 @@ export default class TodoistBoardPlugin extends Plugin {
 
   // ======================= 🖱️ Drag & Drop =======================
   private setupTaskDragAndDrop(row: HTMLElement, listWrapper: HTMLElement, filters: string[]) {
-    let lastTap = 0;
-
-    row.onpointerdown = (ev: PointerEvent) => {
-      // Ignore pointerdown if it's on the mini-toolbar/fixed-chin
-      if ((ev.target as HTMLElement)?.closest(".fixed-chin")) return;
+    row.onpointerdown = (event: PointerEvent) => {
+      if (!isTaskDragStart(event)) return;
+      if ((event.target as HTMLElement)?.closest(".fixed-chin, a, button, input, textarea, select")) return;
       if (row.classList.contains("subtask-row") || row.closest(".subtask-wrapper")) return;
-      // // if (this.settings?.enableLogs) console.log("🔽 pointerdown", ev.pointerType, ev.clientX, ev.clientY);
-      const tapNow = Date.now();
-      if (tapNow - lastTap < 300) return;
+      this.activeTaskDragCancel?.();
 
-      if ((ev.target as HTMLElement).closest('input[type="checkbox"]')) {
-        return;
-      }
+      const document = row.ownerDocument;
+      const rect = row.getBoundingClientRect();
+      const offsetX = Math.min(Math.max(event.clientX - rect.left, 12), Math.max(rect.width - 12, 12));
+      const offsetY = Math.min(Math.max(event.clientY - rect.top, 12), Math.max(rect.height - 12, 12));
+      const readOrder = () => Array.from(listWrapper.children)
+        .map((child) => child.getAttribute("data-id"))
+        .filter((id): id is string => Boolean(id));
+      const originalOrder = readOrder();
+      let layer: HTMLElement | null = null;
+      let placeholder: HTMLElement | null = null;
+      let locked = false;
+      const cancel: () => void = trackTaskDrag(row, event, {
+        onStart: () => {
+          locked = true;
+          this.setTaskDragLock(row, listWrapper, true);
+          document.defaultView?.navigator.vibrate?.([30, 20, 30]);
 
-      const isTouch = ev.pointerType === "touch" || ev.pointerType === "pen";
-      const startX = ev.clientX;
-      const startY = ev.clientY;
-      const startRect = row.getBoundingClientRect();
-      const dragOffsetX = Math.min(Math.max(startX - startRect.left, 12), Math.max(startRect.width - 12, 12));
-      const dragOffsetY = Math.min(Math.max(startY - startRect.top, 12), Math.max(startRect.height - 12, 12));
-      let longPressTimer: number | null = null;
-      let dragging = false;
-      let pid = ev.pointerId;
-
-      const beginDrag = (e?: PointerEvent) => {
-        if (dragging) return;
-        dragging = true;
-
-        if (e && e.cancelable) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-        this.setTaskDragLock(row, listWrapper, true);
-
-        if (navigator.vibrate) {
-          navigator.vibrate([30, 20, 30]);
-        }
-
-        const ownerDocument = listWrapper.ownerDocument;
-        const dragLayer = ownerDocument.adoptNode(createDiv());
-        dragLayer.className = "todoist-board task-drag-layer";
-        dragLayer.setCssProps({
-          "--task-drag-width": `${startRect.width}px`,
-          "--task-drag-min-height": `${startRect.height}px`,
-        });
-
-        const dragPreview = row.cloneNode(true) as HTMLElement;
-        dragPreview.id = "";
-        dragPreview.removeAttribute("data-id");
-        dragPreview.removeAttribute("data-task-id");
-        dragPreview.classList.remove("dragging-row");
-        dragPreview.classList.add("task-drag-preview");
-        dragLayer.appendChild(dragPreview);
-        ownerDocument.body.appendChild(dragLayer);
-
-        const updateDragPreview = (event: PointerEvent) => {
-          const x = event.clientX - dragOffsetX;
-          const y = event.clientY - dragOffsetY;
-          dragLayer.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-        };
-        updateDragPreview(e ?? ev);
-
-        const placeholder = row.cloneNode(true) as HTMLDivElement;
-        placeholder.id = "todoist-placeholder";
-        placeholder.className = "task-placeholder";
-        let dragFinished = false;
-
-        listWrapper.insertBefore(placeholder, row);
-
-        const moveWhileDragging = (e: PointerEvent) => {
-          // // if (this.settings?.enableLogs) console.log("📍 pointermove during drag", e.clientY);
-          if (e.pointerId !== pid) return;
-          e.preventDefault();
-          e.stopPropagation();
-          updateDragPreview(e);
-
-          const rows = Array.from(listWrapper.children).filter(c => c !== row && c !== placeholder) as HTMLDivElement[];
-          for (let i = 0; i < rows.length; i++) {
-            const other = rows[i];
-            const otherRect = other.getBoundingClientRect();
-            if (e.clientY < otherRect.top + otherRect.height / 2) {
-              listWrapper.insertBefore(placeholder, other);
-              break;
-            }
-            if (i === rows.length - 1) {
-              listWrapper.appendChild(placeholder);
-            }
+          layer = document.adoptNode(createDiv());
+          layer.className = "todoist-board task-drag-layer";
+          layer.setCssProps({
+            "--task-drag-width": `${rect.width}px`,
+            "--task-drag-min-height": `${rect.height}px`,
+          });
+          const preview = row.cloneNode(true) as HTMLElement;
+          preview.id = "";
+          preview.removeAttribute("data-id");
+          preview.removeAttribute("data-task-id");
+          preview.classList.remove("dragging-row");
+          preview.classList.add("task-drag-preview");
+          layer.appendChild(preview);
+          document.body.appendChild(layer);
+          placeholder = document.adoptNode(createDiv({ cls: "task-placeholder" }));
+          placeholder.id = "todoist-placeholder";
+          listWrapper.insertBefore(placeholder, row);
+        },
+        onMove: (move) => {
+          if (!layer || !placeholder) return;
+          layer.style.transform = `translate3d(${move.clientX - offsetX}px, ${move.clientY - offsetY}px, 0)`;
+          const rows = Array.from(listWrapper.children)
+            .filter((child) => child !== row && child.classList.contains("task"));
+          const next = rows.find((other) => {
+            const bounds = other.getBoundingClientRect();
+            return move.clientY < bounds.top + bounds.height / 2;
+          });
+          if (next) listWrapper.insertBefore(placeholder, next);
+          else rows.at(-1)?.after(placeholder);
+        },
+        onEnd: (commit) => {
+          if (this.activeTaskDragCancel === cancel) this.activeTaskDragCancel = null;
+          // Cancellation leaves the real row in its original position. Only a
+          // successful primary-pointer release commits the placeholder's order.
+          if (commit && placeholder?.parentElement === listWrapper && row.parentElement === listWrapper) {
+            listWrapper.insertBefore(row, placeholder);
           }
-        };
-
-        const finishDrag = (e: PointerEvent) => {
-          // // if (this.settings?.enableLogs) console.log("✅ finishDrag");
-          if (e.pointerId !== pid) return;
-          if (dragFinished) return;
-          dragFinished = true;
-
-          if (row.hasPointerCapture(pid)) row.releasePointerCapture(pid);
-          row.removeEventListener("pointermove", moveWhileDragging);
-          row.removeEventListener("pointerup", finishDrag);
-          row.removeEventListener("pointercancel", finishDrag);
-          row.removeEventListener("lostpointercapture", finishDrag);
-
-          this.setTaskDragLock(row, listWrapper, false);
-
-          if (placeholder.parentElement) listWrapper.insertBefore(row, placeholder);
-          placeholder.remove();
-          dragLayer.remove();
-          const newOrder = Array.from(listWrapper.children)
-            .map(c => c.getAttribute("data-id"))
-            .filter(id => id);
+          placeholder?.remove();
+          layer?.remove();
+          if (locked) this.setTaskDragLock(row, listWrapper, false);
+          if (!commit) return;
+          const order = readOrder();
+          if (order.join("\n") === originalOrder.join("\n")) return;
           this.ensureRefactoredRuntime(this.settings.apiKey);
-          this.storage.setManualOrder(filters.join(","), newOrder as string[]);
-
+          this.storage.setManualOrder(filters.join(","), order);
           void this.savePluginData();
-        };
-
-        row.setPointerCapture(pid);
-        row.addEventListener("pointermove", moveWhileDragging);
-        row.addEventListener("pointerup", finishDrag);
-        row.addEventListener("pointercancel", finishDrag);
-        row.addEventListener("lostpointercapture", finishDrag);
-      };
-
-      if (isTouch) {
-        let moved = false;
-        const moveThreshold = 25;
-
-        const onTouchMove = (e: PointerEvent) => {
-          // // if (this.settings?.enableLogs) console.log("👣 onTouchMove", e.clientX, e.clientY);
-          const dx = Math.abs(e.clientX - startX);
-          const dy = Math.abs(e.clientY - startY);
-          if (dx > moveThreshold || dy > moveThreshold) {
-            moved = true;
-            cleanup();
-          }
-        };
-
-        const cleanup = () => {
-          // // if (this.settings?.enableLogs) console.log("🧹 Cleanup triggered");
-          if (longPressTimer !== null) window.clearTimeout(longPressTimer);
-          row.removeEventListener('pointermove', onTouchMove);
-          row.removeEventListener('pointerup', cleanup);
-          row.removeEventListener('pointercancel', cleanup);
-          this.setTaskDragLock(row, listWrapper, false);
-        };
-
-        // passive: false for pointermove
-        row.addEventListener('pointermove', onTouchMove, { passive: true });
-        row.addEventListener('pointerup', cleanup, { passive: true });
-        row.addEventListener('pointercancel', cleanup, { passive: true });
-
-        longPressTimer = window.setTimeout(() => {
-          // // if (this.settings?.enableLogs) console.log("⏳ Long press timer fired");
-          if (!moved) {
-            if (ev.cancelable) ev.preventDefault();
-            beginDrag(ev);
-          }
-        }, 150);
-      } else if (ev.pointerType === "mouse") {
-        const moveCheck = (e: PointerEvent) => {
-          const dx = Math.abs(e.clientX - startX);
-          const dy = Math.abs(e.clientY - startY);
-          if (dx > 5 || dy > 5) {
-            row.removeEventListener("pointermove", moveCheck);
-            beginDrag(e);
-          }
-        };
-        row.addEventListener("pointermove", moveCheck);
-
-        row.addEventListener("pointerup", () => {
-          row.removeEventListener("pointermove", moveCheck);
-        });
-      }
+        },
+      }, listWrapper);
+      this.activeTaskDragCancel = cancel;
     };
-
-    row.addEventListener("pointercancel", () => {
-      // // if (this.settings?.enableLogs) console.log("⚠️ pointercancel triggered");
-      window.getSelection()?.removeAllRanges();
-    });
   }
 
   private setupGlobalEventListeners() {
