@@ -3573,7 +3573,7 @@ export default class TodoistBoardPlugin extends Plugin {
             return move.clientY < bounds.top + bounds.height / 2;
           });
           if (next) listWrapper.insertBefore(placeholder, next);
-          else rows.at(-1)?.after(placeholder);
+          else rows[rows.length - 1]?.after(placeholder);
         },
         onEnd: (commit) => {
           if (this.activeTaskDragCancel === cancel) this.activeTaskDragCancel = null;

@@ -22,6 +22,7 @@ export class WikilinkSuggest extends Component {
   private queryKey = "";
   private dismissedKey = "";
   private composing = false;
+  private touchingPopup = false;
 
   constructor(app: App, parentScope: Scope, inputs: TextInput[], popupHost: HTMLElement) {
     super();
@@ -73,7 +74,11 @@ export class WikilinkSuggest extends Component {
       this.registerDomEvent(input, "click", () => { this.dismissedKey = ""; this.update(input); });
       this.registerDomEvent(input, "keyup", () => this.update(input));
       this.registerDomEvent(input, "select", () => this.update(input));
-      this.registerDomEvent(input, "blur", () => { this.dismissedKey = ""; this.close(); });
+      this.registerDomEvent(input, "blur", () => {
+        this.dismissedKey = "";
+        // WebKit can blur the field before delivering a suggestion's touchend.
+        if (!this.touchingPopup) this.close();
+      });
       this.registerDomEvent(input, "compositionstart", () => { this.composing = true; this.close(); });
       this.registerDomEvent(input, "compositionend", () => { this.composing = false; this.update(input); });
     }
@@ -116,7 +121,15 @@ export class WikilinkSuggest extends Component {
       this.popup.id = this.id;
       this.popup.setAttribute("role", "listbox");
       this.popup.setAttribute("aria-label", "Notes");
-      this.popup.addEventListener("pointerdown", (event) => event.preventDefault());
+      for (const type of ["pointerdown", "mousedown"] as const) {
+        this.popup.addEventListener(type, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        });
+      }
+      // Keep mobile workspace handlers from dismissing the keyboard. Do not
+      // cancel touchstart/touchmove: the suggestions must still scroll natively.
+      this.popup.addEventListener("touchstart", (event) => event.stopPropagation(), { passive: true });
       this.app.keymap.pushScope(this.scope);
     }
     this.popup.empty();
@@ -128,6 +141,35 @@ export class WikilinkSuggest extends Component {
       item.createDiv({ cls: "suggestion-note", text: note.path });
       item.addEventListener("mouseenter", () => this.select(index));
       item.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); this.choose(index); });
+      let touch: { id: number; x: number; y: number } | null = null;
+      item.addEventListener("touchstart", (event) => {
+        const start = event.touches.length === 1 ? event.touches[0] : null;
+        touch = start ? { id: start.identifier, x: start.clientX, y: start.clientY } : null;
+        this.touchingPopup = true;
+      }, { passive: true });
+      item.addEventListener("touchmove", (event) => {
+        const current = Array.from(event.touches).find((point) => point.identifier === touch?.id);
+        if (!current || !touch || Math.hypot(current.clientX - touch.x, current.clientY - touch.y) > 10) touch = null;
+      }, { passive: true });
+      item.addEventListener("touchend", (event) => {
+        // Select before WebKit's synthetic mouse events, which can blur the
+        // input or be suppressed altogether when a hover changes the list.
+        event.preventDefault();
+        event.stopPropagation();
+        const end = Array.from(event.changedTouches).find((point) => point.identifier === touch?.id);
+        const tapped = touch && end && event.touches.length === 0
+          && Math.hypot(end.clientX - touch.x, end.clientY - touch.y) <= 10;
+        touch = null;
+        this.touchingPopup = false;
+        if (tapped) this.choose(index);
+        else if (input.ownerDocument.activeElement !== input) this.close();
+      }, { passive: false });
+      item.addEventListener("touchcancel", (event) => {
+        event.stopPropagation();
+        touch = null;
+        this.touchingPopup = false;
+        if (input.ownerDocument.activeElement !== input) this.close();
+      }, { passive: true });
     });
     input.setAttribute("aria-controls", this.id);
     input.setAttribute("aria-expanded", "true");
@@ -206,6 +248,7 @@ export class WikilinkSuggest extends Component {
   }
 
   private close(dismissed = false) {
+    this.touchingPopup = false;
     if (dismissed) this.dismissedKey = this.queryKey;
     if (this.popup) {
       this.popup.remove();

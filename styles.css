@@ -5961,6 +5961,8 @@ body .todoist-board .list-toolbar .filter-row-wrapper button.filter-row:focus-vi
 
 /* ========== Obsidian-native Task Sheet Modal ========== */
 .todoist-task-sheet-modal .modal {
+  /* Keep controls and their popovers below the sibling note suggestions. */
+  isolation: isolate;
   width: min(600px, calc(100vw - 32px));
   max-width: var(--modal-max-width);
 }
