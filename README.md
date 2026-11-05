@@ -18,7 +18,7 @@ Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive b
 
 ## NEW in 2.4
 🆕 Use [[ to link your Obsidian notes in the task's title or description. Creates a hyperlink in Todoist that opens back to Obsidian.
-<img width="1064" height="630" alt="wikilinks" src="https://github.com/user-attachments/assets/b9b38739-e5e4-405e-84f8-e689723211c2" />
+<img width="532" height="315" alt="wikilinks" src="https://github.com/user-attachments/assets/b9b38739-e5e4-405e-84f8-e689723211c2" />
 
 
 
