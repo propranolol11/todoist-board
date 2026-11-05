@@ -14,7 +14,13 @@ Todoist Board is an Obsidian plugin that displays Todoist tasks as interactive b
 - Parent and subtask display with collapse controls.
 - Sorting, compact mode, hidden tasks, manual order, polling refresh, and cached offline display.
 - Mobile support is enabled with `isDesktopOnly: false`.
-- 
+
+
+## NEW in 2.4
+🆕 Use [[ to link your Obsidian notes in the task's title or description. Creates a hyperlink in Todoist that opens back to Obsidian.
+![Uploading wikilinks.gif…]()
+
+
 ## Screenshots
 
 ![Todoist Board sidebar view](https://github.com/user-attachments/assets/6a9f23ae-98cb-4f6e-8624-5c03fa9579ef)
